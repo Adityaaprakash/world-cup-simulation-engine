@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: worldcup-postgres
+
+    environment:
+      POSTGRES_DB: worldcup
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
