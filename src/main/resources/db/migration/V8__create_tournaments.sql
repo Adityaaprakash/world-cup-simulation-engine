@@ -1,0 +1,14 @@
+CREATE TABLE tournaments
+(
+    id BIGSERIAL PRIMARY KEY,
+
+    name VARCHAR(100) NOT NULL,
+
+    year INTEGER NOT NULL,
+
+    host_country VARCHAR(100) NOT NULL,
+
+    status VARCHAR(30) NOT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,9 +1,10 @@
 package com.aditya.worldcup.countries.entity;
 
+
 import com.aditya.worldcup.players.entity.Player;
 import jakarta.persistence.*;
 import lombok.*;
-
+import com.aditya.worldcup.teams.entity.Team;
 import java.util.List;
 
 @Entity
@@ -37,4 +38,7 @@ public class Country {
 
     @OneToMany(mappedBy = "country")
     private List<Player> players;
+
+    @OneToOne(mappedBy = "country")
+    private Team team;
 }
