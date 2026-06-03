@@ -1,8 +1,10 @@
 package com.aditya.worldcup.auth.controller;
 
 import com.aditya.worldcup.auth.dto.AuthResponse;
+import com.aditya.worldcup.auth.dto.LoginRequest;
 import com.aditya.worldcup.auth.dto.RegisterRequest;
 import com.aditya.worldcup.auth.service.AuthenticationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +17,15 @@ public class AuthController {
 
     @PostMapping("/register")
     public AuthResponse register(
-            @RequestBody RegisterRequest request) {
+            @Valid @RequestBody RegisterRequest request) {
 
         return authenticationService.register(request);
+    }
+
+    @PostMapping("/login")
+    public AuthResponse login(
+            @Valid @RequestBody LoginRequest request) {
+
+        return authenticationService.login(request);
     }
 }
