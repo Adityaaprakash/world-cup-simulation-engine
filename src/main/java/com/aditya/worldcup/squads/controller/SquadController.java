@@ -1,5 +1,8 @@
 package com.aditya.worldcup.squads.controller;
 
+import com.aditya.worldcup.players.dto.PlayerResponse;
+import com.aditya.worldcup.squadplayers.dto.AddPlayerRequest;
+import com.aditya.worldcup.squadplayers.service.SquadPlayerService;
 import com.aditya.worldcup.squads.dto.CreateSquadRequest;
 import com.aditya.worldcup.squads.dto.SquadResponse;
 import com.aditya.worldcup.squads.service.SquadService;
@@ -15,6 +18,7 @@ import java.util.List;
 public class SquadController {
 
     private final SquadService squadService;
+    private final SquadPlayerService squadPlayerService;
 
     @PostMapping
     public SquadResponse createSquad(
@@ -32,5 +36,38 @@ public class SquadController {
             Authentication authentication
     ) {
         return squadService.getMySquads(authentication);
+    }
+
+    @PostMapping("/{squadId}/players")
+    public void addPlayer(
+            @PathVariable Long squadId,
+            @RequestBody AddPlayerRequest request,
+            Authentication authentication
+    ) {
+        squadPlayerService.addPlayer(
+                squadId,
+                request,
+                authentication
+        );
+    }
+
+    @GetMapping("/{squadId}/players")
+    public List<PlayerResponse> getSquadPlayers(
+            @PathVariable Long squadId
+    ) {
+        return squadPlayerService.getSquadPlayers(squadId);
+    }
+
+    @DeleteMapping("/{squadId}/players/{playerId}")
+    public void removePlayer(
+            @PathVariable Long squadId,
+            @PathVariable Long playerId,
+            Authentication authentication
+    ) {
+        squadPlayerService.removePlayer(
+                squadId,
+                playerId,
+                authentication
+        );
     }
 }
