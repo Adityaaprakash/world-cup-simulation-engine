@@ -4,6 +4,7 @@ import com.aditya.worldcup.players.dto.PlayerResponse;
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.repository.PlayerRepository;
 import com.aditya.worldcup.squadplayers.dto.AddPlayerRequest;
+import com.aditya.worldcup.squadplayers.dto.StartingXiRequest;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.squads.entity.Squad;
@@ -123,5 +124,72 @@ public class SquadPlayerService {
                                 new RuntimeException("Player not in squad"));
 
         squadPlayerRepository.delete(squadPlayer);
+    }
+
+    public void setStartingXi(
+            Long squadId,
+            StartingXiRequest request,
+            Authentication authentication
+    ) {
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Squad squad = squadRepository.findById(squadId)
+                .orElseThrow(() ->
+                        new RuntimeException("Squad not found"));
+
+        if (!squad.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Not your squad");
+        }
+
+        if (request.playerIds() == null ||
+                request.playerIds().size() != 11) {
+
+            throw new RuntimeException(
+                    "Starting XI must contain exactly 11 players");
+        }
+
+        List<SquadPlayer> squadPlayers =
+                squadPlayerRepository.findBySquadId(squadId);
+
+        for (Long playerId : request.playerIds()) {
+
+            boolean exists = squadPlayers.stream()
+                    .anyMatch(sp ->
+                            sp.getPlayer().getId().equals(playerId));
+
+            if (!exists) {
+                throw new RuntimeException(
+                        "Player does not belong to squad");
+            }
+        }
+
+        squadPlayers.forEach(sp -> sp.setStartingXi(false));
+
+        squadPlayers.stream()
+                .filter(sp ->
+                        request.playerIds()
+                                .contains(sp.getPlayer().getId()))
+                .forEach(sp -> sp.setStartingXi(true));
+
+        squadPlayerRepository.saveAll(squadPlayers);
+    }
+
+    public List<PlayerResponse> getStartingXi(Long squadId) {
+
+        return squadPlayerRepository
+                .findBySquadIdAndStartingXiTrue(squadId)
+                .stream()
+                .map(sp -> new PlayerResponse(
+                        sp.getPlayer().getId(),
+                        sp.getPlayer().getName(),
+                        sp.getPlayer().getPosition().name(),
+                        sp.getPlayer().getOverallRating()
+                ))
+                .toList();
     }
 }

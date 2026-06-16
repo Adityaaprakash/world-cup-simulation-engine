@@ -2,6 +2,7 @@ package com.aditya.worldcup.squads.controller;
 
 import com.aditya.worldcup.players.dto.PlayerResponse;
 import com.aditya.worldcup.squadplayers.dto.AddPlayerRequest;
+import com.aditya.worldcup.squadplayers.dto.StartingXiRequest;
 import com.aditya.worldcup.squadplayers.service.SquadPlayerService;
 import com.aditya.worldcup.squads.dto.CreateSquadRequest;
 import com.aditya.worldcup.squads.dto.SquadResponse;
@@ -69,5 +70,25 @@ public class SquadController {
                 playerId,
                 authentication
         );
+    }
+
+    @PutMapping("/{squadId}/starting-xi")
+    public void setStartingXi(
+            @PathVariable Long squadId,
+            @RequestBody StartingXiRequest request,
+            Authentication authentication
+    ) {
+        squadPlayerService.setStartingXi(
+                squadId,
+                request,
+                authentication
+        );
+    }
+
+    @GetMapping("/{squadId}/starting-xi")
+    public List<PlayerResponse> getStartingXi(
+            @PathVariable Long squadId
+    ) {
+        return squadPlayerService.getStartingXi(squadId);
     }
 }
