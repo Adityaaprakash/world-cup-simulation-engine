@@ -14,6 +14,7 @@ import com.aditya.worldcup.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
 
 import java.util.List;
 
@@ -124,6 +125,47 @@ public class SquadPlayerService {
                                 new RuntimeException("Player not in squad"));
 
         squadPlayerRepository.delete(squadPlayer);
+    }
+
+    public void setCaptain(
+            Long squadId,
+            CaptainRequest request,
+            Authentication authentication
+    ) {
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Squad squad = squadRepository.findById(squadId)
+                .orElseThrow(() ->
+                        new RuntimeException("Squad not found"));
+
+        if (!squad.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Not your squad");
+        }
+
+        List<SquadPlayer> squadPlayers =
+                squadPlayerRepository.findBySquadId(squadId);
+
+        SquadPlayer selectedPlayer = squadPlayers.stream()
+                .filter(sp ->
+                        sp.getPlayer().getId()
+                                .equals(request.playerId()))
+                .findFirst()
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Player not found in squad"));
+
+        squadPlayers.forEach(sp -> {
+            sp.setCaptain(false);
+            squadPlayerRepository.save(sp);
+        });
+
+        selectedPlayer.setCaptain(true);
+        squadPlayerRepository.save(selectedPlayer);
     }
 
     public void setStartingXi(

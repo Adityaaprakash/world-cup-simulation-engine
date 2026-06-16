@@ -10,6 +10,7 @@ import com.aditya.worldcup.squads.service.SquadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
 
 import java.util.List;
 
@@ -79,6 +80,20 @@ public class SquadController {
             Authentication authentication
     ) {
         squadPlayerService.setStartingXi(
+                squadId,
+                request,
+                authentication
+        );
+    }
+
+    @PutMapping("/{squadId}/captain")
+    public void setCaptain(
+            @PathVariable Long squadId,
+            @RequestBody CaptainRequest request,
+            Authentication authentication
+    ) {
+
+        squadPlayerService.setCaptain(
                 squadId,
                 request,
                 authentication
