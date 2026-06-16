@@ -15,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
+import com.aditya.worldcup.squadplayers.dto.PositionAssignmentRequest;
+import com.aditya.worldcup.squadplayers.dto.LineupPlayerResponse;
+import com.aditya.worldcup.squadplayers.dto.LineupValidationResponse;
 
 import java.util.List;
 
@@ -168,6 +171,44 @@ public class SquadPlayerService {
         squadPlayerRepository.save(selectedPlayer);
     }
 
+    public void assignPosition(
+            Long squadId,
+            PositionAssignmentRequest request,
+            Authentication authentication
+    ) {
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Squad squad = squadRepository.findById(squadId)
+                .orElseThrow(() ->
+                        new RuntimeException("Squad not found"));
+
+        if (!squad.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Not your squad");
+        }
+
+        SquadPlayer squadPlayer =
+                squadPlayerRepository.findBySquadId(squadId)
+                        .stream()
+                        .filter(sp ->
+                                sp.getPlayer().getId()
+                                        .equals(request.playerId()))
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Player not found in squad"));
+
+        squadPlayer.setPositionSlot(
+                request.positionSlot().toUpperCase()
+        );
+
+        squadPlayerRepository.save(squadPlayer);
+    }
+
     public void setStartingXi(
             Long squadId,
             StartingXiRequest request,
@@ -233,5 +274,106 @@ public class SquadPlayerService {
                         sp.getPlayer().getOverallRating()
                 ))
                 .toList();
+    }
+    public List<LineupPlayerResponse> getLineup(
+            Long squadId
+    ) {
+
+        return squadPlayerRepository.findBySquadId(squadId)
+                .stream()
+                .map(sp -> new LineupPlayerResponse(
+                        sp.getPlayer().getId(),
+                        sp.getPlayer().getName(),
+                        sp.getPositionSlot(),
+                        sp.getStartingXi(),
+                        sp.getCaptain()
+                ))
+                .toList();
+    }
+    public LineupValidationResponse validateLineup(
+            Long squadId
+    ) {
+
+        Squad squad = squadRepository.findById(squadId)
+                .orElseThrow(() ->
+                        new RuntimeException("Squad not found"));
+
+        List<SquadPlayer> starters =
+                squadPlayerRepository.findBySquadId(squadId)
+                        .stream()
+                        .filter(SquadPlayer::getStartingXi)
+                        .toList();
+
+        if (starters.size() != 11) {
+            return new LineupValidationResponse(
+                    false,
+                    "Starting XI must contain exactly 11 players"
+            );
+        }
+
+        long gkCount = starters.stream()
+                .filter(sp -> "GK".equals(sp.getPositionSlot()))
+                .count();
+
+        if (gkCount != 1) {
+            return new LineupValidationResponse(
+                    false,
+                    "Lineup must contain exactly 1 goalkeeper"
+            );
+        }
+
+        long defenderCount = starters.stream()
+                .filter(sp ->
+                        List.of("LB", "CB", "RB", "LWB", "RWB")
+                                .contains(sp.getPositionSlot()))
+                .count();
+
+        long midfielderCount = starters.stream()
+                .filter(sp ->
+                        List.of("CDM", "CM", "CAM", "LM", "RM")
+                                .contains(sp.getPositionSlot()))
+                .count();
+
+        long attackerCount = starters.stream()
+                .filter(sp ->
+                        List.of("LW", "RW", "ST", "CF")
+                                .contains(sp.getPositionSlot()))
+                .count();
+
+        if (defenderCount != squad.getFormation().getDefenders()) {
+            return new LineupValidationResponse(
+                    false,
+                    "Expected "
+                            + squad.getFormation().getDefenders()
+                            + " defenders but found "
+                            + defenderCount
+            );
+        }
+
+        if (midfielderCount != squad.getFormation().getMidfielders()) {
+            return new LineupValidationResponse(
+                    false,
+                    "Expected "
+                            + squad.getFormation().getMidfielders()
+                            + " midfielders but found "
+                            + midfielderCount
+            );
+        }
+
+        if (attackerCount != squad.getFormation().getAttackers()) {
+            return new LineupValidationResponse(
+                    false,
+                    "Expected "
+                            + squad.getFormation().getAttackers()
+                            + " attackers but found "
+                            + attackerCount
+            );
+        }
+
+        return new LineupValidationResponse(
+                true,
+                "Lineup matches formation "
+                        + squad.getFormation().getName()
+        );
     }
 }

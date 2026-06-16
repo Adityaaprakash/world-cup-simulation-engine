@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
+import com.aditya.worldcup.squadplayers.dto.PositionAssignmentRequest;
+import com.aditya.worldcup.squadplayers.dto.LineupPlayerResponse;
+import com.aditya.worldcup.squadplayers.dto.LineupValidationResponse;
 
 import java.util.List;
 
@@ -97,6 +100,40 @@ public class SquadController {
                 squadId,
                 request,
                 authentication
+        );
+    }
+
+    @PutMapping("/{squadId}/positions")
+    public void assignPosition(
+            @PathVariable Long squadId,
+            @RequestBody PositionAssignmentRequest request,
+            Authentication authentication
+    ) {
+
+        squadPlayerService.assignPosition(
+                squadId,
+                request,
+                authentication
+        );
+    }
+
+    @GetMapping("/{squadId}/lineup")
+    public List<LineupPlayerResponse> getLineup(
+            @PathVariable Long squadId
+    ) {
+
+        return squadPlayerService.getLineup(
+                squadId
+        );
+    }
+
+    @GetMapping("/{squadId}/validate")
+    public LineupValidationResponse validateLineup(
+            @PathVariable Long squadId
+    ) {
+
+        return squadPlayerService.validateLineup(
+                squadId
         );
     }
 
