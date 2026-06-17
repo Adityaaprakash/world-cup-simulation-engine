@@ -18,6 +18,7 @@ import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
 import com.aditya.worldcup.squadplayers.dto.PositionAssignmentRequest;
 import com.aditya.worldcup.squadplayers.dto.LineupPlayerResponse;
 import com.aditya.worldcup.squadplayers.dto.LineupValidationResponse;
+import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
 
 import java.util.List;
 
@@ -56,7 +57,6 @@ public class SquadPlayerService {
 
         if (!player.getCountry().getId()
                 .equals(squad.getTeam().getCountry().getId())) {
-
             throw new RuntimeException(
                     "Player does not belong to selected country");
         }
@@ -161,6 +161,12 @@ public class SquadPlayerService {
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Player not found in squad"));
+
+        if (!selectedPlayer.getStartingXi()) {
+            throw new RuntimeException(
+                    "Captain must be part of the Starting XI"
+            );
+        }
 
         squadPlayers.forEach(sp -> {
             sp.setCaptain(false);
@@ -275,6 +281,7 @@ public class SquadPlayerService {
                 ))
                 .toList();
     }
+
     public List<LineupPlayerResponse> getLineup(
             Long squadId
     ) {
@@ -290,6 +297,7 @@ public class SquadPlayerService {
                 ))
                 .toList();
     }
+
     public LineupValidationResponse validateLineup(
             Long squadId
     ) {
@@ -374,6 +382,66 @@ public class SquadPlayerService {
                 true,
                 "Lineup matches formation "
                         + squad.getFormation().getName()
+        );
+    }
+
+    public SquadReadyResponse getSquadReadyStatus(
+            Long squadId
+    ) {
+
+        List<SquadPlayer> squadPlayers =
+                squadPlayerRepository.findBySquadId(squadId);
+
+        List<SquadPlayer> starters = squadPlayers.stream()
+                .filter(SquadPlayer::getStartingXi)
+                .toList();
+
+        if (starters.size() != 11) {
+            return new SquadReadyResponse(
+                    false,
+                    "Starting XI must contain exactly 11 players"
+            );
+        }
+
+        long captainCount = starters.stream()
+                .filter(SquadPlayer::getCaptain)
+                .count();
+
+        if (captainCount != 1) {
+            return new SquadReadyResponse(
+                    false,
+                    "Exactly one captain is required"
+            );
+        }
+
+        boolean missingPosition = starters.stream()
+                .anyMatch(sp ->
+                        sp.getPositionSlot() == null ||
+                                sp.getPositionSlot().isBlank() ||
+                                "RESERVE".equalsIgnoreCase(
+                                        sp.getPositionSlot()
+                                ));
+
+        if (missingPosition) {
+            return new SquadReadyResponse(
+                    false,
+                    "All starters must have positions assigned"
+            );
+        }
+
+        LineupValidationResponse validation =
+                validateLineup(squadId);
+
+        if (!validation.valid()) {
+            return new SquadReadyResponse(
+                    false,
+                    validation.message()
+            );
+        }
+
+        return new SquadReadyResponse(
+                true,
+                "Squad is ready for match simulation"
         );
     }
 }

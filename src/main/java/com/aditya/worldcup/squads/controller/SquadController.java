@@ -14,6 +14,7 @@ import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
 import com.aditya.worldcup.squadplayers.dto.PositionAssignmentRequest;
 import com.aditya.worldcup.squadplayers.dto.LineupPlayerResponse;
 import com.aditya.worldcup.squadplayers.dto.LineupValidationResponse;
+import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
 
 import java.util.List;
 
@@ -133,6 +134,16 @@ public class SquadController {
     ) {
 
         return squadPlayerService.validateLineup(
+                squadId
+        );
+    }
+
+    @GetMapping("/{squadId}/ready")
+    public SquadReadyResponse getSquadReadyStatus(
+            @PathVariable Long squadId
+    ) {
+
+        return squadPlayerService.getSquadReadyStatus(
                 squadId
         );
     }
