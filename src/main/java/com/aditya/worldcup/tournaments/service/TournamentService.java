@@ -5,6 +5,7 @@ import com.aditya.worldcup.tournaments.dto.TournamentResponse;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
+import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -45,12 +46,16 @@ public class TournamentService {
 
         Tournament tournament = tournamentRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Tournament not found"));
+                        new TournamentNotFoundException(id));
 
         return mapToResponse(tournament);
     }
 
     public void deleteTournament(Long id) {
+
+        if (!tournamentRepository.existsById(id)) {
+            throw new TournamentNotFoundException(id);
+        }
 
         tournamentRepository.deleteById(id);
     }

@@ -44,5 +44,8 @@ public class Match {
     private LocalDateTime matchDate;
 
     @Enumerated(EnumType.STRING)
+    private MatchRound round;
+
+    @Enumerated(EnumType.STRING)
     private MatchStatus status;
 }

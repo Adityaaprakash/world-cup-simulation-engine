@@ -3,6 +3,9 @@ package com.aditya.worldcup.groups.service;
 import com.aditya.worldcup.groups.dto.GroupResponse;
 import com.aditya.worldcup.groups.entity.Group;
 import com.aditya.worldcup.groups.repository.GroupRepository;
+import com.aditya.worldcup.shared.exception.GroupsAlreadyGeneratedException;
+import com.aditya.worldcup.shared.exception.NoRegisteredTeamsException;
+import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import com.aditya.worldcup.tournamentteams.entity.TournamentTeam;
@@ -25,18 +28,17 @@ public class GroupService {
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Tournament not found"));
+                        new TournamentNotFoundException(tournamentId));
 
         if (!groupRepository.findByTournamentId(tournamentId).isEmpty()) {
-            throw new RuntimeException("Groups already generated");
+            throw new GroupsAlreadyGeneratedException();
         }
 
         List<TournamentTeam> tournamentTeams =
                 tournamentTeamRepository.findByTournamentId(tournamentId);
 
         if (tournamentTeams.isEmpty()) {
-            throw new RuntimeException(
-                    "No teams registered for tournament");
+            throw new NoRegisteredTeamsException();
         }
 
         Group[] groups = new Group[4];

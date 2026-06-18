@@ -31,6 +31,73 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler({
+            TournamentNotFoundException.class,
+            TeamNotFoundException.class
+    })
+    public ResponseEntity<ErrorResponse>
+    handleNotFound(
+            RuntimeException ex) {
+
+        ErrorResponse response =
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.NOT_FOUND.value(),
+                        HttpStatus.NOT_FOUND.getReasonPhrase(),
+                        ex.getMessage()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler({
+            GroupsAlreadyGeneratedException.class,
+            FixturesAlreadyGeneratedException.class,
+            KnockoutAlreadyGeneratedException.class,
+            TeamAlreadyRegisteredException.class
+    })
+    public ResponseEntity<ErrorResponse>
+    handleConflict(
+            RuntimeException ex) {
+
+        ErrorResponse response =
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.CONFLICT.value(),
+                        HttpStatus.CONFLICT.getReasonPhrase(),
+                        ex.getMessage()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler({
+            NoRegisteredTeamsException.class,
+            GroupsNotGeneratedException.class,
+            FixturesNotGeneratedException.class,
+            RegistrationClosedException.class
+    })
+    public ResponseEntity<ErrorResponse>
+    handleBadRequest(
+            RuntimeException ex) {
+
+        ErrorResponse response =
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        HttpStatus.BAD_REQUEST.value(),
+                        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                        ex.getMessage()
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse>
     handleDataIntegrityViolation(

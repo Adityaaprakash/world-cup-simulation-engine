@@ -2,6 +2,10 @@ package com.aditya.worldcup.tournamentteams.service;
 
 import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.teams.repository.TeamRepository;
+import com.aditya.worldcup.shared.exception.RegistrationClosedException;
+import com.aditya.worldcup.shared.exception.TeamAlreadyRegisteredException;
+import com.aditya.worldcup.shared.exception.TeamNotFoundException;
+import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
@@ -28,16 +32,15 @@ public class TournamentTeamService {
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() ->
-                        new RuntimeException("Tournament not found"));
+                        new TournamentNotFoundException(tournamentId));
 
         if (tournament.getStatus() != TournamentStatus.UPCOMING) {
-            throw new RuntimeException(
-                    "Registration is closed for this tournament");
+            throw new RegistrationClosedException();
         }
 
         Team team = teamRepository.findById(request.teamId())
                 .orElseThrow(() ->
-                        new RuntimeException("Team not found"));
+                        new TeamNotFoundException(request.teamId()));
 
         boolean alreadyRegistered =
                 tournamentTeamRepository.existsByTournamentIdAndTeamId(
@@ -46,8 +49,7 @@ public class TournamentTeamService {
                 );
 
         if (alreadyRegistered) {
-            throw new RuntimeException(
-                    "Team already registered");
+            throw new TeamAlreadyRegisteredException();
         }
 
         TournamentTeam tournamentTeam =
