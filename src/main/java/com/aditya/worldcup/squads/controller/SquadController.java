@@ -15,6 +15,8 @@ import com.aditya.worldcup.squadplayers.dto.PositionAssignmentRequest;
 import com.aditya.worldcup.squadplayers.dto.LineupPlayerResponse;
 import com.aditya.worldcup.squadplayers.dto.LineupValidationResponse;
 import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
+import com.aditya.worldcup.simulation.dto.TeamStrengthResponse;
+import com.aditya.worldcup.simulation.service.TeamStrengthService;
 
 import java.util.List;
 
@@ -25,6 +27,7 @@ public class SquadController {
 
     private final SquadService squadService;
     private final SquadPlayerService squadPlayerService;
+    private final TeamStrengthService teamStrengthService;
 
     @PostMapping
     public SquadResponse createSquad(
@@ -144,6 +147,16 @@ public class SquadController {
     ) {
 
         return squadPlayerService.getSquadReadyStatus(
+                squadId
+        );
+    }
+
+    @GetMapping("/{squadId}/strength")
+    public TeamStrengthResponse getStrength(
+            @PathVariable Long squadId
+    ) {
+
+        return teamStrengthService.calculateStrength(
                 squadId
         );
     }

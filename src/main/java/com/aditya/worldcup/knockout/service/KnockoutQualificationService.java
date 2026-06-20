@@ -14,7 +14,10 @@ import com.aditya.worldcup.shared.exception.KnockoutAlreadyGeneratedException;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.standings.entity.Standing;
 import com.aditya.worldcup.standings.repository.StandingRepository;
+import com.aditya.worldcup.standings.service.StandingService;
 import com.aditya.worldcup.teams.entity.Team;
+import com.aditya.worldcup.tournamentteams.entity.TournamentTeam;
+import com.aditya.worldcup.tournamentteams.repository.TournamentTeamRepository;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,8 @@ public class KnockoutQualificationService {
     private final TournamentRepository tournamentRepository;
     private final GroupRepository groupRepository;
     private final StandingRepository standingRepository;
+    private final StandingService standingService;
+    private final TournamentTeamRepository tournamentTeamRepository;
     private final MatchRepository matchRepository;
 
     @Transactional
@@ -63,7 +68,7 @@ public class KnockoutQualificationService {
         }
 
         List<GroupQualifier> qualifiers = groups.stream()
-                .map(group -> getGroupQualifier(tournamentId, group))
+                .map(group -> getGroupQualifier(tournament, group))
                 .toList();
 
         List<Match> knockoutMatches = buildKnockoutMatches(
@@ -85,24 +90,50 @@ public class KnockoutQualificationService {
     }
 
     private GroupQualifier getGroupQualifier(
-            Long tournamentId,
+            Tournament tournament,
             Group group) {
 
         List<Standing> standings =
-                standingRepository
-                        .findByTournamentIdAndGroupIdOrderByPointsDescGoalDifferenceDescGoalsForDesc(
-                                tournamentId,
-                                group.getId()
-                        );
+                getGroupStandings(tournament.getId(), group.getId());
 
         if (standings.size() < 2) {
-            throw new FixturesNotGeneratedException();
+            List<TournamentTeam> groupTeams =
+                    tournamentTeamRepository.findByTournamentIdAndGroupId(
+                            tournament.getId(),
+                            group.getId()
+                    );
+
+            standingService.initializeStandings(
+                    tournament,
+                    group,
+                    groupTeams
+            );
+
+            standings = getGroupStandings(
+                    tournament.getId(),
+                    group.getId()
+            );
+        }
+
+        if (standings.size() < 2) {
+            throw new GroupsNotGeneratedException();
         }
 
         return new GroupQualifier(
                 standings.get(0).getTeam(),
                 standings.get(1).getTeam()
         );
+    }
+
+    private List<Standing> getGroupStandings(
+            Long tournamentId,
+            Long groupId) {
+
+        return standingRepository
+                .findByTournamentIdAndGroupIdOrderByPointsDescGoalDifferenceDescGoalsForDesc(
+                        tournamentId,
+                        groupId
+                );
     }
 
     private List<Match> buildKnockoutMatches(
