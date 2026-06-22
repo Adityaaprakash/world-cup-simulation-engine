@@ -1,5 +1,9 @@
 package com.aditya.worldcup.simulation.dto;
 
+import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
+
+import java.util.List;
+
 public record MatchSimulationResponse(
         String homeTeam,
         String awayTeam,
@@ -7,6 +11,7 @@ public record MatchSimulationResponse(
         Integer awayGoals,
         String winner,
         Integer homeStrength,
-        Integer awayStrength
+        Integer awayStrength,
+        List<MatchEventResponse> events
 ) {
 }

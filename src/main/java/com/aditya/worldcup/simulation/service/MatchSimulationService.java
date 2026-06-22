@@ -3,6 +3,8 @@ package com.aditya.worldcup.simulation.service;
 import com.aditya.worldcup.simulation.dto.MatchSimulationRequest;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
 import com.aditya.worldcup.simulation.dto.TeamStrengthResponse;
+import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
+import com.aditya.worldcup.matchevents.service.MatchEventGenerationService;
 import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
 import com.aditya.worldcup.squadplayers.service.SquadPlayerService;
 
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -19,6 +22,7 @@ public class MatchSimulationService {
     private final TeamStrengthService teamStrengthService;
     private final SquadRepository squadRepository;
     private final SquadPlayerService squadPlayerService;
+    private final MatchEventGenerationService matchEventGenerationService;
 
     private final Random random = new Random();
 
@@ -108,6 +112,14 @@ public class MatchSimulationService {
             winner = "DRAW";
         }
 
+        List<MatchEventResponse> events =
+                matchEventGenerationService.generateGoalEvents(
+                        homeSquad.getId(),
+                        awaySquad.getId(),
+                        homeGoals,
+                        awayGoals
+                );
+
         return new MatchSimulationResponse(
                 homeSquad.getName(),
                 awaySquad.getName(),
@@ -115,6 +127,8 @@ public class MatchSimulationService {
                 awayGoals,
                 winner,
                 homeOverall,
-                awayOverall
+                awayOverall,
+                events
         );
-    }}
+    }
+}
