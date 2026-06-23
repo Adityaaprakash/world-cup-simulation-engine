@@ -1,6 +1,7 @@
 package com.aditya.worldcup.matches.controller;
 
 import com.aditya.worldcup.matches.dto.MatchResponse;
+import com.aditya.worldcup.matches.dto.MatchResultRequest;
 import com.aditya.worldcup.matches.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,5 +20,19 @@ public class MatchController {
             @PathVariable Long id) {
 
         return matchService.getTournamentMatches(id);
+    }
+
+    @PostMapping("/{id}/matches/{matchId}/complete")
+    public MatchResponse completeMatch(
+            @PathVariable Long id,
+            @PathVariable Long matchId,
+            @RequestBody MatchResultRequest request
+    ) {
+
+        return matchService.completeMatch(
+                id,
+                matchId,
+                request
+        );
     }
 }

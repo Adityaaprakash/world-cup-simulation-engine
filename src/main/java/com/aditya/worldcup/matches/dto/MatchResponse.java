@@ -9,6 +9,8 @@ public record MatchResponse(
         MatchRound round,
         String homeTeam,
         String awayTeam,
+        Integer homeScore,
+        Integer awayScore,
         MatchStatus status
 ) {
 }
