@@ -55,6 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             GroupsAlreadyGeneratedException.class,
             FixturesAlreadyGeneratedException.class,
+            GroupStageAlreadyCompletedException.class,
             KnockoutAlreadyGeneratedException.class,
             TeamAlreadyRegisteredException.class
     })
