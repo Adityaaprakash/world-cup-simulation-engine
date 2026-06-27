@@ -101,11 +101,13 @@ public class TournamentMatchSimulationService {
 
         matchRepository.save(match);
 
-        standingUpdateService.updateStandings(
-                match,
-                simulation.homeGoals(),
-                simulation.awayGoals()
-        );
+        if (match.getGroup() != null) {
+            standingUpdateService.updateStandings(
+                    match,
+                    simulation.homeGoals(),
+                    simulation.awayGoals()
+            );
+        }
 
         return new TournamentMatchSimulationResponse(
                 match.getId(),
