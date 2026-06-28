@@ -117,7 +117,8 @@ public class TournamentMatchSimulationService {
                 simulation.awayGoals(),
                 simulation.winner(),
                 match.getStatus().name(),
-                simulation.events()
+                simulation.events(),
+                simulation.statistics()
         );
     }
 }

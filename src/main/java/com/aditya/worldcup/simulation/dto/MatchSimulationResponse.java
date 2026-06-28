@@ -12,6 +12,7 @@ public record MatchSimulationResponse(
         String winner,
         Integer homeStrength,
         Integer awayStrength,
-        List<MatchEventResponse> events
+        List<MatchEventResponse> events,
+        MatchStatisticsResponse statistics
 ) {
 }

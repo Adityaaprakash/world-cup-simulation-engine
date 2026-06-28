@@ -23,6 +23,8 @@ public class MatchSimulationService {
     private final SquadRepository squadRepository;
     private final SquadPlayerService squadPlayerService;
     private final MatchEventGenerationService matchEventGenerationService;
+    private final MatchStatisticsGenerationService
+            matchStatisticsGenerationService;
 
     private final Random random = new Random();
 
@@ -128,7 +130,13 @@ public class MatchSimulationService {
                 winner,
                 homeOverall,
                 awayOverall,
-                events
+                events,
+                matchStatisticsGenerationService.generate(
+                        homeGoals,
+                        awayGoals,
+                        homeOverall,
+                        awayOverall
+                )
         );
     }
 }
