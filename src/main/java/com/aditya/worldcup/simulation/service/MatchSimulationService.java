@@ -115,7 +115,7 @@ public class MatchSimulationService {
         }
 
         List<MatchEventResponse> events =
-                matchEventGenerationService.generateGoalEvents(
+                matchEventGenerationService.generateMatchEvents(
                         homeSquad.getId(),
                         awaySquad.getId(),
                         homeGoals,
