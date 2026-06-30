@@ -13,6 +13,7 @@ public record MatchSimulationResponse(
         Integer homeStrength,
         Integer awayStrength,
         List<MatchEventResponse> events,
-        MatchStatisticsResponse statistics
+        MatchStatisticsResponse statistics,
+        List<PlayerMatchRatingResponse> playerRatings
 ) {
 }

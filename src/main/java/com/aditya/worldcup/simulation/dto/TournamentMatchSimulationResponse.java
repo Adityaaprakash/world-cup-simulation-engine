@@ -13,6 +13,7 @@ public record TournamentMatchSimulationResponse(
         String winner,
         String status,
         List<MatchEventResponse> events,
-        MatchStatisticsResponse statistics
+        MatchStatisticsResponse statistics,
+        List<PlayerMatchRatingResponse> playerRatings
 ) {
 }

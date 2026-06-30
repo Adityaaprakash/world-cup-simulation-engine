@@ -2,6 +2,8 @@ package com.aditya.worldcup.simulation.service;
 
 import com.aditya.worldcup.simulation.dto.MatchSimulationRequest;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
+import com.aditya.worldcup.simulation.dto.MatchStatisticsResponse;
+import com.aditya.worldcup.simulation.dto.PlayerMatchRatingResponse;
 import com.aditya.worldcup.simulation.dto.TeamStrengthResponse;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.matchevents.service.MatchEventGenerationService;
@@ -25,6 +27,7 @@ public class MatchSimulationService {
     private final MatchEventGenerationService matchEventGenerationService;
     private final MatchStatisticsGenerationService
             matchStatisticsGenerationService;
+    private final PlayerRatingGenerationService playerRatingGenerationService;
 
     private final Random random = new Random();
 
@@ -122,6 +125,26 @@ public class MatchSimulationService {
                         awayGoals
                 );
 
+        MatchStatisticsResponse statistics =
+                matchStatisticsGenerationService.generate(
+                        homeGoals,
+                        awayGoals,
+                        homeOverall,
+                        awayOverall
+                );
+
+        List<PlayerMatchRatingResponse> playerRatings =
+                playerRatingGenerationService.generate(
+                        homeSquad.getId(),
+                        awaySquad.getId(),
+                        homeSquad.getName(),
+                        awaySquad.getName(),
+                        homeGoals,
+                        awayGoals,
+                        events,
+                        statistics
+                );
+
         return new MatchSimulationResponse(
                 homeSquad.getName(),
                 awaySquad.getName(),
@@ -131,12 +154,8 @@ public class MatchSimulationService {
                 homeOverall,
                 awayOverall,
                 events,
-                matchStatisticsGenerationService.generate(
-                        homeGoals,
-                        awayGoals,
-                        homeOverall,
-                        awayOverall
-                )
+                statistics,
+                playerRatings
         );
     }
 }
