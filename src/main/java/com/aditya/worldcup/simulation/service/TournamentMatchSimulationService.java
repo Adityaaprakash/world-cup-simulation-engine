@@ -119,7 +119,8 @@ public class TournamentMatchSimulationService {
                 match.getStatus().name(),
                 simulation.events(),
                 simulation.statistics(),
-                simulation.playerRatings()
+                simulation.playerRatings(),
+                simulation.manOfTheMatch()
         );
     }
 }

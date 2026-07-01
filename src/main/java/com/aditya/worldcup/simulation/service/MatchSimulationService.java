@@ -3,6 +3,7 @@ package com.aditya.worldcup.simulation.service;
 import com.aditya.worldcup.simulation.dto.MatchSimulationRequest;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
 import com.aditya.worldcup.simulation.dto.MatchStatisticsResponse;
+import com.aditya.worldcup.simulation.dto.ManOfTheMatchResponse;
 import com.aditya.worldcup.simulation.dto.PlayerMatchRatingResponse;
 import com.aditya.worldcup.simulation.dto.TeamStrengthResponse;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
@@ -28,6 +29,7 @@ public class MatchSimulationService {
     private final MatchStatisticsGenerationService
             matchStatisticsGenerationService;
     private final PlayerRatingGenerationService playerRatingGenerationService;
+    private final ManOfTheMatchService manOfTheMatchService;
 
     private final Random random = new Random();
 
@@ -145,6 +147,13 @@ public class MatchSimulationService {
                         statistics
                 );
 
+        ManOfTheMatchResponse manOfTheMatch =
+                manOfTheMatchService.determine(
+                        playerRatings,
+                        events,
+                        winner
+                );
+
         return new MatchSimulationResponse(
                 homeSquad.getName(),
                 awaySquad.getName(),
@@ -155,7 +164,8 @@ public class MatchSimulationService {
                 awayOverall,
                 events,
                 statistics,
-                playerRatings
+                playerRatings,
+                manOfTheMatch
         );
     }
 }
