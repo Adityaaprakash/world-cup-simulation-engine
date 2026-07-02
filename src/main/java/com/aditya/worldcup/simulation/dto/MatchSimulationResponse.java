@@ -15,6 +15,7 @@ public record MatchSimulationResponse(
         List<MatchEventResponse> events,
         MatchStatisticsResponse statistics,
         List<PlayerMatchRatingResponse> playerRatings,
-        ManOfTheMatchResponse manOfTheMatch
+        ManOfTheMatchResponse manOfTheMatch,
+        List<CommentaryResponse> commentary
 ) {
 }

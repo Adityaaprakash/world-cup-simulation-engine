@@ -120,7 +120,8 @@ public class TournamentMatchSimulationService {
                 simulation.events(),
                 simulation.statistics(),
                 simulation.playerRatings(),
-                simulation.manOfTheMatch()
+                simulation.manOfTheMatch(),
+                simulation.commentary()
         );
     }
 }
