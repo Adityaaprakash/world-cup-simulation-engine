@@ -1,6 +1,7 @@
 package com.aditya.worldcup.matches.entity;
 
 import com.aditya.worldcup.groups.entity.Group;
+import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import jakarta.persistence.*;
@@ -48,4 +49,8 @@ public class Match {
 
     @Enumerated(EnumType.STRING)
     private MatchStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "man_of_the_match_player_id")
+    private Player manOfTheMatch;
 }

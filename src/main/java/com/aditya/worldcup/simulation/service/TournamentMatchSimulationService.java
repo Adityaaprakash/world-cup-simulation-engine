@@ -84,22 +84,9 @@ public class TournamentMatchSimulationService {
                         new MatchSimulationRequest(
                                 homeSquad.getId(),
                                 awaySquad.getId()
-                        )
+                        ),
+                        match
                 );
-
-        match.setHomeScore(
-                simulation.homeGoals()
-        );
-
-        match.setAwayScore(
-                simulation.awayGoals()
-        );
-
-        match.setStatus(
-                MatchStatus.FINISHED
-        );
-
-        matchRepository.save(match);
 
         if (match.getGroup() != null) {
             standingUpdateService.updateStandings(

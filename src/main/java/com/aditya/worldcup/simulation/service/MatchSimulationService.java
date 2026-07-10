@@ -13,6 +13,7 @@ import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
 import com.aditya.worldcup.squadplayers.service.SquadPlayerService;
 
@@ -32,11 +33,19 @@ public class MatchSimulationService {
     private final PlayerRatingGenerationService playerRatingGenerationService;
     private final ManOfTheMatchService manOfTheMatchService;
     private final MatchCommentaryService matchCommentaryService;
+    private final MatchPersistenceService matchPersistenceService;
 
     private final Random random = new Random();
 
     public MatchSimulationResponse simulate(
             MatchSimulationRequest request
+    ) {
+        return simulate(request, null);
+    }
+
+    public MatchSimulationResponse simulate(
+            MatchSimulationRequest request,
+            Match match
     ) {
 
         Squad homeSquad = squadRepository.findById(
@@ -159,7 +168,7 @@ public class MatchSimulationService {
                         winner
                 );
 
-        return new MatchSimulationResponse(
+        MatchSimulationResponse response = new MatchSimulationResponse(
                 homeSquad.getName(),
                 awaySquad.getName(),
                 homeGoals,
@@ -173,5 +182,11 @@ public class MatchSimulationService {
                 manOfTheMatch,
                 commentary
         );
+
+        if (match != null) {
+            matchPersistenceService.persistSimulationData(match, response);
+        }
+
+        return response;
     }
 }
