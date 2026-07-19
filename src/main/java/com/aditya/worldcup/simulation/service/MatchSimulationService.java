@@ -16,12 +16,19 @@ import org.springframework.stereotype.Service;
 import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
 import com.aditya.worldcup.squadplayers.service.SquadPlayerService;
+import com.aditya.worldcup.ml.dto.PredictionRequest;
+import com.aditya.worldcup.ml.dto.PredictionResponse;
+import com.aditya.worldcup.ml.exception.MlServiceException;
+import com.aditya.worldcup.ml.mapper.MlFeatureMapper;
+import com.aditya.worldcup.ml.service.MlPredictionService;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MatchSimulationService {
 
     private final TeamStrengthService teamStrengthService;
@@ -34,6 +41,8 @@ public class MatchSimulationService {
     private final ManOfTheMatchService manOfTheMatchService;
     private final MatchCommentaryService matchCommentaryService;
     private final MatchPersistenceService matchPersistenceService;
+    private final MlFeatureMapper mlFeatureMapper;
+    private final MlPredictionService mlPredictionService;
 
     private final Random random = new Random();
 
@@ -99,26 +108,16 @@ public class MatchSimulationService {
         int homeOverall = homeStrength.overall();
         int awayOverall = awayStrength.overall();
 
-        int difference = homeOverall - awayOverall;
-
-        int homeGoals;
-        int awayGoals;
-
-        if (difference >= 5) {
-
-            homeGoals = random.nextInt(4);
-            awayGoals = random.nextInt(3);
-
-        } else if (difference <= -5) {
-
-            homeGoals = random.nextInt(3);
-            awayGoals = random.nextInt(4);
-
-        } else {
-
-            homeGoals = random.nextInt(4);
-            awayGoals = random.nextInt(4);
-        }
+        Scoreline scoreline = selectScoreline(
+                homeSquad,
+                awaySquad,
+                homeStrength,
+                awayStrength,
+                match,
+                homeOverall - awayOverall
+        );
+        int homeGoals = scoreline.homeGoals();
+        int awayGoals = scoreline.awayGoals();
 
         String winner;
 
@@ -188,5 +187,91 @@ public class MatchSimulationService {
         }
 
         return response;
+    }
+
+    private Scoreline selectScoreline(
+            Squad homeSquad,
+            Squad awaySquad,
+            TeamStrengthResponse homeStrength,
+            TeamStrengthResponse awayStrength,
+            Match match,
+            int strengthDifference
+    ) {
+        if (!mlPredictionService.isMlServiceAvailable()) {
+            log.warn("ML prediction service is unavailable; heuristic match simulation fallback activated.");
+            return heuristicScoreline(strengthDifference);
+        }
+
+        try {
+            PredictionRequest request = mlFeatureMapper.map(
+                    homeSquad, awaySquad, homeStrength, awayStrength, match
+            );
+            PredictionResponse prediction = mlPredictionService.predict(request);
+            log.info("ML prediction service available; using hybrid score selection.");
+            return mlScoreline(prediction);
+        } catch (MlServiceException exception) {
+            log.warn("ML prediction failed; heuristic match simulation fallback activated.");
+            return heuristicScoreline(strengthDifference);
+        }
+    }
+
+    private Scoreline heuristicScoreline(int difference) {
+        if (difference >= 5) {
+            return new Scoreline(random.nextInt(4), random.nextInt(3));
+        }
+        if (difference <= -5) {
+            return new Scoreline(random.nextInt(3), random.nextInt(4));
+        }
+        return new Scoreline(random.nextInt(4), random.nextInt(4));
+    }
+
+    private Scoreline mlScoreline(PredictionResponse prediction) {
+        MatchOutcome outcome = sampleOutcome(prediction);
+        int homeGoals = goalsAround(prediction.expectedHomeGoals());
+        int awayGoals = goalsAround(prediction.expectedAwayGoals());
+
+        if (outcome == MatchOutcome.HOME_WIN && homeGoals <= awayGoals) {
+            homeGoals = Math.min(8, awayGoals + 1);
+        } else if (outcome == MatchOutcome.AWAY_WIN && awayGoals <= homeGoals) {
+            awayGoals = Math.min(8, homeGoals + 1);
+        } else if (outcome == MatchOutcome.DRAW && homeGoals != awayGoals) {
+            int drawnGoals = Math.max(0, Math.min(8, (int) Math.round((homeGoals + awayGoals) / 2.0)));
+            homeGoals = drawnGoals;
+            awayGoals = drawnGoals;
+        }
+        return new Scoreline(homeGoals, awayGoals);
+    }
+
+    private MatchOutcome sampleOutcome(PredictionResponse prediction) {
+        double homeProbability = Math.max(0.0, prediction.homeWinProbability());
+        double drawProbability = Math.max(0.0, prediction.drawProbability());
+        double awayProbability = Math.max(0.0, prediction.awayWinProbability());
+        double total = homeProbability + drawProbability + awayProbability;
+        if (total == 0.0) {
+            return MatchOutcome.DRAW;
+        }
+        double sample = random.nextDouble() * total;
+        if (sample < homeProbability) {
+            return MatchOutcome.HOME_WIN;
+        }
+        if (sample < homeProbability + drawProbability) {
+            return MatchOutcome.DRAW;
+        }
+        return MatchOutcome.AWAY_WIN;
+    }
+
+    private int goalsAround(double expectedGoals) {
+        double deviation = Math.sqrt(Math.max(0.5, expectedGoals));
+        int goals = (int) Math.round(expectedGoals + random.nextGaussian() * deviation);
+        return Math.max(0, Math.min(8, goals));
+    }
+
+    private record Scoreline(int homeGoals, int awayGoals) {
+    }
+
+    private enum MatchOutcome {
+        HOME_WIN,
+        DRAW,
+        AWAY_WIN
     }
 }
