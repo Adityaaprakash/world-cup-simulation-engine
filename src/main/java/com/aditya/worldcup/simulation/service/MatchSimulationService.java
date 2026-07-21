@@ -9,6 +9,7 @@ import com.aditya.worldcup.simulation.dto.TeamStrengthResponse;
 import com.aditya.worldcup.simulation.dto.CommentaryResponse;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.matchevents.service.MatchEventGenerationService;
+import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class MatchSimulationService {
     private final MatchPersistenceService matchPersistenceService;
     private final MlFeatureMapper mlFeatureMapper;
     private final MlPredictionService mlPredictionService;
+    private final PlayerStateService playerStateService;
 
     private final Random random = new Random();
 
@@ -185,6 +187,14 @@ public class MatchSimulationService {
         if (match != null) {
             matchPersistenceService.persistSimulationData(match, response);
         }
+
+        playerStateService.updateAfterMatch(
+                homeSquad.getId(),
+                awaySquad.getId(),
+                homeGoals,
+                awayGoals,
+                events
+        );
 
         return response;
     }

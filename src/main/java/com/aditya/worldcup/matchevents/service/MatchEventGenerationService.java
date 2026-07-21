@@ -3,6 +3,7 @@ package com.aditya.worldcup.matchevents.service;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.matchevents.entity.MatchEventType;
 import com.aditya.worldcup.players.entity.Player;
+import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.Random;
 public class MatchEventGenerationService {
 
     private final SquadPlayerRepository squadPlayerRepository;
+    private final PlayerStateService playerStateService;
 
     private final Random random = new Random();
 
@@ -46,17 +48,25 @@ public class MatchEventGenerationService {
 
         List<SquadPlayer> homePlayers =
                 squadPlayerRepository
-                        .findBySquadIdAndStartingXiTrue(homeSquadId);
+                        .findBySquadIdAndStartingXiTrue(homeSquadId)
+                        .stream()
+                        .filter(this::isAvailable)
+                        .toList();
 
         List<SquadPlayer> awayPlayers =
                 squadPlayerRepository
-                        .findBySquadIdAndStartingXiTrue(awaySquadId);
+                        .findBySquadIdAndStartingXiTrue(awaySquadId)
+                        .stream()
+                        .filter(this::isAvailable)
+                        .toList();
 
         List<SquadPlayer> homeSquadPlayers =
-                squadPlayerRepository.findBySquadId(homeSquadId);
+                squadPlayerRepository.findBySquadId(homeSquadId)
+                        .stream().filter(this::isAvailable).toList();
 
         List<SquadPlayer> awaySquadPlayers =
-                squadPlayerRepository.findBySquadId(awaySquadId);
+                squadPlayerRepository.findBySquadId(awaySquadId)
+                        .stream().filter(this::isAvailable).toList();
 
         validateStartingXi(homePlayers, homeSquadId);
         validateStartingXi(awayPlayers, awaySquadId);
@@ -160,6 +170,12 @@ public class MatchEventGenerationService {
                     "No starting XI players found for squad: " + squadId
             );
         }
+    }
+
+    private boolean isAvailable(SquadPlayer squadPlayer) {
+        return playerStateService.isAvailable(
+                playerStateService.getOrCreateState(squadPlayer.getPlayer())
+        );
     }
 
     private void addAssistEvent(

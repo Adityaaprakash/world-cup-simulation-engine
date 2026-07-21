@@ -17,8 +17,8 @@ public class MlPredictionClient {
 
     public MlPredictionClient(RestClient.Builder restClientBuilder, MlProperties properties) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(properties.getTimeout());
-        requestFactory.setReadTimeout(properties.getTimeout());
+        requestFactory.setConnectTimeout(Math.toIntExact(properties.getTimeout()));
+        requestFactory.setReadTimeout(Math.toIntExact(properties.getTimeout()));
         this.restClient = restClientBuilder
                 .baseUrl(properties.getBaseUrl())
                 .requestFactory(requestFactory)

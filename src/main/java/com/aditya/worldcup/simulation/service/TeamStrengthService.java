@@ -1,6 +1,6 @@
 package com.aditya.worldcup.simulation.service;
 
-import com.aditya.worldcup.players.entity.Player;
+import com.aditya.worldcup.players.service.PlayerEffectiveRatingService;
 import com.aditya.worldcup.simulation.dto.TeamStrengthResponse;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
@@ -14,6 +14,7 @@ import java.util.List;
 public class TeamStrengthService {
 
     private final SquadPlayerRepository squadPlayerRepository;
+    private final PlayerEffectiveRatingService playerEffectiveRatingService;
 
     public TeamStrengthResponse calculateStrength(Long squadId) {
 
@@ -78,7 +79,7 @@ public class TeamStrengthService {
                                         sp.getPositionSlot()
                                 ))
                         .map(SquadPlayer::getPlayer)
-                        .map(Player::getOverallRating)
+                        .map(playerEffectiveRatingService::calculate)
                         .toList();
 
         if (ratings.isEmpty()) {
