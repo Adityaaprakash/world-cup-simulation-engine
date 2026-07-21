@@ -22,6 +22,10 @@ import com.aditya.worldcup.ml.dto.PredictionResponse;
 import com.aditya.worldcup.ml.exception.MlServiceException;
 import com.aditya.worldcup.ml.mapper.MlFeatureMapper;
 import com.aditya.worldcup.ml.service.MlPredictionService;
+import com.aditya.worldcup.tactics.entity.TacticalProfile;
+import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
+import com.aditya.worldcup.tactics.service.TacticalModifierService;
+import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -45,6 +49,8 @@ public class MatchSimulationService {
     private final MlFeatureMapper mlFeatureMapper;
     private final MlPredictionService mlPredictionService;
     private final PlayerStateService playerStateService;
+    private final TacticalProfileService tacticalProfileService;
+    private final TacticalModifierService tacticalModifierService;
 
     private final Random random = new Random();
 
@@ -110,13 +116,24 @@ public class MatchSimulationService {
         int homeOverall = homeStrength.overall();
         int awayOverall = awayStrength.overall();
 
+        TacticalProfile homeProfile = tacticalProfileService.getOrCreateProfile(
+                homeSquad.getTeam());
+        TacticalProfile awayProfile = tacticalProfileService.getOrCreateProfile(
+                awaySquad.getTeam());
+        TacticalMatchModifiers homeTactics = tacticalModifierService
+                .calculateModifiers(homeProfile, awayProfile);
+        TacticalMatchModifiers awayTactics = tacticalModifierService
+                .calculateModifiers(awayProfile, homeProfile);
+
         Scoreline scoreline = selectScoreline(
                 homeSquad,
                 awaySquad,
                 homeStrength,
                 awayStrength,
                 match,
-                homeOverall - awayOverall
+                homeOverall - awayOverall,
+                homeTactics,
+                awayTactics
         );
         int homeGoals = scoreline.homeGoals();
         int awayGoals = scoreline.awayGoals();
@@ -136,7 +153,9 @@ public class MatchSimulationService {
                         homeSquad.getId(),
                         awaySquad.getId(),
                         homeGoals,
-                        awayGoals
+                        awayGoals,
+                        homeTactics,
+                        awayTactics
                 );
 
         List<CommentaryResponse> commentary =
@@ -147,7 +166,9 @@ public class MatchSimulationService {
                         homeGoals,
                         awayGoals,
                         homeOverall,
-                        awayOverall
+                        awayOverall,
+                        homeTactics,
+                        awayTactics
                 );
 
         List<PlayerMatchRatingResponse> playerRatings =
@@ -193,7 +214,9 @@ public class MatchSimulationService {
                 awaySquad.getId(),
                 homeGoals,
                 awayGoals,
-                events
+                events,
+                homeTactics,
+                awayTactics
         );
 
         return response;
@@ -205,11 +228,14 @@ public class MatchSimulationService {
             TeamStrengthResponse homeStrength,
             TeamStrengthResponse awayStrength,
             Match match,
-            int strengthDifference
+            int strengthDifference,
+            TacticalMatchModifiers homeTactics,
+            TacticalMatchModifiers awayTactics
     ) {
         if (!mlPredictionService.isMlServiceAvailable()) {
             log.warn("ML prediction service is unavailable; heuristic match simulation fallback activated.");
-            return heuristicScoreline(strengthDifference);
+            return heuristicScoreline(tacticalStrengthDifference(
+                    strengthDifference, homeTactics, awayTactics));
         }
 
         try {
@@ -218,10 +244,11 @@ public class MatchSimulationService {
             );
             PredictionResponse prediction = mlPredictionService.predict(request);
             log.info("ML prediction service available; using hybrid score selection.");
-            return mlScoreline(prediction);
+            return mlScoreline(prediction, homeTactics, awayTactics);
         } catch (MlServiceException exception) {
             log.warn("ML prediction failed; heuristic match simulation fallback activated.");
-            return heuristicScoreline(strengthDifference);
+            return heuristicScoreline(tacticalStrengthDifference(
+                    strengthDifference, homeTactics, awayTactics));
         }
     }
 
@@ -235,10 +262,14 @@ public class MatchSimulationService {
         return new Scoreline(random.nextInt(4), random.nextInt(4));
     }
 
-    private Scoreline mlScoreline(PredictionResponse prediction) {
+    private Scoreline mlScoreline(PredictionResponse prediction,
+                                  TacticalMatchModifiers homeTactics,
+                                  TacticalMatchModifiers awayTactics) {
         MatchOutcome outcome = sampleOutcome(prediction);
-        int homeGoals = goalsAround(prediction.expectedHomeGoals());
-        int awayGoals = goalsAround(prediction.expectedAwayGoals());
+        int homeGoals = goalsAround(prediction.expectedHomeGoals()
+                + expectedGoalModifier(homeTactics, awayTactics));
+        int awayGoals = goalsAround(prediction.expectedAwayGoals()
+                + expectedGoalModifier(awayTactics, homeTactics));
 
         if (outcome == MatchOutcome.HOME_WIN && homeGoals <= awayGoals) {
             homeGoals = Math.min(8, awayGoals + 1);
@@ -274,6 +305,20 @@ public class MatchSimulationService {
         double deviation = Math.sqrt(Math.max(0.5, expectedGoals));
         int goals = (int) Math.round(expectedGoals + random.nextGaussian() * deviation);
         return Math.max(0, Math.min(8, goals));
+    }
+
+    private int tacticalStrengthDifference(int strengthDifference,
+                                           TacticalMatchModifiers homeTactics,
+                                           TacticalMatchModifiers awayTactics) {
+        return strengthDifference + (int) Math.round(
+                (homeTactics.attackModifier() + homeTactics.counterModifier()
+                        - awayTactics.attackModifier() - awayTactics.counterModifier()) * 3);
+    }
+
+    private double expectedGoalModifier(TacticalMatchModifiers tactics,
+                                        TacticalMatchModifiers opponentTactics) {
+        return (tactics.attackModifier() + tactics.counterModifier()
+                - opponentTactics.defenseModifier()) * 0.18;
     }
 
     private record Scoreline(int homeGoals, int awayGoals) {

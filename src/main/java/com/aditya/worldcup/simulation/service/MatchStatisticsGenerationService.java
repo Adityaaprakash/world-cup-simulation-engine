@@ -1,6 +1,7 @@
 package com.aditya.worldcup.simulation.service;
 
 import com.aditya.worldcup.simulation.dto.MatchStatisticsResponse;
+import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,6 +19,18 @@ public class MatchStatisticsGenerationService {
             int homeStrength,
             int awayStrength
     ) {
+        return generate(homeGoals, awayGoals, homeStrength, awayStrength,
+                TacticalMatchModifiers.balanced(), TacticalMatchModifiers.balanced());
+    }
+
+    public MatchStatisticsResponse generate(
+            int homeGoals,
+            int awayGoals,
+            int homeStrength,
+            int awayStrength,
+            TacticalMatchModifiers homeTactics,
+            TacticalMatchModifiers awayTactics
+    ) {
 
         int resultInfluence = Integer.compare(homeGoals, awayGoals) * 4;
         int strengthInfluence = clamp(
@@ -27,7 +40,9 @@ public class MatchStatisticsGenerationService {
         );
 
         int homePossession = clamp(
-                50 + resultInfluence + strengthInfluence + randomRange(-6, 6),
+                50 + resultInfluence + strengthInfluence
+                        + tacticalDifference(homeTactics.possessionModifier(), awayTactics.possessionModifier(), 5)
+                        + randomRange(-6, 6),
                 35,
                 65
         );
@@ -37,13 +52,17 @@ public class MatchStatisticsGenerationService {
                 homeGoals,
                 homeStrength,
                 awayStrength,
-                homeGoals > awayGoals
+                homeGoals > awayGoals,
+                homeTactics,
+                awayTactics
         );
         int awayShots = generateShots(
                 awayGoals,
                 awayStrength,
                 homeStrength,
-                awayGoals > homeGoals
+                awayGoals > homeGoals,
+                awayTactics,
+                homeTactics
         );
 
         int homeShotsOnTarget = generateShotsOnTarget(
@@ -58,12 +77,14 @@ public class MatchStatisticsGenerationService {
         int homePassAccuracy = generatePassAccuracy(
                 homePossession,
                 homeGoals > awayGoals,
-                homeStrength
+                homeStrength,
+                homeTactics
         );
         int awayPassAccuracy = generatePassAccuracy(
                 awayPossession,
                 awayGoals > homeGoals,
-                awayStrength
+                awayStrength,
+                awayTactics
         );
 
         int homePasses = generatePasses(
@@ -85,12 +106,12 @@ public class MatchStatisticsGenerationService {
                         homePasses,
                         homePassAccuracy,
                         generateCorners(homeShots),
-                        generateFouls(homeGoals < awayGoals),
-                        randomRange(0, 4),
-                        generateYellowCards(),
-                        generateRedCards(),
+                        generateFouls(homeGoals < awayGoals, homeTactics),
+                        generateOffsides(homeTactics, awayTactics),
+                        generateYellowCards(homeTactics),
+                        generateRedCards(homeTactics),
                         generateSaves(awayShotsOnTarget, awayGoals),
-                        generateExpectedGoals(homeGoals, homeShotsOnTarget)
+                        generateExpectedGoals(homeGoals, homeShotsOnTarget, homeTactics)
                 ),
                 new MatchStatisticsResponse.TeamStatisticsResponse(
                         awayPossession,
@@ -99,12 +120,12 @@ public class MatchStatisticsGenerationService {
                         awayPasses,
                         awayPassAccuracy,
                         generateCorners(awayShots),
-                        generateFouls(awayGoals < homeGoals),
-                        randomRange(0, 4),
-                        generateYellowCards(),
-                        generateRedCards(),
+                        generateFouls(awayGoals < homeGoals, awayTactics),
+                        generateOffsides(awayTactics, homeTactics),
+                        generateYellowCards(awayTactics),
+                        generateRedCards(awayTactics),
                         generateSaves(homeShotsOnTarget, homeGoals),
-                        generateExpectedGoals(awayGoals, awayShotsOnTarget)
+                        generateExpectedGoals(awayGoals, awayShotsOnTarget, awayTactics)
                 )
         );
     }
@@ -113,7 +134,9 @@ public class MatchStatisticsGenerationService {
             int goals,
             int attackingStrength,
             int defendingStrength,
-            boolean winner
+            boolean winner,
+            TacticalMatchModifiers tactics,
+            TacticalMatchModifiers opponentTactics
     ) {
 
         int strengthEdge = clamp(
@@ -125,6 +148,8 @@ public class MatchStatisticsGenerationService {
 
         return clamp(
                 7 + goals * 2 + strengthEdge + winnerBoost
+                        + tacticalDifference(tactics.attackModifier() + tactics.counterModifier(),
+                        opponentTactics.defenseModifier(), 2)
                         + randomRange(-3, 5),
                 Math.max(5, goals + 4),
                 20
@@ -146,14 +171,16 @@ public class MatchStatisticsGenerationService {
     private int generatePassAccuracy(
             int possession,
             boolean winner,
-            int strength
+            int strength,
+            TacticalMatchModifiers tactics
     ) {
 
         int winnerBoost = winner ? randomRange(1, 3) : 0;
 
         return clamp(
                 74 + (possession - 50) / 3 + (strength - 75) / 5
-                        + winnerBoost + randomRange(-4, 5),
+                        + winnerBoost + (int) Math.round(tactics.passingModifier() * 5)
+                        + randomRange(-4, 5),
                 70,
                 95
         );
@@ -182,21 +209,23 @@ public class MatchStatisticsGenerationService {
         );
     }
 
-    private int generateFouls(boolean losing) {
+    private int generateFouls(boolean losing, TacticalMatchModifiers tactics) {
 
         int losingBoost = losing ? randomRange(1, 3) : 0;
 
         return clamp(
-                randomRange(7, 15) + losingBoost,
+                randomRange(7, 15) + losingBoost
+                        + (int) Math.round(Math.max(0, tactics.pressModifier()) * 2),
                 5,
                 18
         );
     }
 
-    private int generateYellowCards() {
+    private int generateYellowCards(TacticalMatchModifiers tactics) {
 
         int roll = random.nextInt(100);
 
+        roll += (int) Math.round(Math.max(0, tactics.disciplineModifier()) * 12);
         if (roll < 12) {
             return 0;
         }
@@ -208,9 +237,10 @@ public class MatchStatisticsGenerationService {
         return randomRange(3, 5);
     }
 
-    private int generateRedCards() {
+    private int generateRedCards(TacticalMatchModifiers tactics) {
 
-        return random.nextInt(100) < 8 ? 1 : 0;
+        return random.nextInt(100) < 8 + (int) Math.round(
+                Math.max(0, tactics.disciplineModifier()) * 5) ? 1 : 0;
     }
 
     private int generateSaves(int opponentShotsOnTarget, int opponentGoals) {
@@ -222,9 +252,12 @@ public class MatchStatisticsGenerationService {
         );
     }
 
-    private double generateExpectedGoals(int goals, int shotsOnTarget) {
+    private double generateExpectedGoals(int goals, int shotsOnTarget,
+                                         TacticalMatchModifiers tactics) {
 
         double value = 0.45 + goals * 0.65 + shotsOnTarget * 0.18
+                + tactics.attackModifier() * 0.18
+                + tactics.counterModifier() * 0.12
                 + randomRange(-2, 4) * 0.1;
 
         return BigDecimal.valueOf(clamp(value, 0.2, 4.5))
@@ -235,6 +268,17 @@ public class MatchStatisticsGenerationService {
     private int randomRange(int minimum, int maximum) {
 
         return random.nextInt(maximum - minimum + 1) + minimum;
+    }
+
+    private int generateOffsides(TacticalMatchModifiers tactics,
+                                 TacticalMatchModifiers opponentTactics) {
+        return clamp(randomRange(0, 4)
+                        + tacticalDifference(tactics.attackModifier(), opponentTactics.offsideModifier(), -1),
+                0, 8);
+    }
+
+    private int tacticalDifference(double own, double opponent, int scale) {
+        return (int) Math.round((own - opponent) * scale);
     }
 
     private int clamp(int value, int minimum, int maximum) {

@@ -6,6 +6,7 @@ import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
+import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,18 @@ public class MatchEventGenerationService {
             Long awaySquadId,
             int homeGoals,
             int awayGoals
+    ) {
+        return generateMatchEvents(homeSquadId, awaySquadId, homeGoals, awayGoals,
+                TacticalMatchModifiers.balanced(), TacticalMatchModifiers.balanced());
+    }
+
+    public List<MatchEventResponse> generateMatchEvents(
+            Long homeSquadId,
+            Long awaySquadId,
+            int homeGoals,
+            int awayGoals,
+            TacticalMatchModifiers homeTactics,
+            TacticalMatchModifiers awayTactics
     ) {
 
         List<MatchEventResponse> events = new ArrayList<>();
@@ -90,7 +103,8 @@ public class MatchEventGenerationService {
                     events,
                     homePlayers,
                     scorer,
-                    minute
+                    minute,
+                    homeTactics
             );
         }
 
@@ -113,20 +127,25 @@ public class MatchEventGenerationService {
                     events,
                     awayPlayers,
                     scorer,
-                    minute
+                    minute,
+                    awayTactics
             );
         }
 
         addYellowCards(
                 events,
                 homeSquadPlayers,
-                awaySquadPlayers
+                awaySquadPlayers,
+                homeTactics,
+                awayTactics
         );
 
         addRedCard(
                 events,
                 homeSquadPlayers,
-                awaySquadPlayers
+                awaySquadPlayers,
+                homeTactics,
+                awayTactics
         );
 
         addPenalty(
@@ -182,10 +201,13 @@ public class MatchEventGenerationService {
             List<MatchEventResponse> events,
             List<SquadPlayer> teammates,
             SquadPlayer scorer,
-            int minute
+            int minute,
+            TacticalMatchModifiers tactics
     ) {
 
-        if (teammates.size() < 2 || random.nextInt(100) >= 75) {
+        int assistChance = 75 + (int) Math.round(
+                (tactics.crossingModifier() + tactics.attackModifier()) * 8);
+        if (teammates.size() < 2 || random.nextInt(100) >= assistChance) {
             return;
         }
 
@@ -202,12 +224,17 @@ public class MatchEventGenerationService {
         Player assister =
                 chooseRandom(candidates).getPlayer();
 
+        String description = tactics.crossingModifier() > 0
+                && random.nextInt(100) < 55
+                ? assister.getName() + " delivers a cross for the assist."
+                : assister.getName() + " provides the assist.";
+
         events.add(
                 new MatchEventResponse(
                         minute,
                         assister.getName(),
                         MatchEventType.ASSIST.name(),
-                        assister.getName() + " provides the assist."
+                        description
                 )
         );
     }
@@ -215,7 +242,9 @@ public class MatchEventGenerationService {
     private void addYellowCards(
             List<MatchEventResponse> events,
             List<SquadPlayer> homeSquadPlayers,
-            List<SquadPlayer> awaySquadPlayers
+            List<SquadPlayer> awaySquadPlayers,
+            TacticalMatchModifiers homeTactics,
+            TacticalMatchModifiers awayTactics
     ) {
 
         List<SquadPlayer> players =
@@ -225,8 +254,9 @@ public class MatchEventGenerationService {
             return;
         }
 
-        int yellowCards =
-                random.nextInt(6);
+        int yellowCards = random.nextInt(6)
+                + disciplineIncrease(homeTactics)
+                + disciplineIncrease(awayTactics);
 
         for (int i = 0; i < yellowCards; i++) {
 
@@ -247,10 +277,14 @@ public class MatchEventGenerationService {
     private void addRedCard(
             List<MatchEventResponse> events,
             List<SquadPlayer> homeSquadPlayers,
-            List<SquadPlayer> awaySquadPlayers
+            List<SquadPlayer> awaySquadPlayers,
+            TacticalMatchModifiers homeTactics,
+            TacticalMatchModifiers awayTactics
     ) {
 
-        if (random.nextInt(100) >= 12) {
+        int redCardChance = 12 + disciplineIncrease(homeTactics) * 2
+                + disciplineIncrease(awayTactics) * 2;
+        if (random.nextInt(100) >= redCardChance) {
             return;
         }
 
@@ -434,5 +468,9 @@ public class MatchEventGenerationService {
 
     private int randomSubstitutionMinute() {
         return random.nextInt(36) + 55;
+    }
+
+    private int disciplineIncrease(TacticalMatchModifiers tactics) {
+        return Math.max(0, (int) Math.round(tactics.disciplineModifier() * 2));
     }
 }

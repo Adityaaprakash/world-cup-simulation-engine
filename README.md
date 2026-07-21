@@ -23,3 +23,27 @@ Simulation strength uses an effective rating calculated from the immutable
 base rating plus small form, confidence, fitness, fatigue, and morale effects.
 Suspended players and players with active moderate or major injuries are
 unavailable for event selection and contribute no effective strength.
+
+## Advanced tactical engine
+
+Every team has one persisted tactical profile. Existing teams receive a
+balanced default profile, so no configuration is required before simulating.
+The profile includes attack and defensive width, defensive line, pressing,
+build-up style, chance creation, attacking width, crosses, long balls, passing
+risk, counter attacks, high press, offside trap, and time wasting.
+
+Tactical profiles do not change base team or player ratings. Instead,
+`TacticalModifierService` derives possession, attack, defense, counter, press,
+fatigue, discipline, passing, crossing, and offside modifiers for each match.
+Those modifiers flow through scoreline selection, expected goals, possession,
+shots, pass accuracy, fouls, cards, offsides, assists, and player-state
+fatigue/recovery.
+
+High pressing raises attacking pressure and card/fatigue risk. A high defensive
+line supports offside traps but improves the opponent's counter-attack modifier;
+a low line is less exposed to counters. Slow possession improves ball control
+and pass completion while reducing attacking urgency, while direct play trades
+possession for faster attacks. Wide and crossing-oriented tactics create more
+assisting opportunities; high-risk passing generates more attacking upside at a
+pass-completion cost. Tactical profiles can be updated through
+`TacticalProfileService.updateProfile` using `TacticalProfileUpdateRequest`.

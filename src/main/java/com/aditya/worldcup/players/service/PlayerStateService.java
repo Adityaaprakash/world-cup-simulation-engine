@@ -8,6 +8,7 @@ import com.aditya.worldcup.players.entity.PlayerState;
 import com.aditya.worldcup.players.repository.PlayerStateRepository;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
+import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,16 @@ public class PlayerStateService {
     public void updateAfterMatch(Long homeSquadId, Long awaySquadId,
                                  int homeGoals, int awayGoals,
                                  List<MatchEventResponse> events) {
+        updateAfterMatch(homeSquadId, awaySquadId, homeGoals, awayGoals, events,
+                TacticalMatchModifiers.balanced(), TacticalMatchModifiers.balanced());
+    }
+
+    @Transactional
+    public void updateAfterMatch(Long homeSquadId, Long awaySquadId,
+                                 int homeGoals, int awayGoals,
+                                 List<MatchEventResponse> events,
+                                 TacticalMatchModifiers homeTactics,
+                                 TacticalMatchModifiers awayTactics) {
         List<SquadPlayer> homePlayers = squadPlayerRepository.findBySquadId(homeSquadId);
         List<SquadPlayer> awayPlayers = squadPlayerRepository.findBySquadId(awaySquadId);
         List<SquadPlayer> allPlayers = new ArrayList<>(homePlayers);
@@ -57,13 +68,15 @@ public class PlayerStateService {
                     .forEach(playersWhoPlayed::add);
         }
 
-        applyParticipation(allPlayers, states, playersWhoPlayed);
+        applyParticipation(homePlayers, states, playersWhoPlayed, homeTactics);
+        applyParticipation(awayPlayers, states, playersWhoPlayed, awayTactics);
         applyResult(homePlayers, states, Integer.compare(homeGoals, awayGoals));
         applyResult(awayPlayers, states, Integer.compare(awayGoals, homeGoals));
         applyEventEffects(events, playersByName, states);
         applyCleanSheets(homePlayers, states, awayGoals == 0);
         applyCleanSheets(awayPlayers, states, homeGoals == 0);
-        recoverInactivePlayers(allPlayers, states, playersWhoPlayed);
+        recoverInactivePlayers(homePlayers, states, playersWhoPlayed, homeTactics);
+        recoverInactivePlayers(awayPlayers, states, playersWhoPlayed, awayTactics);
         processSuspensions(states, existingSuspensions);
         processInjuries(states.values());
         decayForm(states.values());
@@ -94,6 +107,20 @@ public class PlayerStateService {
                 .forEach(state -> {
                     state.setFitness(between(state.getFitness() + 4, 0, 100));
                     state.setFatigue(between(state.getFatigue() - 5, 0, 100));
+                });
+    }
+
+    private void recoverInactivePlayers(List<SquadPlayer> players,
+                                        Map<Long, PlayerState> states,
+                                        Set<Long> playersWhoPlayed,
+                                        TacticalMatchModifiers tactics) {
+        int recovery = 4 - (int) Math.round(Math.max(0, tactics.fatigueModifier()));
+        players.stream()
+                .filter(player -> !playersWhoPlayed.contains(player.getPlayer().getId()))
+                .map(player -> states.get(player.getPlayer().getId()))
+                .forEach(state -> {
+                    state.setFitness(between(state.getFitness() + Math.max(2, recovery), 0, 100));
+                    state.setFatigue(between(state.getFatigue() - Math.max(3, recovery + 1), 0, 100));
                 });
     }
 
@@ -130,12 +157,15 @@ public class PlayerStateService {
 
     private void applyParticipation(List<SquadPlayer> players,
                                     Map<Long, PlayerState> states,
-                                    Set<Long> playersWhoPlayed) {
+                                    Set<Long> playersWhoPlayed,
+                                    TacticalMatchModifiers tactics) {
+        int fatigueIncrease = 8 + (int) Math.round(
+                Math.max(0, tactics.fatigueModifier()) * 3);
         players.stream()
                 .filter(player -> playersWhoPlayed.contains(player.getPlayer().getId()))
                 .map(player -> states.get(player.getPlayer().getId()))
                 .forEach(state -> {
-                    state.setFatigue(between(state.getFatigue() + 8, 0, 100));
+                    state.setFatigue(between(state.getFatigue() + fatigueIncrease, 0, 100));
                     state.setFitness(between(state.getFitness() - 5, 0, 100));
                 });
     }
