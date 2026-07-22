@@ -34,4 +34,8 @@ public class SquadPlayer {
 
     @Column(nullable = false)
     private Boolean captain;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean viceCaptain = false;
 }

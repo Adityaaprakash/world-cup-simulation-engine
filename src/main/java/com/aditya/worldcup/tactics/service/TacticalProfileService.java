@@ -45,4 +45,9 @@ public class TacticalProfileService {
         profile.setTimeWasting(request.timeWasting());
         return tacticalProfileRepository.save(profile);
     }
+
+    @Transactional
+    public TacticalProfile saveProfile(TacticalProfile profile) {
+        return tacticalProfileRepository.save(profile);
+    }
 }

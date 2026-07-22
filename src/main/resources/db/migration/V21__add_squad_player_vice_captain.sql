@@ -1,0 +1,2 @@
+ALTER TABLE squad_players
+    ADD COLUMN vice_captain BOOLEAN NOT NULL DEFAULT FALSE;

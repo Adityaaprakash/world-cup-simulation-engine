@@ -26,8 +26,11 @@ import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import com.aditya.worldcup.tactics.service.TacticalModifierService;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
+import com.aditya.worldcup.ai.service.AiManagerService;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -51,6 +54,7 @@ public class MatchSimulationService {
     private final PlayerStateService playerStateService;
     private final TacticalProfileService tacticalProfileService;
     private final TacticalModifierService tacticalModifierService;
+    private final AiManagerService aiManagerService;
 
     private final Random random = new Random();
 
@@ -78,6 +82,9 @@ public class MatchSimulationService {
                 new IllegalArgumentException(
                         "Away squad not found: " + request.awaySquadId()
                 ));
+
+        aiManagerService.prepareForMatch(homeSquad, awaySquad);
+        aiManagerService.prepareForMatch(awaySquad, homeSquad);
 
         SquadReadyResponse homeReady =
                 squadPlayerService.getSquadReadyStatus(
@@ -138,6 +145,13 @@ public class MatchSimulationService {
         int homeGoals = scoreline.homeGoals();
         int awayGoals = scoreline.awayGoals();
 
+        homeProfile = aiManagerService.adjustTacticsForMatchState(
+                homeSquad, Integer.compare(homeGoals, awayGoals));
+        awayProfile = aiManagerService.adjustTacticsForMatchState(
+                awaySquad, Integer.compare(awayGoals, homeGoals));
+        homeTactics = tacticalModifierService.calculateModifiers(homeProfile, awayProfile);
+        awayTactics = tacticalModifierService.calculateModifiers(awayProfile, homeProfile);
+
         String winner;
 
         if (homeGoals > awayGoals) {
@@ -148,7 +162,7 @@ public class MatchSimulationService {
             winner = "DRAW";
         }
 
-        List<MatchEventResponse> events =
+        List<MatchEventResponse> generatedEvents =
                 matchEventGenerationService.generateMatchEvents(
                         homeSquad.getId(),
                         awaySquad.getId(),
@@ -157,6 +171,14 @@ public class MatchSimulationService {
                         homeTactics,
                         awayTactics
                 );
+        List<MatchEventResponse> events = new ArrayList<>(generatedEvents.stream()
+                .filter(event -> !"SUBSTITUTION".equals(event.eventType()))
+                .toList());
+        events.addAll(aiManagerService.decideSubstitutions(homeSquad,
+                Integer.compare(homeGoals, awayGoals)));
+        events.addAll(aiManagerService.decideSubstitutions(awaySquad,
+                Integer.compare(awayGoals, homeGoals)));
+        events.sort(Comparator.comparing(MatchEventResponse::minute));
 
         List<CommentaryResponse> commentary =
                 matchCommentaryService.generate(events);

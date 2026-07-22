@@ -47,3 +47,25 @@ possession for faster attacks. Wide and crossing-oriented tactics create more
 assisting opportunities; high-risk passing generates more attacking upside at a
 pass-completion cost. Tactical profiles can be updated through
 `TacticalProfileService.updateProfile` using `TacticalProfileUpdateRequest`.
+
+## AI manager
+
+The backend AI manager prepares every simulated squad before kickoff. It selects
+the closest suitable formation from the configured formations, then builds an
+availability-aware starting XI from the registered squad. Selection favours
+effective rating, current form, confidence, morale, and fitness, while excluding
+suspended and unavailable injured players. High fatigue, low fitness, and the
+more rotation-prone wide positions lower selection priority; goalkeepers rotate
+less aggressively.
+
+The manager assigns a captain and vice captain from the starting XI using age,
+overall rating, and confidence. Stronger squads favour a 4-3-3-style shape and
+possession/high-press tactics; underdogs favour a five-defender shape, a lower
+line, direct play, and counter attacks. Balanced opponents retain balanced
+formations and tactics.
+
+After the simulated scoreline is known, tactical risk is adjusted for the match
+state. The manager then replaces the generic substitutions with AI decisions at
+60, 70, and 80 minutes. Leading teams trade attackers for fresh defenders or
+midfielders, drawing teams make fitness-led balanced changes, and losing teams
+introduce attackers while increasing press and attacking risk.
