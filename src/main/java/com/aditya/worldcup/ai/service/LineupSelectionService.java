@@ -1,11 +1,7 @@
 package com.aditya.worldcup.ai.service;
 
 import com.aditya.worldcup.formations.entity.Formation;
-import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.entity.PlayerPosition;
-import com.aditya.worldcup.players.entity.PlayerState;
-import com.aditya.worldcup.players.service.PlayerEffectiveRatingService;
-import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.squads.entity.Squad;
@@ -14,37 +10,77 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class LineupSelectionService {
 
     private final SquadPlayerRepository squadPlayerRepository;
-    private final PlayerEffectiveRatingService playerEffectiveRatingService;
-    private final PlayerStateService playerStateService;
     private final RotationService rotationService;
+    private final PlayerEvaluationService playerEvaluationService;
+
+    public List<SquadPlayer> selectMatchSquad(Squad squad) {
+        return selectMatchSquad(squad, MatchImportance.GROUP_STAGE);
+    }
+
+    public List<SquadPlayer> selectMatchSquad(Squad squad, MatchImportance importance) {
+        return squadPlayerRepository.findBySquadId(squad.getId()).stream()
+                .filter(player -> rotationService.isAvailable(player.getPlayer()))
+                .sorted(Comparator.<SquadPlayer>comparingDouble(player ->
+                        selectionScore(player, importance)).reversed())
+                .toList();
+    }
+
+    public List<SquadPlayer> selectBench(Squad squad) {
+        return selectBench(squad, MatchImportance.GROUP_STAGE);
+    }
+
+    public List<SquadPlayer> selectBench(Squad squad, MatchImportance importance) {
+        List<SquadPlayer> squadPlayers = squadPlayerRepository.findBySquadId(squad.getId());
+        List<SquadPlayer> bench = squadPlayers.stream()
+                .filter(player -> !player.getStartingXi())
+                .filter(player -> rotationService.isAvailable(player.getPlayer()))
+                .sorted(Comparator.<SquadPlayer>comparingDouble(player ->
+                        selectionScore(player, importance)).reversed())
+                .toList();
+        List<SquadPlayer> balancedBench = new ArrayList<>();
+        addBenchPlayers(bench, balancedBench, Set.of(PlayerPosition.GK), 1);
+        addBenchPlayers(bench, balancedBench, Set.of(PlayerPosition.RB, PlayerPosition.CB, PlayerPosition.LB), 2);
+        addBenchPlayers(bench, balancedBench, Set.of(PlayerPosition.CDM, PlayerPosition.CM, PlayerPosition.CAM), 2);
+        addBenchPlayers(bench, balancedBench, Set.of(PlayerPosition.RW, PlayerPosition.LW, PlayerPosition.ST), 2);
+        bench.stream()
+                .filter(player -> !balancedBench.contains(player))
+                .limit(Math.max(0, 12 - balancedBench.size()))
+                .forEach(balancedBench::add);
+        return balancedBench;
+    }
 
     @Transactional
     public void selectStartingXi(Squad squad, Formation formation) {
+        selectStartingXi(squad, formation, MatchImportance.GROUP_STAGE);
+    }
+
+    @Transactional
+    public void selectStartingXi(Squad squad, Formation formation, MatchImportance importance) {
         List<SquadPlayer> squadPlayers = squadPlayerRepository.findBySquadId(squad.getId());
         List<SquadPlayer> available = squadPlayers.stream()
                 .filter(player -> rotationService.isAvailable(player.getPlayer()))
                 .toList();
         List<SquadPlayer> preferred = available.stream()
-                .filter(player -> !rotationService.shouldRest(player.getPlayer()))
+                .filter(player -> !rotationService.shouldRest(player.getPlayer(), importance))
                 .toList();
         List<SquadPlayer> candidates = preferred.size() >= 11 ? preferred : available;
         Set<Long> selected = new HashSet<>();
 
-        select(candidates, selected, Set.of(PlayerPosition.GK), 1);
+        select(candidates, selected, Set.of(PlayerPosition.GK), 1, importance);
         select(candidates, selected, Set.of(PlayerPosition.RB, PlayerPosition.CB, PlayerPosition.LB),
-                formation.getDefenders());
+                formation.getDefenders(), importance);
         select(candidates, selected, Set.of(PlayerPosition.CDM, PlayerPosition.CM, PlayerPosition.CAM),
-                formation.getMidfielders());
+                formation.getMidfielders(), importance);
         select(candidates, selected, Set.of(PlayerPosition.RW, PlayerPosition.LW, PlayerPosition.ST),
-                formation.getAttackers());
-        select(candidates, selected, EnumSet.allOf(PlayerPosition.class), 11 - selected.size());
+                formation.getAttackers(), importance);
+        select(candidates, selected, EnumSet.allOf(PlayerPosition.class),
+                11 - selected.size(), importance);
 
         Map<Long, String> slots = assignSlots(candidates, selected, formation);
         squadPlayers.forEach(player -> {
@@ -61,14 +97,16 @@ public class LineupSelectionService {
     }
 
     private void select(List<SquadPlayer> candidates, Set<Long> selected,
-                        Set<PlayerPosition> positions, int count) {
+                        Set<PlayerPosition> positions, int count,
+                        MatchImportance importance) {
         if (count <= 0) {
             return;
         }
         candidates.stream()
                 .filter(player -> positions.contains(player.getPlayer().getPosition()))
                 .filter(player -> !selected.contains(player.getPlayer().getId()))
-                .sorted(Comparator.comparingDouble(this::selectionScore).reversed())
+                .sorted(Comparator.<SquadPlayer>comparingDouble(player ->
+                        selectionScore(player, importance)).reversed())
                 .limit(count)
                 .map(player -> player.getPlayer().getId())
                 .forEach(selected::add);
@@ -97,6 +135,15 @@ public class LineupSelectionService {
         return slots;
     }
 
+    private void addBenchPlayers(List<SquadPlayer> bench, List<SquadPlayer> balancedBench,
+                                 Set<PlayerPosition> positions, int count) {
+        bench.stream()
+                .filter(player -> positions.contains(player.getPlayer().getPosition()))
+                .filter(player -> !balancedBench.contains(player))
+                .limit(count)
+                .forEach(balancedBench::add);
+    }
+
     private void assign(List<SquadPlayer> starters, Map<Long, String> slots,
                         Set<PlayerPosition> positions, List<String> availableSlots) {
         List<String> slotsToUse = new ArrayList<>(availableSlots);
@@ -115,12 +162,12 @@ public class LineupSelectionService {
     }
 
     private double selectionScore(SquadPlayer squadPlayer) {
-        Player player = squadPlayer.getPlayer();
-        PlayerState state = playerStateService.getOrCreateState(player);
-        return playerEffectiveRatingService.calculate(player)
-                + state.getCurrentForm() * 0.35
-                + state.getConfidence() * 0.02
-                + state.getMorale() * 0.015
-                + rotationService.availabilityScore(player);
+        return selectionScore(squadPlayer, MatchImportance.GROUP_STAGE);
+    }
+
+    private double selectionScore(SquadPlayer squadPlayer, MatchImportance importance) {
+        return playerEvaluationService.evaluatePlayer(squadPlayer.getPlayer())
+                * importance.qualityWeight()
+                + rotationService.availabilityScore(squadPlayer.getPlayer(), importance);
     }
 }

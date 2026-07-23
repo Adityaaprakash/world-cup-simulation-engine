@@ -18,6 +18,7 @@ public class CaptainSelectionService {
 
     private final SquadPlayerRepository squadPlayerRepository;
     private final PlayerStateService playerStateService;
+    private final PlayerEvaluationService playerEvaluationService;
 
     @Transactional
     public void selectCaptainAndViceCaptain(Squad squad) {
@@ -44,7 +45,8 @@ public class CaptainSelectionService {
     private double leadershipScore(SquadPlayer squadPlayer) {
         PlayerState state = playerStateService.getOrCreateState(squadPlayer.getPlayer());
         return squadPlayer.getPlayer().getAge() * 0.35
-                + squadPlayer.getPlayer().getOverallRating() * 0.45
-                + state.getConfidence() * 0.2;
+                + playerEvaluationService.evaluatePlayer(squadPlayer.getPlayer()) * 0.35
+                + state.getConfidence() * 0.18
+                + state.getMorale() * 0.12;
     }
 }

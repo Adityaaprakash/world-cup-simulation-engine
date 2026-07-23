@@ -27,12 +27,17 @@ import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import com.aditya.worldcup.tactics.service.TacticalModifierService;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import com.aditya.worldcup.ai.service.AiManagerService;
+import com.aditya.worldcup.ai.service.MatchImportance;
+import com.aditya.worldcup.matchevents.entity.MatchEventType;
+import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -83,8 +88,9 @@ public class MatchSimulationService {
                         "Away squad not found: " + request.awaySquadId()
                 ));
 
-        aiManagerService.prepareForMatch(homeSquad, awaySquad);
-        aiManagerService.prepareForMatch(awaySquad, homeSquad);
+        MatchImportance matchImportance = aiManagerService.determineMatchImportance(match);
+        aiManagerService.prepareForMatch(homeSquad, awaySquad, matchImportance);
+        aiManagerService.prepareForMatch(awaySquad, homeSquad, matchImportance);
 
         SquadReadyResponse homeReady =
                 squadPlayerService.getSquadReadyStatus(
@@ -171,13 +177,38 @@ public class MatchSimulationService {
                         homeTactics,
                         awayTactics
                 );
+        boolean extraTime = matchImportance.extraTimePossible() && homeGoals == awayGoals;
+        boolean homeRedCard = hasRedCard(generatedEvents, homeSquad);
+        boolean awayRedCard = hasRedCard(generatedEvents, awaySquad);
+        homeProfile = aiManagerService.adjustTacticsForMatchState(
+                homeSquad,
+                Integer.compare(homeGoals, awayGoals),
+                homeRedCard,
+                awayRedCard,
+                extraTime);
+        awayProfile = aiManagerService.adjustTacticsForMatchState(
+                awaySquad,
+                Integer.compare(awayGoals, homeGoals),
+                awayRedCard,
+                homeRedCard,
+                extraTime);
+        homeTactics = tacticalModifierService.calculateModifiers(homeProfile, awayProfile);
+        awayTactics = tacticalModifierService.calculateModifiers(awayProfile, homeProfile);
         List<MatchEventResponse> events = new ArrayList<>(generatedEvents.stream()
                 .filter(event -> !"SUBSTITUTION".equals(event.eventType()))
                 .toList());
-        events.addAll(aiManagerService.decideSubstitutions(homeSquad,
-                Integer.compare(homeGoals, awayGoals)));
-        events.addAll(aiManagerService.decideSubstitutions(awaySquad,
-                Integer.compare(awayGoals, homeGoals)));
+        events.addAll(aiManagerService.makeSubstitutions(
+                homeSquad,
+                Integer.compare(homeGoals, awayGoals),
+                events,
+                matchImportance,
+                extraTime));
+        events.addAll(aiManagerService.makeSubstitutions(
+                awaySquad,
+                Integer.compare(awayGoals, homeGoals),
+                events,
+                matchImportance,
+                extraTime));
         events.sort(Comparator.comparing(MatchEventResponse::minute));
 
         List<CommentaryResponse> commentary =
@@ -240,8 +271,26 @@ public class MatchSimulationService {
                 homeTactics,
                 awayTactics
         );
+        aiManagerService.planRotationForNextMatch(homeSquad);
+        aiManagerService.planRotationForNextMatch(awaySquad);
 
         return response;
+    }
+
+    private boolean hasRedCard(List<MatchEventResponse> events, Squad squad) {
+        Set<String> squadPlayers = squadPlayerNames(squad);
+        return events.stream()
+                .filter(event -> MatchEventType.RED_CARD.name().equals(event.eventType()))
+                .map(MatchEventResponse::player)
+                .anyMatch(squadPlayers::contains);
+    }
+
+    private Set<String> squadPlayerNames(Squad squad) {
+        Set<String> playerNames = new HashSet<>();
+        aiManagerService.selectMatchSquad(squad).stream()
+                .map(SquadPlayer::getPlayer)
+                .forEach(player -> playerNames.add(player.getName()));
+        return playerNames;
     }
 
     private Scoreline selectScoreline(

@@ -58,14 +58,52 @@ suspended and unavailable injured players. High fatigue, low fitness, and the
 more rotation-prone wide positions lower selection priority; goalkeepers rotate
 less aggressively.
 
-The manager assigns a captain and vice captain from the starting XI using age,
-overall rating, and confidence. Stronger squads favour a 4-3-3-style shape and
-possession/high-press tactics; underdogs favour a five-defender shape, a lower
-line, direct play, and counter attacks. Balanced opponents retain balanced
-formations and tactics.
+`PlayerEvaluationService` provides the common AI score used by lineup, bench,
+captain, and substitution decisions. It combines effective rating, base quality,
+form, confidence, morale, fitness, fatigue, position fit, experience, and
+availability without changing the stored base rating.
+
+The manager exposes reusable backend methods for selecting a match squad,
+starting eleven, bench, formation, captain, tactical profile, substitutions,
+rotation checks, and player evaluation. The bench selector keeps positional
+balance by preferring a goalkeeper, defenders, midfielders, and attackers
+instead of simply taking the next best attackers.
+
+Formation choice uses existing configured formations. Winger-heavy squads
+prefer 4-3-3 shapes, strong central-midfield squads prefer 4-2-3-1-style shapes,
+strong striker groups prefer 4-4-2-style shapes, and heavy underdogs prefer a
+five-defender shape when available. Name matching is used only as a tie-breaker
+among compatible formations.
+
+Tactical selection starts from opponent strength and then adjusts to squad
+traits. Fast attackers push the team toward direct counter attacks, creative
+midfields toward possession, strong defenses toward a higher line and offside
+trap, weak defenses toward a lower block, and high fitness toward pressing.
+Poor stamina reduces pressing intensity.
 
 After the simulated scoreline is known, tactical risk is adjusted for the match
 state. The manager then replaces the generic substitutions with AI decisions at
 60, 70, and 80 minutes. Leading teams trade attackers for fresh defenders or
 midfielders, drawing teams make fitness-led balanced changes, and losing teams
 introduce attackers while increasing press and attacking risk.
+
+Match importance is derived internally from the match round. Group-stage matches
+allow more rotation to protect tired players, knockout matches favour stronger
+available lineups, semi finals rotate only when needed, and finals select the
+strongest fit team. Recovered and suspension-cleared players automatically
+return to the available pool because availability is recalculated before every
+match.
+
+In-match AI now reacts to red cards and extra-time pressure. Teams leading a
+match reduce pressing, attacking width, and passing risk while enabling time
+wasting. Trailing teams increase press and risk. A team with a red card lowers
+its defensive line and pressing, while a team facing ten players increases
+attacking pressure. Tied knockout matches are treated as extra-time contexts:
+the AI can use an additional substitution, prefers fresher bench players, and
+backs away from high pressing when stamina is low.
+
+Substitution decisions protect booked players, players close to suspension, and
+exhausted players while preserving captains when possible. Replacement choice
+prefers tactical fit and same-line positional cover, then adapts to the score:
+more defensive while leading, more attacking while trailing, and balanced while
+drawing.
