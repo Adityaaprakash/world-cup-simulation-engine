@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +36,7 @@ public class KnockoutSimulationService {
     private final TournamentMatchSimulationService
             tournamentMatchSimulationService;
     private final MatchService matchService;
-    private final Random random = new Random();
+    private final PenaltyShootoutService penaltyShootoutService;
 
     @Transactional
     public KnockoutSimulationResponse simulate(Long tournamentId) {
@@ -235,7 +234,7 @@ public class KnockoutSimulationService {
             return;
         }
 
-        if (random.nextBoolean()) {
+        if (penaltyShootoutService.homeWinsShootout(match)) {
             match.setHomeScore(match.getHomeScore() + 1);
         } else {
             match.setAwayScore(match.getAwayScore() + 1);

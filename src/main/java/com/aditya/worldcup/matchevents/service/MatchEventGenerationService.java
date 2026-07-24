@@ -4,6 +4,9 @@ import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.matchevents.entity.MatchEventType;
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.service.PlayerStateService;
+import com.aditya.worldcup.ai.service.MatchImportance;
+import com.aditya.worldcup.simulation.service.MatchContext;
+import com.aditya.worldcup.simulation.service.MatchModifierService;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
@@ -21,6 +24,7 @@ public class MatchEventGenerationService {
 
     private final SquadPlayerRepository squadPlayerRepository;
     private final PlayerStateService playerStateService;
+    private final MatchModifierService matchModifierService;
 
     private final Random random = new Random();
 
@@ -56,6 +60,20 @@ public class MatchEventGenerationService {
             TacticalMatchModifiers homeTactics,
             TacticalMatchModifiers awayTactics
     ) {
+        return generateMatchEvents(homeSquadId, awaySquadId, homeGoals, awayGoals,
+                homeTactics, awayTactics, null, MatchImportance.GROUP_STAGE);
+    }
+
+    public List<MatchEventResponse> generateMatchEvents(
+            Long homeSquadId,
+            Long awaySquadId,
+            int homeGoals,
+            int awayGoals,
+            TacticalMatchModifiers homeTactics,
+            TacticalMatchModifiers awayTactics,
+            MatchContext context,
+            MatchImportance importance
+    ) {
 
         List<MatchEventResponse> events = new ArrayList<>();
 
@@ -89,22 +107,23 @@ public class MatchEventGenerationService {
             SquadPlayer scorer =
                     chooseRandom(homePlayers);
 
-            int minute =
-                    randomMatchMinute();
+            int minute = dynamicMatchMinute(true, homeGoals, awayGoals, context, importance);
 
-            events.add(
-                    createGoalEvent(
-                            scorer.getPlayer(),
-                            minute
-                    )
-            );
+            MatchEventResponse goalEvent = createGoalEvent(scorer.getPlayer(), minute);
+            events.add(goalEvent);
+            applyContextEvent(context, goalEvent, true, homeGoals, awayGoals, importance);
 
             addAssistEvent(
                     events,
                     homePlayers,
                     scorer,
                     minute,
-                    homeTactics
+                    homeTactics,
+                    context,
+                    true,
+                    homeGoals,
+                    awayGoals,
+                    importance
             );
         }
 
@@ -113,22 +132,23 @@ public class MatchEventGenerationService {
             SquadPlayer scorer =
                     chooseRandom(awayPlayers);
 
-            int minute =
-                    randomMatchMinute();
+            int minute = dynamicMatchMinute(false, homeGoals, awayGoals, context, importance);
 
-            events.add(
-                    createGoalEvent(
-                            scorer.getPlayer(),
-                            minute
-                    )
-            );
+            MatchEventResponse goalEvent = createGoalEvent(scorer.getPlayer(), minute);
+            events.add(goalEvent);
+            applyContextEvent(context, goalEvent, false, homeGoals, awayGoals, importance);
 
             addAssistEvent(
                     events,
                     awayPlayers,
                     scorer,
                     minute,
-                    awayTactics
+                    awayTactics,
+                    context,
+                    false,
+                    homeGoals,
+                    awayGoals,
+                    importance
             );
         }
 
@@ -137,7 +157,11 @@ public class MatchEventGenerationService {
                 homeSquadPlayers,
                 awaySquadPlayers,
                 homeTactics,
-                awayTactics
+                awayTactics,
+                context,
+                homeGoals,
+                awayGoals,
+                importance
         );
 
         addRedCard(
@@ -145,19 +169,31 @@ public class MatchEventGenerationService {
                 homeSquadPlayers,
                 awaySquadPlayers,
                 homeTactics,
-                awayTactics
+                awayTactics,
+                context,
+                homeGoals,
+                awayGoals,
+                importance
         );
 
         addPenalty(
                 events,
                 homeSquadPlayers,
-                awaySquadPlayers
+                awaySquadPlayers,
+                context,
+                homeGoals,
+                awayGoals,
+                importance
         );
 
         addOwnGoal(
                 events,
                 homePlayers,
-                awayPlayers
+                awayPlayers,
+                context,
+                homeGoals,
+                awayGoals,
+                importance
         );
 
         addSubstitutions(
@@ -202,11 +238,18 @@ public class MatchEventGenerationService {
             List<SquadPlayer> teammates,
             SquadPlayer scorer,
             int minute,
-            TacticalMatchModifiers tactics
+            TacticalMatchModifiers tactics,
+            MatchContext context,
+            boolean homeEvent,
+            int homeGoals,
+            int awayGoals,
+            MatchImportance importance
     ) {
 
         int assistChance = 75 + (int) Math.round(
                 (tactics.crossingModifier() + tactics.attackModifier()) * 8);
+        assistChance += context == null ? 0
+                : matchModifierService.probabilityAdjustment(context, homeEvent);
         if (teammates.size() < 2 || random.nextInt(100) >= assistChance) {
             return;
         }
@@ -229,14 +272,14 @@ public class MatchEventGenerationService {
                 ? assister.getName() + " delivers a cross for the assist."
                 : assister.getName() + " provides the assist.";
 
-        events.add(
-                new MatchEventResponse(
-                        minute,
-                        assister.getName(),
-                        MatchEventType.ASSIST.name(),
-                        description
-                )
+        MatchEventResponse assist = new MatchEventResponse(
+                minute,
+                assister.getName(),
+                MatchEventType.ASSIST.name(),
+                description
         );
+        events.add(assist);
+        applyContextEvent(context, assist, homeEvent, homeGoals, awayGoals, importance);
     }
 
     private void addYellowCards(
@@ -244,7 +287,11 @@ public class MatchEventGenerationService {
             List<SquadPlayer> homeSquadPlayers,
             List<SquadPlayer> awaySquadPlayers,
             TacticalMatchModifiers homeTactics,
-            TacticalMatchModifiers awayTactics
+            TacticalMatchModifiers awayTactics,
+            MatchContext context,
+            int homeGoals,
+            int awayGoals,
+            MatchImportance importance
     ) {
 
         List<SquadPlayer> players =
@@ -256,21 +303,24 @@ public class MatchEventGenerationService {
 
         int yellowCards = random.nextInt(6)
                 + disciplineIncrease(homeTactics)
-                + disciplineIncrease(awayTactics);
+                + disciplineIncrease(awayTactics)
+                + weatherMistakeCards(context);
 
         for (int i = 0; i < yellowCards; i++) {
 
-            Player player =
-                    chooseRandom(players).getPlayer();
+            SquadPlayer squadPlayer = chooseRandom(players);
+            Player player = squadPlayer.getPlayer();
 
-            events.add(
-                    new MatchEventResponse(
-                            randomMatchMinute(),
-                            player.getName(),
-                            MatchEventType.YELLOW_CARD.name(),
-                            player.getName() + " receives a yellow card."
-                    )
+            MatchEventResponse yellowCard = new MatchEventResponse(
+                    dynamicMatchMinute(isHomePlayer(squadPlayer, homeSquadPlayers),
+                            homeGoals, awayGoals, context, importance),
+                    player.getName(),
+                    MatchEventType.YELLOW_CARD.name(),
+                    player.getName() + " receives a yellow card."
             );
+            events.add(yellowCard);
+            applyContextEvent(context, yellowCard, isHomePlayer(squadPlayer, homeSquadPlayers),
+                    homeGoals, awayGoals, importance);
         }
     }
 
@@ -279,11 +329,16 @@ public class MatchEventGenerationService {
             List<SquadPlayer> homeSquadPlayers,
             List<SquadPlayer> awaySquadPlayers,
             TacticalMatchModifiers homeTactics,
-            TacticalMatchModifiers awayTactics
+            TacticalMatchModifiers awayTactics,
+            MatchContext context,
+            int homeGoals,
+            int awayGoals,
+            MatchImportance importance
     ) {
 
         int redCardChance = 12 + disciplineIncrease(homeTactics) * 2
-                + disciplineIncrease(awayTactics) * 2;
+                + disciplineIncrease(awayTactics) * 2
+                + weatherMistakeCards(context);
         if (random.nextInt(100) >= redCardChance) {
             return;
         }
@@ -295,26 +350,32 @@ public class MatchEventGenerationService {
             return;
         }
 
-        Player player =
-                chooseRandom(players).getPlayer();
+        SquadPlayer squadPlayer = chooseRandom(players);
+        Player player = squadPlayer.getPlayer();
 
-        events.add(
-                new MatchEventResponse(
-                        randomMatchMinute(),
-                        player.getName(),
-                        MatchEventType.RED_CARD.name(),
-                        player.getName() + " is sent off."
-                )
+        MatchEventResponse redCard = new MatchEventResponse(
+                dynamicMatchMinute(isHomePlayer(squadPlayer, homeSquadPlayers),
+                        homeGoals, awayGoals, context, importance),
+                player.getName(),
+                MatchEventType.RED_CARD.name(),
+                player.getName() + " is sent off."
         );
+        events.add(redCard);
+        applyContextEvent(context, redCard, isHomePlayer(squadPlayer, homeSquadPlayers),
+                homeGoals, awayGoals, importance);
     }
 
     private void addPenalty(
             List<MatchEventResponse> events,
             List<SquadPlayer> homeSquadPlayers,
-            List<SquadPlayer> awaySquadPlayers
+            List<SquadPlayer> awaySquadPlayers,
+            MatchContext context,
+            int homeGoals,
+            int awayGoals,
+            MatchImportance importance
     ) {
 
-        if (random.nextInt(100) >= 25) {
+        if (random.nextInt(100) >= 25 + weatherMistakeCards(context)) {
             return;
         }
 
@@ -325,49 +386,55 @@ public class MatchEventGenerationService {
             return;
         }
 
-        Player player =
-                chooseRandom(players).getPlayer();
+        SquadPlayer squadPlayer = chooseRandom(players);
+        Player player = squadPlayer.getPlayer();
 
         String description =
                 random.nextBoolean()
                         ? player.getName() + " converts from the penalty spot."
                         : player.getName() + " misses from the penalty spot.";
 
-        events.add(
-                new MatchEventResponse(
-                        randomMatchMinute(),
-                        player.getName(),
-                        MatchEventType.PENALTY.name(),
-                        description
-                )
+        boolean homeEvent = isHomePlayer(squadPlayer, homeSquadPlayers);
+        MatchEventResponse penalty = new MatchEventResponse(
+                dynamicMatchMinute(homeEvent, homeGoals, awayGoals, context, importance),
+                player.getName(),
+                MatchEventType.PENALTY.name(),
+                description
         );
+        events.add(penalty);
+        applyContextEvent(context, penalty, homeEvent, homeGoals, awayGoals, importance);
     }
 
     private void addOwnGoal(
             List<MatchEventResponse> events,
             List<SquadPlayer> homePlayers,
-            List<SquadPlayer> awayPlayers
+            List<SquadPlayer> awayPlayers,
+            MatchContext context,
+            int homeGoals,
+            int awayGoals,
+            MatchImportance importance
     ) {
 
-        if (random.nextInt(100) >= 5) {
+        if (random.nextInt(100) >= 5 + weatherMistakeCards(context)) {
             return;
         }
 
         List<SquadPlayer> players =
                 combinePlayers(homePlayers, awayPlayers);
 
-        Player player =
-                chooseRandom(players).getPlayer();
+        SquadPlayer squadPlayer = chooseRandom(players);
+        Player player = squadPlayer.getPlayer();
 
-        events.add(
-                new MatchEventResponse(
-                        randomMatchMinute(),
-                        player.getName(),
-                        MatchEventType.OWN_GOAL.name(),
-                        player.getName()
-                                + " scores an unfortunate own goal."
-                )
+        boolean homeEvent = isHomePlayer(squadPlayer, homePlayers);
+        MatchEventResponse ownGoal = new MatchEventResponse(
+                dynamicMatchMinute(homeEvent, homeGoals, awayGoals, context, importance),
+                player.getName(),
+                MatchEventType.OWN_GOAL.name(),
+                player.getName()
+                        + " scores an unfortunate own goal."
         );
+        events.add(ownGoal);
+        applyContextEvent(context, ownGoal, homeEvent, homeGoals, awayGoals, importance);
     }
 
     private void addSubstitutions(
@@ -466,11 +533,52 @@ public class MatchEventGenerationService {
         return random.nextInt(90) + 1;
     }
 
+    private int dynamicMatchMinute(boolean homeTeam,
+                                   int homeGoals,
+                                   int awayGoals,
+                                   MatchContext context,
+                                   MatchImportance importance) {
+        if (context == null) {
+            return randomMatchMinute();
+        }
+        return matchModifierService.goalMinute(homeTeam, homeGoals, awayGoals, context, importance);
+    }
+
     private int randomSubstitutionMinute() {
         return random.nextInt(36) + 55;
     }
 
     private int disciplineIncrease(TacticalMatchModifiers tactics) {
         return Math.max(0, (int) Math.round(tactics.disciplineModifier() * 2));
+    }
+
+    private void applyContextEvent(MatchContext context,
+                                   MatchEventResponse event,
+                                   boolean homeEvent,
+                                   int homeGoals,
+                                   int awayGoals,
+                                   MatchImportance importance) {
+        if (context == null) {
+            return;
+        }
+        matchModifierService.applyEvent(context, event, homeEvent, homeGoals, awayGoals, importance);
+    }
+
+    private int weatherMistakeCards(MatchContext context) {
+        if (context == null) {
+            return 0;
+        }
+        return switch (context.getWeather()) {
+            case RAIN -> 1;
+            case SNOW -> 2;
+            case HOT -> 1;
+            default -> 0;
+        };
+    }
+
+    private boolean isHomePlayer(SquadPlayer player, List<SquadPlayer> homePlayers) {
+        return homePlayers.stream()
+                .anyMatch(homePlayer -> homePlayer.getPlayer().getId()
+                        .equals(player.getPlayer().getId()));
     }
 }

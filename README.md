@@ -107,3 +107,40 @@ exhausted players while preserving captains when possible. Replacement choice
 prefers tactical fit and same-line positional cover, then adapts to the score:
 more defensive while leading, more attacking while trailing, and balanced while
 drawing.
+
+## Dynamic match engine
+
+Each simulation now creates a transient `MatchContext` that is never persisted.
+It tracks home and away momentum, pressure, attacking intent, defensive
+confidence, match intensity, current phase, consecutive attacks, extra-time
+state, and weather. Existing public simulation APIs still work; older calls use
+balanced defaults.
+
+Matches progress through phases: opening, settled play, end of first half,
+restart, substitution phase, closing phase, extra time, and penalty shootout.
+The active phase affects pressure, tempo, late knockout aggression, and
+extra-time conservatism.
+
+Events now chain into later events. Goals and assists increase momentum,
+weaken the opponent's defensive confidence, and shift pressure. Red cards
+reduce the sent-off team's control and defensive confidence while giving the
+opponent more momentum. Yellow cards reduce aggression slightly and remain a
+higher AI substitution priority. Substitutions reduce pressure by adding fresh
+legs.
+
+`MatchModifierService` applies momentum, pressure, game state, weather, home
+advantage, fatigue, and tactical context to match modifiers. Home advantage is
+small: an initial momentum nudge and slightly different pressure, not a hidden
+rating boost. Rain and snow increase mistakes and reduce passing quality, hot
+weather accelerates fatigue and lowers pressing, and clear weather is neutral.
+
+Context-adjusted tactical modifiers flow into scoreline selection, event
+generation, statistics, AI tactical reactions, substitutions, and player-state
+fatigue updates. Tied knockout matches use an extra-time context with lower
+tempo, higher fatigue, and more value placed on fresh substitutes.
+
+Knockout draws are resolved through a lightweight penalty shootout model rather
+than a random coin flip. Penalty order favours available outfield players with
+shooting quality, confidence, lower fatigue, and overall ability. Shootout
+probability accounts for goalkeeper confidence, shooter confidence, fatigue,
+pressure, home calm, weather, and sudden death.

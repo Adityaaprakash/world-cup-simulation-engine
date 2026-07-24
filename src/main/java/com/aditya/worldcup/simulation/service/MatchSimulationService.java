@@ -60,6 +60,7 @@ public class MatchSimulationService {
     private final TacticalProfileService tacticalProfileService;
     private final TacticalModifierService tacticalModifierService;
     private final AiManagerService aiManagerService;
+    private final MatchModifierService matchModifierService;
 
     private final Random random = new Random();
 
@@ -89,6 +90,7 @@ public class MatchSimulationService {
                 ));
 
         MatchImportance matchImportance = aiManagerService.determineMatchImportance(match);
+        MatchContext matchContext = matchModifierService.createContext(matchImportance);
         aiManagerService.prepareForMatch(homeSquad, awaySquad, matchImportance);
         aiManagerService.prepareForMatch(awaySquad, homeSquad, matchImportance);
 
@@ -137,6 +139,8 @@ public class MatchSimulationService {
                 .calculateModifiers(homeProfile, awayProfile);
         TacticalMatchModifiers awayTactics = tacticalModifierService
                 .calculateModifiers(awayProfile, homeProfile);
+        homeTactics = matchModifierService.applyContext(homeTactics, matchContext, true);
+        awayTactics = matchModifierService.applyContext(awayTactics, matchContext, false);
 
         Scoreline scoreline = selectScoreline(
                 homeSquad,
@@ -157,6 +161,8 @@ public class MatchSimulationService {
                 awaySquad, Integer.compare(awayGoals, homeGoals));
         homeTactics = tacticalModifierService.calculateModifiers(homeProfile, awayProfile);
         awayTactics = tacticalModifierService.calculateModifiers(awayProfile, homeProfile);
+        homeTactics = matchModifierService.applyContext(homeTactics, matchContext, true);
+        awayTactics = matchModifierService.applyContext(awayTactics, matchContext, false);
 
         String winner;
 
@@ -175,9 +181,12 @@ public class MatchSimulationService {
                         homeGoals,
                         awayGoals,
                         homeTactics,
-                        awayTactics
+                        awayTactics,
+                        matchContext,
+                        matchImportance
                 );
         boolean extraTime = matchImportance.extraTimePossible() && homeGoals == awayGoals;
+        matchContext.setExtraTime(extraTime);
         boolean homeRedCard = hasRedCard(generatedEvents, homeSquad);
         boolean awayRedCard = hasRedCard(generatedEvents, awaySquad);
         homeProfile = aiManagerService.adjustTacticsForMatchState(
@@ -194,6 +203,8 @@ public class MatchSimulationService {
                 extraTime);
         homeTactics = tacticalModifierService.calculateModifiers(homeProfile, awayProfile);
         awayTactics = tacticalModifierService.calculateModifiers(awayProfile, homeProfile);
+        homeTactics = matchModifierService.applyContext(homeTactics, matchContext, true);
+        awayTactics = matchModifierService.applyContext(awayTactics, matchContext, false);
         List<MatchEventResponse> events = new ArrayList<>(generatedEvents.stream()
                 .filter(event -> !"SUBSTITUTION".equals(event.eventType()))
                 .toList());
