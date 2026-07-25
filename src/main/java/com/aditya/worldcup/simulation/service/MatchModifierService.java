@@ -14,7 +14,18 @@ public class MatchModifierService {
     private final Random random = new Random();
 
     public MatchContext createContext(MatchImportance importance) {
+        return createContext(importance, 0.0, 0.0, 0.0);
+    }
+
+    public MatchContext createContext(MatchImportance importance,
+                                      double homeTournamentMomentum,
+                                      double awayTournamentMomentum,
+                                      double knockoutPressure) {
         MatchContext context = new MatchContext(selectWeather());
+        context.setHomeMomentum(context.getHomeMomentum() + homeTournamentMomentum * 0.35);
+        context.setAwayMomentum(context.getAwayMomentum() + awayTournamentMomentum * 0.35);
+        context.setHomePressure(context.getHomePressure() + knockoutPressure);
+        context.setAwayPressure(context.getAwayPressure() + knockoutPressure);
         if (importance.extraTimePossible()) {
             context.setMatchIntensity(1.08);
         }

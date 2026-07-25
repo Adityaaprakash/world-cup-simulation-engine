@@ -30,6 +30,7 @@ import com.aditya.worldcup.ai.service.AiManagerService;
 import com.aditya.worldcup.ai.service.MatchImportance;
 import com.aditya.worldcup.matchevents.entity.MatchEventType;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
+import com.aditya.worldcup.tournaments.service.TournamentIntelligenceService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class MatchSimulationService {
     private final TacticalModifierService tacticalModifierService;
     private final AiManagerService aiManagerService;
     private final MatchModifierService matchModifierService;
+    private final TournamentIntelligenceService tournamentIntelligenceService;
 
     private final Random random = new Random();
 
@@ -90,7 +92,7 @@ public class MatchSimulationService {
                 ));
 
         MatchImportance matchImportance = aiManagerService.determineMatchImportance(match);
-        MatchContext matchContext = matchModifierService.createContext(matchImportance);
+        MatchContext matchContext = createMatchContext(match, matchImportance);
         aiManagerService.prepareForMatch(homeSquad, awaySquad, matchImportance);
         aiManagerService.prepareForMatch(awaySquad, homeSquad, matchImportance);
 
@@ -294,6 +296,28 @@ public class MatchSimulationService {
                 .filter(event -> MatchEventType.RED_CARD.name().equals(event.eventType()))
                 .map(MatchEventResponse::player)
                 .anyMatch(squadPlayers::contains);
+    }
+
+    private MatchContext createMatchContext(Match match, MatchImportance matchImportance) {
+        if (match == null || match.getTournament() == null) {
+            return matchModifierService.createContext(matchImportance);
+        }
+        Long tournamentId = match.getTournament().getId();
+        double homeMomentum = tournamentIntelligenceService.momentumForTeam(
+                tournamentId, match.getHomeTeam().getId());
+        double awayMomentum = tournamentIntelligenceService.momentumForTeam(
+                tournamentId, match.getAwayTeam().getId());
+        double pressure = match.getRound() == null ? 0.0 : switch (match.getRound()) {
+            case QUARTER_FINALS -> 0.12;
+            case SEMI_FINALS -> 0.2;
+            case FINAL -> 0.3;
+            default -> 0.0;
+        };
+        return matchModifierService.createContext(
+                matchImportance,
+                homeMomentum,
+                awayMomentum,
+                pressure);
     }
 
     private Set<String> squadPlayerNames(Squad squad) {

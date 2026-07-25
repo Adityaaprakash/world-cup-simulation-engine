@@ -144,3 +144,37 @@ than a random coin flip. Penalty order favours available outfield players with
 shooting quality, confidence, lower fatigue, and overall ability. Shootout
 probability accounts for goalkeeper confidence, shooter confidence, fatigue,
 pressure, home calm, weather, and sudden death.
+
+## Tournament intelligence
+
+Tournament intelligence rebuilds a transient `TournamentContext` from persisted
+fixtures, results, events, ratings, and statistics. The context is not stored in
+the database. It tracks the current stage, remaining fixtures, group or knockout
+state, favourites, dark horses, biggest upset, highest scoring team, best
+defensive team, streak leaders, team form, reputation, and tournament momentum.
+
+Team form is calculated separately from player form as a compact recent result
+string such as `WWDWL`. It feeds tournament momentum, which then flows into the
+dynamic match context before each tournament match. Upset wins, winning streaks,
+large victories, and knockout progress increase momentum; heavy defeats and
+loss streaks reduce it. Strong momentum gives a small future confidence lift
+through the existing player-state system.
+
+Teams are classified by reputation from tournament strength: favourite,
+contender, outsider, or underdog. Outsiders and underdogs with strong momentum
+or unbeaten runs become dark horses. Knockout matches add stage pressure,
+especially in quarterfinals, semifinals, finals, and shootouts.
+
+`MatchNarrativeService` produces deterministic narratives from saved match
+statistics and events, such as possession dominance without conversion, late
+pressure, clean-sheet control, high-scoring thrillers, and major upsets.
+
+Existing player awards continue to provide Golden Boot, Golden Ball, Golden
+Glove, Best Young Player, and Team of the Tournament. `TournamentTeamAwardsService`
+adds Best Attack, Best Defence, and Fair Play from persisted scores and match
+statistics.
+
+`TournamentSummaryService` assembles tournament summaries including biggest
+upset, most entertaining match, highest scoring match, top scorer, best
+goalkeeper, champion path, longest streak, total goals, completed matches,
+match narratives, and team awards.

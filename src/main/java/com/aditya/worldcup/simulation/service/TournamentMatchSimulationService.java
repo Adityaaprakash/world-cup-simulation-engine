@@ -10,6 +10,7 @@ import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.standings.service.StandingUpdateService;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
+import com.aditya.worldcup.tournaments.service.TournamentIntelligenceService;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class TournamentMatchSimulationService {
     private final SquadRepository squadRepository;
     private final MatchSimulationService matchSimulationService;
     private final StandingUpdateService standingUpdateService;
+    private final TournamentIntelligenceService tournamentIntelligenceService;
 
     @Transactional
     public TournamentMatchSimulationResponse simulate(
@@ -95,6 +97,7 @@ public class TournamentMatchSimulationService {
                     simulation.awayGoals()
             );
         }
+        tournamentIntelligenceService.applyCompletedMatchEffects(match);
 
         return new TournamentMatchSimulationResponse(
                 match.getId(),

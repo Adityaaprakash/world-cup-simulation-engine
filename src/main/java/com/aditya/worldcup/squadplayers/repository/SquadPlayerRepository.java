@@ -11,6 +11,8 @@ public interface SquadPlayerRepository extends JpaRepository<SquadPlayer, Long> 
 
     List<SquadPlayer> findBySquadIdAndStartingXiTrue(Long squadId);
 
+    List<SquadPlayer> findBySquadTeamId(Long teamId);
+
     boolean existsBySquadIdAndPlayerId(Long squadId, Long playerId);
 
     long countBySquadId(Long squadId);

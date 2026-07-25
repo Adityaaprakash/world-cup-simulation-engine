@@ -9,6 +9,7 @@ import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
+import com.aditya.worldcup.tournaments.service.TournamentIntelligenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class PenaltyShootoutService {
     private final SquadPlayerRepository squadPlayerRepository;
     private final PlayerStateService playerStateService;
     private final MatchModifierService matchModifierService;
+    private final TournamentIntelligenceService tournamentIntelligenceService;
     private final Random random = new Random();
 
     public boolean homeWinsShootout(Match match) {
@@ -34,7 +36,7 @@ public class PenaltyShootoutService {
             return random.nextBoolean();
         }
 
-        MatchContext context = new MatchContext(WeatherCondition.CLEAR);
+        MatchContext context = shootoutContext(match);
         context.setCurrentPhase(MatchPhase.PENALTY_SHOOTOUT);
         List<SquadPlayer> homeOrder = penaltyOrder(homeSquad.get());
         List<SquadPlayer> awayOrder = penaltyOrder(awaySquad.get());
@@ -66,6 +68,27 @@ public class PenaltyShootoutService {
             kick++;
         }
         return random.nextBoolean();
+    }
+
+    private MatchContext shootoutContext(Match match) {
+        if (match.getTournament() == null) {
+            return new MatchContext(WeatherCondition.CLEAR);
+        }
+        double homeMomentum = tournamentIntelligenceService.momentumForTeam(
+                match.getTournament().getId(), match.getHomeTeam().getId());
+        double awayMomentum = tournamentIntelligenceService.momentumForTeam(
+                match.getTournament().getId(), match.getAwayTeam().getId());
+        double pressure = match.getRound() == null ? 0.0 : switch (match.getRound()) {
+            case QUARTER_FINALS -> 0.12;
+            case SEMI_FINALS -> 0.2;
+            case FINAL -> 0.3;
+            default -> 0.0;
+        };
+        return matchModifierService.createContext(
+                com.aditya.worldcup.ai.service.MatchImportance.KNOCKOUT,
+                homeMomentum,
+                awayMomentum,
+                pressure);
     }
 
     private List<SquadPlayer> penaltyOrder(Squad squad) {
