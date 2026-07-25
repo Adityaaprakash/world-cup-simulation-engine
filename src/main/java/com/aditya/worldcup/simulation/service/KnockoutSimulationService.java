@@ -6,6 +6,7 @@ import com.aditya.worldcup.matches.entity.MatchRound;
 import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.matches.repository.MatchRepository;
 import com.aditya.worldcup.matches.service.MatchService;
+import com.aditya.worldcup.optimization.service.SimulationMetricsService;
 import com.aditya.worldcup.shared.exception.FixturesNotGeneratedException;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.simulation.dto.KnockoutSimulationResponse;
@@ -13,6 +14,7 @@ import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class KnockoutSimulationService {
 
     private static final List<MatchRound> KNOCKOUT_ROUNDS = List.of(
@@ -37,9 +40,11 @@ public class KnockoutSimulationService {
             tournamentMatchSimulationService;
     private final MatchService matchService;
     private final PenaltyShootoutService penaltyShootoutService;
+    private final SimulationMetricsService simulationMetricsService;
 
     @Transactional
     public KnockoutSimulationResponse simulate(Long tournamentId) {
+        long start = System.currentTimeMillis();
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new TournamentNotFoundException(
@@ -103,12 +108,19 @@ public class KnockoutSimulationService {
             }
         }
 
-        return new KnockoutSimulationResponse(
+        KnockoutSimulationResponse response = new KnockoutSimulationResponse(
                 tournamentId,
                 champion.getName(),
                 simulatedMatches,
                 countCompletedKnockoutMatches(tournamentId)
         );
+        long duration = System.currentTimeMillis() - start;
+        simulationMetricsService.recordExecutionTime("knockout-simulation", duration);
+        log.info("Knockout simulation completed: tournament={}, champion={}, durationMs={}",
+                tournamentId,
+                champion.getName(),
+                duration);
+        return response;
     }
 
     private List<Match> getRoundMatches(

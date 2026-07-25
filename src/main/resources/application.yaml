@@ -31,6 +31,14 @@ ml:
     base-url: http://localhost:8000
     timeout: 5000
 
+simulation:
+  optimization:
+    benchmark-iterations: 100
+    tournament-benchmark-iterations: 3
+    analytics-cache-duration-ms: 60000
+    cache-duration-ms: 60000
+    metrics-retention: 1000
+
 logging:
   level:
     org.springframework.security: DEBUG

@@ -4,6 +4,7 @@ import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.matches.entity.MatchRound;
 import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.matches.repository.MatchRepository;
+import com.aditya.worldcup.optimization.service.SimulationMetricsService;
 import com.aditya.worldcup.shared.exception.FixturesNotGeneratedException;
 import com.aditya.worldcup.shared.exception.GroupStageAlreadyCompletedException;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
@@ -11,6 +12,7 @@ import com.aditya.worldcup.simulation.dto.GroupStageSimulationResponse;
 import com.aditya.worldcup.standings.service.StandingService;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,15 +20,18 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GroupStageSimulationService {
 
     private final TournamentRepository tournamentRepository;
     private final MatchRepository matchRepository;
     private final TournamentMatchSimulationService tournamentMatchSimulationService;
     private final StandingService standingService;
+    private final SimulationMetricsService simulationMetricsService;
 
     @Transactional
     public GroupStageSimulationResponse simulate(Long tournamentId) {
+        long start = System.currentTimeMillis();
 
         if (!tournamentRepository.existsById(tournamentId)) {
             throw new TournamentNotFoundException(tournamentId);
@@ -61,11 +66,18 @@ public class GroupStageSimulationService {
                 .filter(match -> match.getStatus() == MatchStatus.FINISHED)
                 .count();
 
-        return new GroupStageSimulationResponse(
+        GroupStageSimulationResponse response = new GroupStageSimulationResponse(
                 tournamentId,
                 remainingMatches.size(),
                 completedMatches,
                 standingService.getStandings(tournamentId)
         );
+        long duration = System.currentTimeMillis() - start;
+        simulationMetricsService.recordExecutionTime("group-stage-simulation", duration);
+        log.info("Group stage simulation completed: tournament={}, matchesSimulated={}, durationMs={}",
+                tournamentId,
+                remainingMatches.size(),
+                duration);
+        return response;
     }
 }

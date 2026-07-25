@@ -35,10 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -49,8 +49,7 @@ public class MatchSimulationService {
     private final SquadRepository squadRepository;
     private final SquadPlayerService squadPlayerService;
     private final MatchEventGenerationService matchEventGenerationService;
-    private final MatchStatisticsGenerationService
-            matchStatisticsGenerationService;
+    private final MatchStatisticsGenerationService matchStatisticsGenerationService;
     private final PlayerRatingGenerationService playerRatingGenerationService;
     private final ManOfTheMatchService manOfTheMatchService;
     private final MatchCommentaryService matchCommentaryService;
@@ -63,6 +62,7 @@ public class MatchSimulationService {
     private final AiManagerService aiManagerService;
     private final MatchModifierService matchModifierService;
     private final TournamentIntelligenceService tournamentIntelligenceService;
+    private final com.aditya.worldcup.optimization.service.SimulationMetricsService simulationMetricsService;
 
     private final Random random = new Random();
 
@@ -76,6 +76,7 @@ public class MatchSimulationService {
             MatchSimulationRequest request,
             Match match
     ) {
+        long simulationStart = System.currentTimeMillis();
 
         Squad homeSquad = squadRepository.findById(
                 request.homeSquadId()
@@ -95,7 +96,6 @@ public class MatchSimulationService {
         MatchContext matchContext = createMatchContext(match, matchImportance);
         aiManagerService.prepareForMatch(homeSquad, awaySquad, matchImportance);
         aiManagerService.prepareForMatch(awaySquad, homeSquad, matchImportance);
-
         SquadReadyResponse homeReady =
                 squadPlayerService.getSquadReadyStatus(
                         homeSquad.getId()
@@ -286,6 +286,22 @@ public class MatchSimulationService {
         );
         aiManagerService.planRotationForNextMatch(homeSquad);
         aiManagerService.planRotationForNextMatch(awaySquad);
+        long duration = System.currentTimeMillis() - simulationStart;
+        boolean shootout = match != null
+                && matchImportance.extraTimePossible()
+                && homeGoals == awayGoals;
+        simulationMetricsService.recordMatchSimulation(
+                duration,
+                response,
+                extraTime,
+                shootout
+        );
+        log.info("Match simulation completed: {} {}-{} {} in {} ms",
+                homeSquad.getName(),
+                homeGoals,
+                awayGoals,
+                awaySquad.getName(),
+                duration);
 
         return response;
     }

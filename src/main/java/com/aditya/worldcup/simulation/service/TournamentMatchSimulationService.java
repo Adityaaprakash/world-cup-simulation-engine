@@ -3,6 +3,7 @@ package com.aditya.worldcup.simulation.service;
 import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.matches.repository.MatchRepository;
+import com.aditya.worldcup.optimization.service.SimulationMetricsService;
 import com.aditya.worldcup.simulation.dto.MatchSimulationRequest;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
 import com.aditya.worldcup.simulation.dto.TournamentMatchSimulationResponse;
@@ -13,11 +14,13 @@ import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.tournaments.service.TournamentIntelligenceService;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TournamentMatchSimulationService {
 
     private final MatchRepository matchRepository;
@@ -26,12 +29,14 @@ public class TournamentMatchSimulationService {
     private final MatchSimulationService matchSimulationService;
     private final StandingUpdateService standingUpdateService;
     private final TournamentIntelligenceService tournamentIntelligenceService;
+    private final SimulationMetricsService simulationMetricsService;
 
     @Transactional
     public TournamentMatchSimulationResponse simulate(
             Long tournamentId,
             Long matchId
     ) {
+        long start = System.currentTimeMillis();
 
         if (!tournamentRepository.existsById(tournamentId)) {
             throw new TournamentNotFoundException(tournamentId);
@@ -98,6 +103,12 @@ public class TournamentMatchSimulationService {
             );
         }
         tournamentIntelligenceService.applyCompletedMatchEffects(match);
+        long duration = System.currentTimeMillis() - start;
+        simulationMetricsService.recordExecutionTime("tournament-match-simulation", duration);
+        log.info("Tournament match completed: tournament={}, match={}, durationMs={}",
+                tournamentId,
+                matchId,
+                duration);
 
         return new TournamentMatchSimulationResponse(
                 match.getId(),

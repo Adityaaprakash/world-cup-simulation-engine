@@ -178,3 +178,28 @@ statistics.
 upset, most entertaining match, highest scoring match, top scorer, best
 goalkeeper, champion path, longest streak, total goals, completed matches,
 match narratives, and team awards.
+
+## Performance and analytics
+
+Phase 9F adds backend-only optimization services without changing simulation
+APIs. `SimulationMetricsService` records completed match simulations, runtime
+statistics, goals, cards, substitutions, possession, xG, extra-time frequency,
+and penalty shootout frequency. Group-stage, knockout, and tournament-match
+simulation services also record operation timings.
+
+`BenchmarkService` can simulate configurable numbers of standalone matches and
+tournaments. Reports include average, median, minimum, and maximum runtime,
+goal distribution, average scoreline, and home win, away win, and draw
+percentages.
+
+`AnalyticsService` reports formation usage, formation win rate, average goals,
+average possession, shots, corners, cards, clean-sheet percentage, and
+tournament averages. `LeaderboardService` reports top scorers, assists, clean
+sheets, highest rated players, best attacking and defensive teams, and yellow
+and red card leaders.
+
+Analytics, leaderboards, tournament summaries, team awards, and tournament
+awards use short-lived in-memory caching controlled by
+`simulation.optimization.cache-duration-ms` and
+`simulation.optimization.analytics-cache-duration-ms`. Active simulations are
+not cached.
