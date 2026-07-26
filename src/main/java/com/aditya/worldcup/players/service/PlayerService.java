@@ -3,6 +3,8 @@ package com.aditya.worldcup.players.service;
 import com.aditya.worldcup.players.dto.PlayerResponse;
 import com.aditya.worldcup.players.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +26,17 @@ public class PlayerService {
                         player.getOverallRating()
                 ))
                 .toList();
+    }
+
+    public Page<PlayerResponse> getPlayerPage(Pageable pageable) {
+
+        return playerRepository.findAll(pageable)
+                .map(player -> new PlayerResponse(
+                        player.getId(),
+                        player.getName(),
+                        player.getPosition().name(),
+                        player.getOverallRating()
+                ));
     }
 
     public List<PlayerResponse> getPlayersByCountry(

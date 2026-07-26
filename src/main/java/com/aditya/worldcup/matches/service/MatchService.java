@@ -83,7 +83,7 @@ public class MatchService {
         validateResult(request);
 
         if (match.getStatus() == MatchStatus.FINISHED) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "Match has already been completed"
             );
         }

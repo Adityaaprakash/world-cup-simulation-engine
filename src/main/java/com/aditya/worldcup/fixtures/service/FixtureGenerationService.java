@@ -17,6 +17,7 @@ import com.aditya.worldcup.standings.service.StandingService;
 import com.aditya.worldcup.tournamentteams.entity.TournamentTeam;
 import com.aditya.worldcup.tournamentteams.repository.TournamentTeamRepository;
 import com.aditya.worldcup.tournaments.entity.Tournament;
+import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,11 @@ public class FixtureGenerationService {
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+
+        if (tournament.getStatus() != TournamentStatus.UPCOMING) {
+            throw new IllegalStateException(
+                    "Fixtures can only be generated before the tournament starts");
+        }
 
         if (matchRepository.existsByTournamentIdAndRound(
                 tournamentId,
@@ -77,8 +83,9 @@ public class FixtureGenerationService {
                             .sorted(Comparator.comparing(tt -> tt.getTeam().getName()))
                             .toList();
 
-            if (groupTeams.isEmpty()) {
-                throw new GroupsNotGeneratedException();
+            if (groupTeams.size() < 2) {
+                throw new IllegalStateException(
+                        "Each group must contain at least two teams before fixtures can be generated");
             }
 
             standingService.initializeStandings(

@@ -3,6 +3,7 @@ package com.aditya.worldcup.squadplayers.service;
 import com.aditya.worldcup.players.dto.PlayerResponse;
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.repository.PlayerRepository;
+import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squadplayers.dto.AddPlayerRequest;
 import com.aditya.worldcup.squadplayers.dto.StartingXiRequest;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
@@ -13,6 +14,7 @@ import com.aditya.worldcup.users.entity.User;
 import com.aditya.worldcup.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import com.aditya.worldcup.squadplayers.dto.CaptainRequest;
 import com.aditya.worldcup.squadplayers.dto.PositionAssignmentRequest;
@@ -21,6 +23,8 @@ import com.aditya.worldcup.squadplayers.dto.LineupValidationResponse;
 import com.aditya.worldcup.squadplayers.dto.SquadReadyResponse;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +34,7 @@ public class SquadPlayerService {
     private final SquadRepository squadRepository;
     private final PlayerRepository playerRepository;
     private final UserRepository userRepository;
+    private final PlayerStateService playerStateService;
 
     public void addPlayer(
             Long squadId,
@@ -48,7 +53,7 @@ public class SquadPlayerService {
                         new RuntimeException("Squad not found"));
 
         if (!squad.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Not your squad");
+            throw new AccessDeniedException("Not your squad");
         }
 
         Player player = playerRepository.findById(request.playerId())
@@ -65,12 +70,12 @@ public class SquadPlayerService {
                 squadId,
                 player.getId())) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Player already exists in squad");
         }
 
         if (squadPlayerRepository.countBySquadId(squadId) >= 26) {
-            throw new RuntimeException(
+            throw new IllegalStateException(
                     "Squad already contains 26 players");
         }
 
@@ -115,7 +120,7 @@ public class SquadPlayerService {
                         new RuntimeException("Squad not found"));
 
         if (!squad.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Not your squad");
+            throw new AccessDeniedException("Not your squad");
         }
 
         SquadPlayer squadPlayer =
@@ -147,7 +152,7 @@ public class SquadPlayerService {
                         new RuntimeException("Squad not found"));
 
         if (!squad.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Not your squad");
+            throw new AccessDeniedException("Not your squad");
         }
 
         List<SquadPlayer> squadPlayers =
@@ -194,7 +199,7 @@ public class SquadPlayerService {
                         new RuntimeException("Squad not found"));
 
         if (!squad.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Not your squad");
+            throw new AccessDeniedException("Not your squad");
         }
 
         SquadPlayer squadPlayer =
@@ -232,7 +237,7 @@ public class SquadPlayerService {
                         new RuntimeException("Squad not found"));
 
         if (!squad.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Not your squad");
+            throw new AccessDeniedException("Not your squad");
         }
 
         if (request.playerIds() == null ||
@@ -240,6 +245,12 @@ public class SquadPlayerService {
 
             throw new RuntimeException(
                     "Starting XI must contain exactly 11 players");
+        }
+
+        Set<Long> uniquePlayerIds = new HashSet<>(request.playerIds());
+        if (uniquePlayerIds.size() != request.playerIds().size()) {
+            throw new IllegalArgumentException(
+                    "Starting XI cannot contain duplicate players");
         }
 
         List<SquadPlayer> squadPlayers =
@@ -254,6 +265,16 @@ public class SquadPlayerService {
             if (!exists) {
                 throw new RuntimeException(
                         "Player does not belong to squad");
+            }
+        }
+
+        for (SquadPlayer squadPlayer : squadPlayers) {
+            if (uniquePlayerIds.contains(squadPlayer.getPlayer().getId())
+                    && !playerStateService.isAvailable(
+                    playerStateService.getOrCreateState(
+                            squadPlayer.getPlayer()))) {
+                throw new IllegalStateException(
+                        "Unavailable players cannot be selected");
             }
         }
 

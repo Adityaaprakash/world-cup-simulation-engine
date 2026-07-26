@@ -11,6 +11,8 @@ import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.standings.service.StandingUpdateService;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
+import com.aditya.worldcup.tournaments.entity.Tournament;
+import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.service.TournamentIntelligenceService;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +40,12 @@ public class TournamentMatchSimulationService {
     ) {
         long start = System.currentTimeMillis();
 
-        if (!tournamentRepository.existsById(tournamentId)) {
-            throw new TournamentNotFoundException(tournamentId);
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+
+        if (tournament.getStatus() == TournamentStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Completed tournament cannot be simulated");
         }
 
         Match match = matchRepository.findById(matchId)
@@ -55,7 +61,7 @@ public class TournamentMatchSimulationService {
         }
 
         if (match.getStatus() == MatchStatus.FINISHED) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "Match has already been completed"
             );
         }
@@ -94,6 +100,11 @@ public class TournamentMatchSimulationService {
                         ),
                         match
                 );
+
+        if (tournament.getStatus() == TournamentStatus.UPCOMING) {
+            tournament.setStatus(TournamentStatus.IN_PROGRESS);
+            tournamentRepository.save(tournament);
+        }
 
         if (match.getGroup() != null) {
             standingUpdateService.updateStandings(

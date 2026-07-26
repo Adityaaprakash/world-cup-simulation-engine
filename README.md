@@ -203,3 +203,35 @@ awards use short-lived in-memory caching controlled by
 `simulation.optimization.cache-duration-ms` and
 `simulation.optimization.analytics-cache-duration-ms`. Active simulations are
 not cached.
+
+## API hardening and production readiness
+
+Phase 9G standardizes REST error handling and validation across the backend.
+Validation failures, business conflicts, authentication failures, and access
+denials return a consistent JSON error payload with `timestamp`, `status`,
+`error`, `message`, and `path`. Request DTOs and path variables use Jakarta
+Validation for required values, positive identifiers, bounded text, valid
+scores, lineup size, and supported position slots.
+
+Security remains stateless JWT-based authentication. Public routes are limited
+to authentication, health checks, and OpenAPI documentation. Application APIs
+remain authenticated by default, and operational optimization endpoints such as
+metrics, benchmark execution, and cache clearing require the existing `ADMIN`
+role.
+
+OpenAPI documentation is exposed through springdoc at `/v3/api-docs` and
+Swagger UI at `/swagger-ui.html`. Controllers include tags, endpoint summaries,
+response descriptions, and parameter descriptions so clients can discover the
+existing API without changing endpoint URLs.
+
+Existing list endpoints keep their legacy array responses for backward
+compatibility. Additive pageable endpoints are available for large read
+collections at `/api/tournaments/page`, `/api/teams/page`, and
+`/api/players/page`, supporting Spring `Pageable` and sort query parameters.
+
+Lifecycle validation prevents duplicate tournaments for the same name and year,
+group or fixture generation after a tournament has started, knockout generation
+before all group-stage matches are complete, replaying completed matches, and
+simulating completed tournaments. The health endpoint at `/api/health` returns
+a lightweight status payload, while actuator health exposure is configured for
+non-sensitive health/info access.

@@ -7,6 +7,8 @@ import com.aditya.worldcup.teams.dto.TeamResponse;
 import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.teams.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +30,16 @@ public class TeamService {
                         team.getOverallRating()
                 ))
                 .toList();
+    }
+
+    public Page<TeamResponse> getTeamPage(Pageable pageable) {
+
+        return teamRepository.findAll(pageable)
+                .map(team -> new TeamResponse(
+                        team.getId(),
+                        team.getName(),
+                        team.getOverallRating()
+                ));
     }
 
     public TeamResponse getTeam(Long id) {

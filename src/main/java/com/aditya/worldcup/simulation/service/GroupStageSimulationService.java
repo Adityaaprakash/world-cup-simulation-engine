@@ -10,6 +10,8 @@ import com.aditya.worldcup.shared.exception.GroupStageAlreadyCompletedException;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.simulation.dto.GroupStageSimulationResponse;
 import com.aditya.worldcup.standings.service.StandingService;
+import com.aditya.worldcup.tournaments.entity.Tournament;
+import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +35,17 @@ public class GroupStageSimulationService {
     public GroupStageSimulationResponse simulate(Long tournamentId) {
         long start = System.currentTimeMillis();
 
-        if (!tournamentRepository.existsById(tournamentId)) {
-            throw new TournamentNotFoundException(tournamentId);
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+
+        if (tournament.getStatus() == TournamentStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Completed tournament cannot be simulated");
+        }
+
+        if (tournament.getStatus() == TournamentStatus.UPCOMING) {
+            tournament.setStatus(TournamentStatus.IN_PROGRESS);
+            tournamentRepository.save(tournament);
         }
 
         List<Match> groupStageMatches =

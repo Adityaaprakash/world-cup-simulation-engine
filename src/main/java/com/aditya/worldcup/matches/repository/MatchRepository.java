@@ -2,6 +2,7 @@ package com.aditya.worldcup.matches.repository;
 
 import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.matches.entity.MatchRound;
+import com.aditya.worldcup.matches.entity.MatchStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +22,12 @@ public interface MatchRepository
     boolean existsByTournamentIdAndRound(
             Long tournamentId,
             MatchRound round
+    );
+
+    boolean existsByTournamentIdAndRoundAndStatusNot(
+            Long tournamentId,
+            MatchRound round,
+            MatchStatus status
     );
 
     @Query("SELECT m FROM Match m WHERE m.status = com.aditya.worldcup.matches.entity.MatchStatus.FINISHED ORDER BY m.matchDate DESC, m.id DESC")

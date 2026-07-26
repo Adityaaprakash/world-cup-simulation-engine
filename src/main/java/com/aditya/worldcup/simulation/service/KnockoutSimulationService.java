@@ -12,6 +12,7 @@ import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.simulation.dto.KnockoutSimulationResponse;
 import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.tournaments.entity.Tournament;
+import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,16 @@ public class KnockoutSimulationService {
                 .orElseThrow(() -> new TournamentNotFoundException(
                         tournamentId
                 ));
+
+        if (tournament.getStatus() == TournamentStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Completed tournament cannot be simulated");
+        }
+
+        if (tournament.getStatus() == TournamentStatus.UPCOMING) {
+            tournament.setStatus(TournamentStatus.IN_PROGRESS);
+            tournamentRepository.save(tournament);
+        }
 
         if (!matchRepository.existsByTournamentIdAndRound(
                 tournamentId,
@@ -114,6 +125,9 @@ public class KnockoutSimulationService {
                 simulatedMatches,
                 countCompletedKnockoutMatches(tournamentId)
         );
+        tournament.setStatus(TournamentStatus.COMPLETED);
+        tournamentRepository.save(tournament);
+
         long duration = System.currentTimeMillis() - start;
         simulationMetricsService.recordExecutionTime("knockout-simulation", duration);
         log.info("Knockout simulation completed: tournament={}, champion={}, durationMs={}",

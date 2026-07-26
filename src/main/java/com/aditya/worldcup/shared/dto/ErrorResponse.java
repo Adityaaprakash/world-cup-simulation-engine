@@ -10,7 +10,18 @@ public record ErrorResponse(
 
         String error,
 
-        String message
+        String message,
+
+        String path
 
 ) {
+
+    public ErrorResponse(
+            LocalDateTime timestamp,
+            int status,
+            String error,
+            String message
+    ) {
+        this(timestamp, status, error, message, null);
+    }
 }

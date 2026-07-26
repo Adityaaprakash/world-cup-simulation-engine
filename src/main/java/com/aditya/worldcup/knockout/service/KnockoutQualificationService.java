@@ -52,6 +52,14 @@ public class KnockoutQualificationService {
             throw new FixturesNotGeneratedException();
         }
 
+        if (matchRepository.existsByTournamentIdAndRoundAndStatusNot(
+                tournamentId,
+                MatchRound.GROUP_STAGE,
+                MatchStatus.FINISHED)) {
+            throw new IllegalStateException(
+                    "Group stage must be completed before knockout fixtures are generated");
+        }
+
         if (matchRepository.existsByTournamentIdAndRound(
                 tournamentId,
                 MatchRound.ROUND_OF_16)) {

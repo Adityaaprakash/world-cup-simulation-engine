@@ -7,6 +7,7 @@ import com.aditya.worldcup.shared.exception.GroupsAlreadyGeneratedException;
 import com.aditya.worldcup.shared.exception.NoRegisteredTeamsException;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
 import com.aditya.worldcup.tournaments.entity.Tournament;
+import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import com.aditya.worldcup.tournamentteams.entity.TournamentTeam;
 import com.aditya.worldcup.tournamentteams.repository.TournamentTeamRepository;
@@ -29,6 +30,11 @@ public class GroupService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() ->
                         new TournamentNotFoundException(tournamentId));
+
+        if (tournament.getStatus() != TournamentStatus.UPCOMING) {
+            throw new IllegalStateException(
+                    "Groups can only be generated before the tournament starts");
+        }
 
         if (!groupRepository.findByTournamentId(tournamentId).isEmpty()) {
             throw new GroupsAlreadyGeneratedException();

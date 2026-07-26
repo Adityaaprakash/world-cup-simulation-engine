@@ -2,13 +2,20 @@ package com.aditya.worldcup.shared.exception;
 
 import com.aditya.worldcup.auth.exception.EmailAlreadyExistsException;
 import com.aditya.worldcup.shared.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -16,19 +23,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse>
     handleEmailAlreadyExists(
-            EmailAlreadyExistsException ex) {
+            EmailAlreadyExistsException ex,
+            HttpServletRequest request) {
 
-        ErrorResponse response =
-                new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.CONFLICT.value(),
-                        HttpStatus.CONFLICT.getReasonPhrase(),
-                        ex.getMessage()
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(response);
+        return error(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -37,19 +35,10 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ErrorResponse>
     handleNotFound(
-            RuntimeException ex) {
+            RuntimeException ex,
+            HttpServletRequest request) {
 
-        ErrorResponse response =
-                new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.NOT_FOUND.value(),
-                        HttpStatus.NOT_FOUND.getReasonPhrase(),
-                        ex.getMessage()
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(response);
+        return error(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -61,19 +50,10 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ErrorResponse>
     handleConflict(
-            RuntimeException ex) {
+            RuntimeException ex,
+            HttpServletRequest request) {
 
-        ErrorResponse response =
-                new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.CONFLICT.value(),
-                        HttpStatus.CONFLICT.getReasonPhrase(),
-                        ex.getMessage()
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(response);
+        return error(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -84,55 +64,107 @@ public class GlobalExceptionHandler {
     })
     public ResponseEntity<ErrorResponse>
     handleBadRequest(
-            RuntimeException ex) {
+            RuntimeException ex,
+            HttpServletRequest request) {
 
-        ErrorResponse response =
-                new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.BAD_REQUEST.value(),
-                        HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                        ex.getMessage()
-                );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse>
     handleDataIntegrityViolation(
-            DataIntegrityViolationException ex) {
+            DataIntegrityViolationException ex,
+            HttpServletRequest request) {
 
-        ErrorResponse response =
-                new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.CONFLICT.value(),
-                        HttpStatus.CONFLICT.getReasonPhrase(),
-                        getRootMessage(ex)
-                );
+        return error(HttpStatus.CONFLICT, getRootMessage(ex), request);
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(response);
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse>
+    handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
+
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(this::fieldErrorMessage)
+                .collect(Collectors.joining("; "));
+
+        return error(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse>
+    handleConstraintViolation(
+            ConstraintViolationException ex,
+            HttpServletRequest request) {
+
+        String message = ex.getConstraintViolations()
+                .stream()
+                .map(violation -> violation.getPropertyPath()
+                        + ": " + violation.getMessage())
+                .collect(Collectors.joining("; "));
+
+        return error(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse>
+    handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        return error(HttpStatus.FORBIDDEN, "Access denied", request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse>
+    handleAuthentication(
+            AuthenticationException ex,
+            HttpServletRequest request) {
+
+        return error(HttpStatus.UNAUTHORIZED, "Authentication required", request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse>
+    handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request) {
+
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse>
+    handleIllegalState(
+            IllegalStateException ex,
+            HttpServletRequest request) {
+
+        return error(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse>
     handleRuntimeException(
-            RuntimeException ex) {
+            RuntimeException ex,
+            HttpServletRequest request) {
 
-        ErrorResponse response =
-                new ErrorResponse(
-                        LocalDateTime.now(),
-                        HttpStatus.BAD_REQUEST.value(),
-                        HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                        ex.getMessage()
-                );
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse>
+    handleGenericException(
+            Exception ex,
+            HttpServletRequest request) {
+
+        return error(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Unexpected server error",
+                request
+        );
     }
 
     private String getRootMessage(Throwable throwable) {
@@ -144,5 +176,30 @@ public class GlobalExceptionHandler {
         }
 
         return root.getMessage();
+    }
+
+    private String fieldErrorMessage(FieldError error) {
+
+        return error.getField() + ": " + error.getDefaultMessage();
+    }
+
+    private ResponseEntity<ErrorResponse> error(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request
+    ) {
+
+        ErrorResponse response =
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        message,
+                        request.getRequestURI()
+                );
+
+        return ResponseEntity
+                .status(status)
+                .body(response);
     }
 }
