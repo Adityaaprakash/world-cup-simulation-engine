@@ -48,6 +48,16 @@ simulation:
     cache-duration-ms: 60000
     metrics-retention: 1000
 
+manager:
+  progression:
+    win-experience: 30
+    draw-experience: 10
+    knockout-experience: 40
+    final-experience: 100
+    tournament-victory-experience: 250
+    award-experience: 25
+    experience-per-level: 100
+
 logging:
   level:
     org.springframework.security: DEBUG

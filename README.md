@@ -235,3 +235,34 @@ before all group-stage matches are complete, replaying completed matches, and
 simulating completed tournaments. The health endpoint at `/api/health` returns
 a lightweight status payload, while actuator health exposure is configured for
 non-sensitive health/info access.
+
+## Manager career core
+
+Phase 9H-1 adds persistent manager careers without changing tournament
+simulation inputs. A manager career is created lazily for the authenticated
+user when `/api/managers/me`, `/api/managers/me/statistics`, or
+`/api/managers/me/history` is requested, or when that user's squad manages a
+completed tournament match. The manager profile stores username, display name,
+nationality, favourite formation, favourite tactical profile, coaching style,
+reputation, experience points, level, and timestamps.
+
+Career statistics are persisted separately from the manager profile. They track
+tournaments managed, matches managed, wins, draws, losses, goals scored, goals
+conceded, clean sheets, trophies won, finals reached, and semifinals reached.
+Manual match completion and simulated tournament matches update match-level
+career statistics through the existing completion flow. Knockout match career
+stats are recorded after existing penalty/shootout resolution so the stored
+result matches the persisted score.
+
+Career history is written when a tournament is completed. Each managed team
+entry records the tournament, team, finishing position, wins, losses, goals
+scored, goals conceded, trophies, and completion date. Duplicate history rows
+for the same manager, tournament, and team are prevented.
+
+Manager progression is handled by `CareerProgressionService`. Managers gain
+configurable experience for match wins, draws, reaching the knockout phase,
+reaching a final, winning a tournament, and future award hooks. Level is derived
+from total experience, and reputation automatically advances through
+`AMATEUR`, `PROFESSIONAL`, `ELITE`, `WORLD_CLASS`, and `LEGENDARY` according to
+level. XP values are configured under `manager.progression` in
+`application.yaml`.

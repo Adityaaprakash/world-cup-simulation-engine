@@ -1,8 +1,10 @@
 package com.aditya.worldcup.simulation.service;
 
 import com.aditya.worldcup.matches.entity.Match;
+import com.aditya.worldcup.matches.entity.MatchRound;
 import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.matches.repository.MatchRepository;
+import com.aditya.worldcup.managers.service.CareerStatisticsService;
 import com.aditya.worldcup.optimization.service.SimulationMetricsService;
 import com.aditya.worldcup.simulation.dto.MatchSimulationRequest;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
@@ -32,6 +34,7 @@ public class TournamentMatchSimulationService {
     private final StandingUpdateService standingUpdateService;
     private final TournamentIntelligenceService tournamentIntelligenceService;
     private final SimulationMetricsService simulationMetricsService;
+    private final CareerStatisticsService careerStatisticsService;
 
     @Transactional
     public TournamentMatchSimulationResponse simulate(
@@ -112,6 +115,9 @@ public class TournamentMatchSimulationService {
                     simulation.homeGoals(),
                     simulation.awayGoals()
             );
+        }
+        if (match.getRound() == MatchRound.GROUP_STAGE) {
+            careerStatisticsService.recordCompletedMatch(match);
         }
         tournamentIntelligenceService.applyCompletedMatchEffects(match);
         long duration = System.currentTimeMillis() - start;

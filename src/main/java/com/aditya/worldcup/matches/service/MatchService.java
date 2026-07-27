@@ -12,6 +12,7 @@ import com.aditya.worldcup.matchevents.entity.MatchEvent;
 import com.aditya.worldcup.matchevents.repository.MatchEventRepository;
 import com.aditya.worldcup.matchstatistics.entity.MatchStatistics;
 import com.aditya.worldcup.matchstatistics.repository.MatchStatisticsRepository;
+import com.aditya.worldcup.managers.service.CareerStatisticsService;
 import com.aditya.worldcup.simulation.dto.MatchStatisticsResponse;
 import com.aditya.worldcup.simulation.dto.PlayerMatchRatingResponse;
 import com.aditya.worldcup.simulation.dto.ManOfTheMatchResponse;
@@ -43,6 +44,7 @@ public class MatchService {
     private final MatchStatisticsRepository matchStatisticsRepository;
     private final PlayerMatchRatingRepository playerMatchRatingRepository;
     private final MatchCommentaryService matchCommentaryService;
+    private final CareerStatisticsService careerStatisticsService;
 
 
     public List<MatchResponse> getTournamentMatches(Long tournamentId) {
@@ -99,6 +101,7 @@ public class MatchService {
                 request.homeGoals(),
                 request.awayGoals()
         );
+        careerStatisticsService.recordCompletedMatch(savedMatch);
 
         return mapToResponse(savedMatch);
     }
