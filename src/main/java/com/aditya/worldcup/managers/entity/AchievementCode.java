@@ -1,0 +1,15 @@
+package com.aditya.worldcup.managers.entity;
+
+public enum AchievementCode {
+    FIRST_VICTORY,
+    FIRST_TROPHY,
+    WORLD_CHAMPION,
+    INVINCIBLE_TOURNAMENT,
+    DEFENSIVE_MASTER,
+    ATTACKING_GENIUS,
+    PENALTY_SPECIALIST,
+    GIANT_KILLER,
+    CLEAN_SHEET_MACHINE,
+    YOUTH_DEVELOPER,
+    TOURNAMENT_VETERAN
+}

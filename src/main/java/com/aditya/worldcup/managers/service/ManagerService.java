@@ -48,9 +48,17 @@ public class ManagerService {
     }
 
     @Transactional
-    public void addExperience(Manager manager, int experience) {
+    public ProgressionResult addExperience(Manager manager, int experience) {
+        ManagerReputation previousReputation = manager.getReputation();
+        int previousLevel = manager.getLevel();
+
         if (experience <= 0) {
-            return;
+            return new ProgressionResult(
+                    previousLevel,
+                    previousLevel,
+                    previousReputation,
+                    previousReputation
+            );
         }
 
         manager.setExperiencePoints(manager.getExperiencePoints() + experience);
@@ -60,6 +68,13 @@ public class ManagerService {
                 manager.getLevel()));
         manager.setUpdatedAt(LocalDateTime.now());
         managerRepository.save(manager);
+
+        return new ProgressionResult(
+                previousLevel,
+                manager.getLevel(),
+                previousReputation,
+                manager.getReputation()
+        );
     }
 
     public ManagerResponse mapToResponse(Manager manager) {
@@ -114,5 +129,21 @@ public class ManagerService {
         }
 
         return username.substring(0, atIndex);
+    }
+
+    public record ProgressionResult(
+            int previousLevel,
+            int currentLevel,
+            ManagerReputation previousReputation,
+            ManagerReputation currentReputation
+    ) {
+
+        public boolean levelChanged() {
+            return currentLevel > previousLevel;
+        }
+
+        public boolean reputationChanged() {
+            return currentReputation != previousReputation;
+        }
     }
 }

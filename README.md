@@ -266,3 +266,25 @@ from total experience, and reputation automatically advances through
 `AMATEUR`, `PROFESSIONAL`, `ELITE`, `WORLD_CLASS`, and `LEGENDARY` according to
 level. XP values are configured under `manager.progression` in
 `application.yaml`.
+
+Phase 9H-2 adds persistent achievements, badges, analytics, timeline events,
+and manager leaderboards. Achievements are unlocked automatically after career
+matches and completed tournaments. Examples include First Victory, First
+Trophy, World Champion, Invincible Tournament, Defensive Master, Attacking
+Genius, Penalty Specialist, Giant Killer, Clean Sheet Machine, Youth Developer,
+and Tournament Veteran. Each achievement carries a badge tier from Bronze,
+Silver, Gold, Platinum, or Diamond.
+
+Career analytics are recalculated from existing persisted data instead of a
+separate simulation pipeline. The analytics snapshot includes win percentage,
+average goals scored and conceded, average possession from match statistics,
+favourite formation from squads, favourite tactical style from tactical
+profiles, inferred manager tactical profile, current most-used lineup, selected
+captain, trusted starters, and longest unbeaten streak.
+
+The manager timeline records chronological career events such as completed
+tournaments, trophies, level promotions, reputation upgrades, achievements, and
+milestones. Leaderboards expose the top managers by win rate, trophies, matches
+managed, unbeaten streak, and reputation. The additional career endpoints are
+`/api/managers/me/achievements`, `/api/managers/me/analytics`,
+`/api/managers/me/timeline`, and `/api/managers/leaderboards`.

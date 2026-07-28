@@ -146,10 +146,17 @@ public class CareerHistoryService {
         careerHistoryRepository.save(history);
         careerStatisticsService.recordCompletedTournamentTeam(
                 manager,
+                team,
+                tournament.getId(),
                 reachedKnockout,
                 reachedFinal,
                 reachedSemiFinal,
-                tournamentVictory
+                tournamentVictory,
+                record.losses() == 0,
+                record.wins(),
+                record.goalsScored(),
+                record.goalsConceded(),
+                knockoutWins(matches, team)
         );
     }
 
@@ -252,6 +259,13 @@ public class CareerHistoryService {
         return first != null
                 && second != null
                 && first.getId().equals(second.getId());
+    }
+
+    private int knockoutWins(List<Match> matches, Team team) {
+        return (int) matches.stream()
+                .filter(match -> match.getRound() != MatchRound.GROUP_STAGE)
+                .filter(match -> sameTeam(team, determineWinner(match)))
+                .count();
     }
 
     private CareerHistoryResponse mapToResponse(CareerHistory history) {

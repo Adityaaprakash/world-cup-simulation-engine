@@ -3,6 +3,7 @@ package com.aditya.worldcup.managers.service;
 import com.aditya.worldcup.managers.dto.CareerStatisticsResponse;
 import com.aditya.worldcup.managers.entity.CareerStatistics;
 import com.aditya.worldcup.managers.entity.Manager;
+import com.aditya.worldcup.managers.entity.TimelineEventType;
 import com.aditya.worldcup.managers.repository.CareerStatisticsRepository;
 import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.matches.entity.MatchStatus;
@@ -25,6 +26,9 @@ public class CareerStatisticsService {
     private final SquadRepository squadRepository;
     private final ManagerService managerService;
     private final CareerProgressionService careerProgressionService;
+    private final AchievementService achievementService;
+    private final CareerAnalyticsService careerAnalyticsService;
+    private final CareerTimelineService timelineService;
 
     @Transactional
     public CareerStatisticsResponse getCurrentStatistics(
@@ -62,10 +66,17 @@ public class CareerStatisticsService {
     @Transactional
     public void recordCompletedTournamentTeam(
             Manager manager,
+            Team team,
+            Long tournamentId,
             boolean reachedKnockout,
             boolean reachedFinal,
             boolean reachedSemiFinal,
-            boolean tournamentVictory
+            boolean tournamentVictory,
+            boolean invincible,
+            int tournamentWins,
+            int tournamentGoalsScored,
+            int tournamentGoalsConceded,
+            int knockoutWins
     ) {
         CareerStatistics statistics = getOrCreateStatistics(manager);
         statistics.setTournamentsManaged(statistics.getTournamentsManaged() + 1);
@@ -86,7 +97,8 @@ public class CareerStatisticsService {
         statistics.setUpdatedAt(LocalDateTime.now());
         careerStatisticsRepository.save(statistics);
 
-        managerService.addExperience(
+        ManagerService.ProgressionResult progression =
+                managerService.addExperience(
                 manager,
                 careerProgressionService.calculateExperience(
                         false,
@@ -97,6 +109,31 @@ public class CareerStatisticsService {
                         0
                 )
         );
+        recordProgressionTimeline(manager, progression);
+
+        timelineService.recordEvent(
+                manager,
+                tournamentVictory
+                        ? TimelineEventType.TROPHY
+                        : TimelineEventType.TOURNAMENT,
+                tournamentVictory
+                        ? "Tournament trophy won"
+                        : "Tournament completed",
+                team.getName() + " finished position updated with "
+                        + tournamentWins + " tournament wins.",
+                tournamentId,
+                team.getId()
+        );
+        achievementService.evaluateAfterTournament(
+                manager,
+                tournamentVictory,
+                invincible,
+                statistics.getTournamentsManaged(),
+                tournamentGoalsScored,
+                tournamentGoalsConceded,
+                knockoutWins
+        );
+        careerAnalyticsService.recalculate(manager);
     }
 
     private void recordTeamMatch(
@@ -137,7 +174,34 @@ public class CareerStatisticsService {
         statistics.setUpdatedAt(LocalDateTime.now());
         careerStatisticsRepository.save(statistics);
 
-        managerService.addExperience(
+        if (statistics.getMatchesManaged() == 1) {
+            timelineService.recordEvent(
+                    manager,
+                    TimelineEventType.MILESTONE,
+                    "First match managed",
+                    "Managed the first match of the career.",
+                    match.getTournament() == null
+                            ? null
+                            : match.getTournament().getId(),
+                    team.getId()
+            );
+        }
+
+        if (victory && statistics.getWins() == 1) {
+            timelineService.recordEvent(
+                    manager,
+                    TimelineEventType.MILESTONE,
+                    "First career win",
+                    "Recorded the first win of the career.",
+                    match.getTournament() == null
+                            ? null
+                            : match.getTournament().getId(),
+                    team.getId()
+            );
+        }
+
+        ManagerService.ProgressionResult progression =
+                managerService.addExperience(
                 manager,
                 careerProgressionService.calculateExperience(
                         victory,
@@ -148,6 +212,46 @@ public class CareerStatisticsService {
                         0
                 )
         );
+        recordProgressionTimeline(manager, progression);
+
+        achievementService.evaluateAfterMatch(
+                manager,
+                match,
+                team,
+                statistics.getWins(),
+                statistics.getCleanSheets(),
+                goalsFor,
+                goalsAgainst
+        );
+        careerAnalyticsService.recalculate(manager);
+    }
+
+    private void recordProgressionTimeline(
+            Manager manager,
+            ManagerService.ProgressionResult progression) {
+
+        if (progression.levelChanged()) {
+            timelineService.recordEvent(
+                    manager,
+                    TimelineEventType.PROMOTION,
+                    "Manager level increased",
+                    "Reached level " + progression.currentLevel() + ".",
+                    null,
+                    null
+            );
+        }
+
+        if (progression.reputationChanged()) {
+            timelineService.recordEvent(
+                    manager,
+                    TimelineEventType.REPUTATION_UPGRADE,
+                    "Reputation upgraded",
+                    "Reputation upgraded to "
+                            + progression.currentReputation() + ".",
+                    null,
+                    null
+            );
+        }
     }
 
     private CareerStatistics getOrCreateStatistics(Manager manager) {
