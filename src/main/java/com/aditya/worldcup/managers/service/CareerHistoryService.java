@@ -8,6 +8,7 @@ import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.matches.entity.MatchRound;
 import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.matches.repository.MatchRepository;
+import com.aditya.worldcup.saves.service.SaveGameService;
 import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.teams.entity.Team;
@@ -32,6 +33,7 @@ public class CareerHistoryService {
     private final SquadRepository squadRepository;
     private final ManagerService managerService;
     private final CareerStatisticsService careerStatisticsService;
+    private final SaveGameService saveGameService;
 
     @Transactional
     public List<CareerHistoryResponse> getCurrentHistory(
@@ -157,6 +159,13 @@ public class CareerHistoryService {
                 record.goalsScored(),
                 record.goalsConceded(),
                 knockoutWins(matches, team)
+        );
+        saveGameService.autosave(
+                manager,
+                tournament.getId(),
+                tournamentVictory
+                        ? "Autosave after trophy win"
+                        : "Autosave after tournament completion"
         );
     }
 

@@ -288,3 +288,30 @@ milestones. Leaderboards expose the top managers by win rate, trophies, matches
 managed, unbeaten streak, and reputation. The additional career endpoints are
 `/api/managers/me/achievements`, `/api/managers/me/analytics`,
 `/api/managers/me/timeline`, and `/api/managers/leaderboards`.
+
+## Career save system
+
+Phase 9I-1 adds persistent save slots for manager career metadata. Save slots do
+not serialize tournaments or replay simulation state. Instead, each slot stores
+metadata for the authenticated manager, including slot name and number, save
+type, current tournament reference, season, stage, total play time, manager
+level, reputation, tournaments played, trophies, current team, current
+tournament, progress percentage, latest save timestamp, and active/autosave
+flags.
+
+Manual saves use positive slot numbers and are unique per manager. Slot `0` is
+reserved for the manager's autosave, and autosave always overwrites that single
+autosave slot. Save ownership is validated through the manager linked to the
+authenticated user, tournament references are checked before saving, and active
+autosaves cannot be deleted accidentally.
+
+Autosaves are refreshed after completed tournaments, trophy wins, and major
+achievement unlocks. The save APIs are:
+
+- `GET /api/saves`
+- `GET /api/saves/{id}`
+- `POST /api/saves`
+- `PUT /api/saves/{id}`
+- `DELETE /api/saves/{id}`
+- `POST /api/saves/autosave`
+- `POST /api/saves/{id}/activate`

@@ -31,7 +31,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             TournamentNotFoundException.class,
-            TeamNotFoundException.class
+            TeamNotFoundException.class,
+            SaveSlotNotFoundException.class
     })
     public ResponseEntity<ErrorResponse>
     handleNotFound(
