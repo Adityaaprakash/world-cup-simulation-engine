@@ -1,9 +1,16 @@
 package com.aditya.worldcup.saves.controller;
 
 import com.aditya.worldcup.saves.dto.CreateSaveSlotRequest;
+import com.aditya.worldcup.saves.dto.ImportSaveRequest;
+import com.aditya.worldcup.saves.dto.ResumeSaveResponse;
+import com.aditya.worldcup.saves.dto.SaveExportResponse;
+import com.aditya.worldcup.saves.dto.SaveImportResponse;
 import com.aditya.worldcup.saves.dto.SaveSlotResponse;
 import com.aditya.worldcup.saves.dto.UpdateSaveSlotRequest;
+import com.aditya.worldcup.saves.service.SaveExportService;
 import com.aditya.worldcup.saves.service.SaveGameService;
+import com.aditya.worldcup.saves.service.SaveImportService;
+import com.aditya.worldcup.saves.service.SaveResumeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,6 +37,9 @@ import java.util.List;
 public class SaveGameController {
 
     private final SaveGameService saveGameService;
+    private final SaveExportService saveExportService;
+    private final SaveImportService saveImportService;
+    private final SaveResumeService saveResumeService;
 
     @GetMapping
     @Operation(summary = "List save slots", description = "Returns save slots owned by the authenticated manager.")
@@ -115,6 +125,30 @@ public class SaveGameController {
         return saveGameService.autosave(authentication);
     }
 
+    @PostMapping("/import")
+    @Operation(summary = "Import save", description = "Validates a JSON save export and creates a manual save slot for the authenticated manager.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Save imported"),
+            @ApiResponse(responseCode = "400", description = "Invalid save export"),
+            @ApiResponse(responseCode = "409", description = "Duplicate slot or manager conflict")
+    })
+    public ResponseEntity<SaveImportResponse> importSave(
+            @Valid @RequestBody ImportSaveRequest request,
+            Authentication authentication) {
+
+        SaveImportResponse response = saveImportService.importSave(
+                request,
+                authentication
+        );
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .replacePath("/api/saves/{id}")
+                .buildAndExpand(response.saveId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(response);
+    }
+
     @PostMapping("/{id}/activate")
     @Operation(summary = "Activate save slot", description = "Marks the selected save slot as active and deactivates other slots for the manager.")
     @ApiResponses({
@@ -127,5 +161,48 @@ public class SaveGameController {
             Authentication authentication) {
 
         return saveGameService.activateSave(id, authentication);
+    }
+
+    @PostMapping("/{id}/resume")
+    @Operation(summary = "Resume save slot", description = "Restores manager progression from the selected save and marks it active.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Save resumed"),
+            @ApiResponse(responseCode = "400", description = "Invalid save state"),
+            @ApiResponse(responseCode = "404", description = "Save slot not found")
+    })
+    public ResumeSaveResponse resumeSave(
+            @Parameter(description = "Save slot id")
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return saveResumeService.resumeSave(id, authentication);
+    }
+
+    @GetMapping("/{id}/export")
+    @Operation(summary = "Export save slot", description = "Exports a versioned JSON snapshot for the selected save slot.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Save export returned"),
+            @ApiResponse(responseCode = "404", description = "Save slot not found")
+    })
+    public SaveExportResponse exportSave(
+            @Parameter(description = "Save slot id")
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return saveExportService.exportSave(id, authentication);
+    }
+
+    @PostMapping("/{id}/backup")
+    @Operation(summary = "Create save backup metadata", description = "Marks the selected save slot with latest backup metadata.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Backup metadata refreshed"),
+            @ApiResponse(responseCode = "404", description = "Save slot not found")
+    })
+    public SaveSlotResponse backupSave(
+            @Parameter(description = "Save slot id")
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return saveGameService.createBackup(id, authentication);
     }
 }

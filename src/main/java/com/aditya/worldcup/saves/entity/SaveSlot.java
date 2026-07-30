@@ -55,8 +55,14 @@ public class SaveSlot {
     @Column(nullable = false)
     private Long totalPlayTime;
 
+    @Column(nullable = false, length = 20)
+    private String formatVersion;
+
     @Column(nullable = false)
     private Integer managerLevel;
+
+    @Column(nullable = false)
+    private Integer managerExperiencePoints;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -94,4 +100,13 @@ public class SaveSlot {
 
     @Column(nullable = false)
     private Boolean active;
+
+    @Column(nullable = false)
+    private Boolean backupAvailable;
+
+    @Column
+    private LocalDateTime backupCreatedAt;
+
+    @Column(length = 500)
+    private String backupDescription;
 }

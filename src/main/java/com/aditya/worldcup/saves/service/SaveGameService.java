@@ -35,6 +35,7 @@ public class SaveGameService {
 
     private static final int AUTOSAVE_SLOT_NUMBER = 0;
     private static final String AUTOSAVE_SLOT_NAME = "Autosave";
+    public static final String CURRENT_FORMAT_VERSION = "9I-2";
     private static final String DEFAULT_STAGE = "CAREER";
     private static final String UNKNOWN = "Unknown";
 
@@ -93,9 +94,11 @@ public class SaveGameService {
                 .currentSeason(defaultSeason(request.currentSeason(), now))
                 .currentStage(defaultStage(request.currentStage()))
                 .totalPlayTime(defaultPlayTime(request.totalPlayTime()))
+                .formatVersion(CURRENT_FORMAT_VERSION)
                 .createdAt(now)
                 .autosave(false)
                 .active(false)
+                .backupAvailable(false)
                 .build();
 
         refreshMetadata(saveSlot, now);
@@ -115,6 +118,8 @@ public class SaveGameService {
             throw new IllegalStateException(
                     "Autosave can only be overwritten through the autosave endpoint");
         }
+
+        markBackup(saveSlot, "Backup before manual overwrite");
 
         if (request.currentTournamentId() != null) {
             validateTournamentReference(request.currentTournamentId());
@@ -196,7 +201,12 @@ public class SaveGameService {
                         .createdAt(now)
                         .autosave(true)
                         .active(false)
+                        .backupAvailable(false)
                         .build());
+
+        if (saveSlot.getId() != null) {
+            markBackup(saveSlot, "Backup before autosave overwrite");
+        }
 
         saveSlot.setSlotName(AUTOSAVE_SLOT_NAME);
         saveSlot.setSlotNumber(AUTOSAVE_SLOT_NUMBER);
@@ -213,6 +223,18 @@ public class SaveGameService {
         refreshMetadata(saveSlot, now);
 
         return saveSlotRepository.save(saveSlot);
+    }
+
+    @Transactional
+    public SaveSlotResponse createBackup(
+            Long saveId,
+            Authentication authentication) {
+
+        Manager manager = managerService.getOrCreateManager(authentication);
+        SaveSlot saveSlot = getOwnedSave(saveId, manager);
+        markBackup(saveSlot, "Manual backup requested");
+        saveSlot.setUpdatedAt(LocalDateTime.now());
+        return mapToResponse(saveSlotRepository.save(saveSlot));
     }
 
     @Transactional
@@ -236,6 +258,14 @@ public class SaveGameService {
         return mapToResponse(saveSlotRepository.save(saveSlot));
     }
 
+    public SaveSlot getOwnedSaveSlot(Long saveId, Manager manager) {
+        return getOwnedSave(saveId, manager);
+    }
+
+    public SaveSlotResponse toResponse(SaveSlot saveSlot) {
+        return mapToResponse(saveSlot);
+    }
+
     private SaveSlot getOwnedSave(Long saveId, Manager manager) {
         return saveSlotRepository.findByIdAndManagerId(
                         saveId,
@@ -254,7 +284,9 @@ public class SaveGameService {
         Optional<Tournament> tournament = currentTournament(saveSlot);
 
         saveSlot.setManagerLevel(manager.getLevel());
+        saveSlot.setManagerExperiencePoints(manager.getExperiencePoints());
         saveSlot.setReputation(manager.getReputation());
+        saveSlot.setFormatVersion(CURRENT_FORMAT_VERSION);
         saveSlot.setTournamentsPlayed(statistics == null
                 ? 0
                 : statistics.getTournamentsManaged());
@@ -329,6 +361,15 @@ public class SaveGameService {
         return playTime == null ? 0L : playTime;
     }
 
+    private void markBackup(
+            SaveSlot saveSlot,
+            String description) {
+
+        saveSlot.setBackupAvailable(true);
+        saveSlot.setBackupCreatedAt(LocalDateTime.now());
+        saveSlot.setBackupDescription(description);
+    }
+
     private SaveSlotResponse mapToResponse(SaveSlot saveSlot) {
         return new SaveSlotResponse(
                 saveSlot.getId(),
@@ -340,7 +381,9 @@ public class SaveGameService {
                 saveSlot.getCurrentSeason(),
                 saveSlot.getCurrentStage(),
                 saveSlot.getTotalPlayTime(),
+                saveSlot.getFormatVersion(),
                 saveSlot.getManagerLevel(),
+                saveSlot.getManagerExperiencePoints(),
                 saveSlot.getReputation(),
                 saveSlot.getTournamentsPlayed(),
                 saveSlot.getTrophies(),
@@ -352,7 +395,10 @@ public class SaveGameService {
                 saveSlot.getUpdatedAt(),
                 saveSlot.getLastPlayedAt(),
                 saveSlot.getAutosave(),
-                saveSlot.getActive()
+                saveSlot.getActive(),
+                saveSlot.getBackupAvailable(),
+                saveSlot.getBackupCreatedAt(),
+                saveSlot.getBackupDescription()
         );
     }
 }

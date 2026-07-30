@@ -315,3 +315,25 @@ achievement unlocks. The save APIs are:
 - `DELETE /api/saves/{id}`
 - `POST /api/saves/autosave`
 - `POST /api/saves/{id}/activate`
+
+Phase 9I-2 extends save slots with a versioned resume/export/import workflow.
+Each save now records the current save format version, manager experience
+points, and latest backup metadata. Manual overwrites and autosave overwrites
+refresh backup metadata before replacing slot metadata, and backups can also be
+marked explicitly through `POST /api/saves/{id}/backup`.
+
+Resume is handled through `POST /api/saves/{id}/resume`. Resuming validates save
+ownership, save format compatibility, and the current tournament reference,
+then restores the manager's saved progression metadata and activates the slot.
+Tournament stage, squad selections, tactical profiles, and player states are
+resolved from the existing canonical repositories instead of a separate
+simulation copy.
+
+`GET /api/saves/{id}/export` returns a JSON save export containing the schema
+version, save metadata, manager profile, career statistics and history, active
+tournament state, squad selections, player states, and tactical settings.
+`POST /api/saves/import` validates the schema version, manager ownership,
+duplicate slot numbers, tournament references, player references, squad
+selections, and tactical team references before creating a manual save slot.
+Unsupported future save format versions are rejected instead of partially
+importing corrupted data.

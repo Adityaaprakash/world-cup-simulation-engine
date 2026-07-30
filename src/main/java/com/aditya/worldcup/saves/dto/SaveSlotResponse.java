@@ -15,7 +15,9 @@ public record SaveSlotResponse(
         Integer currentSeason,
         String currentStage,
         Long totalPlayTime,
+        String formatVersion,
         Integer managerLevel,
+        Integer managerExperiencePoints,
         ManagerReputation reputation,
         Integer tournamentsPlayed,
         Integer trophies,
@@ -27,6 +29,9 @@ public record SaveSlotResponse(
         LocalDateTime updatedAt,
         LocalDateTime lastPlayedAt,
         Boolean autosave,
-        Boolean active
+        Boolean active,
+        Boolean backupAvailable,
+        LocalDateTime backupCreatedAt,
+        String backupDescription
 ) {
 }
