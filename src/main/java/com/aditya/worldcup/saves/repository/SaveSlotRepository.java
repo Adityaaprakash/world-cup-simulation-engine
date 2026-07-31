@@ -2,6 +2,7 @@ package com.aditya.worldcup.saves.repository;
 
 import com.aditya.worldcup.saves.entity.SaveSlot;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,4 +28,11 @@ public interface SaveSlotRepository extends JpaRepository<SaveSlot, Long> {
             Long managerId,
             Integer slotNumber
     );
+
+    long countByAutosaveTrue();
+
+    long countByActiveTrue();
+
+    @Query("SELECT COUNT(DISTINCT s.manager.id) FROM SaveSlot s WHERE s.active = true")
+    long countActiveManagers();
 }

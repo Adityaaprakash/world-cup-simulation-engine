@@ -13,6 +13,7 @@ import java.util.List;
 public interface MatchEventRepository extends JpaRepository<MatchEvent, Long> {
     List<MatchEvent> findByMatchId(Long matchId);
     List<MatchEvent> findByMatchIdIn(List<Long> matchIds);
+    void deleteByMatchIdIn(List<Long> matchIds);
 
     @Query("SELECT e.player, COUNT(e) FROM MatchEvent e WHERE e.eventType = :eventType AND e.player IS NOT NULL GROUP BY e.player ORDER BY COUNT(e) DESC")
     List<Object[]> findTopPlayersByEventType(@Param("eventType") MatchEventType eventType, Pageable pageable);

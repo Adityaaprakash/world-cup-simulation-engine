@@ -337,3 +337,42 @@ duplicate slot numbers, tournament references, player references, squad
 selections, and tactical team references before creating a manual save slot.
 Unsupported future save format versions are rejected instead of partially
 importing corrupted data.
+
+## Administration core
+
+Phase 9J-1 adds backend-only administrator operations under `/api/admin`.
+Every admin endpoint is protected with `ROLE_ADMIN` through Spring Security
+method authorization, while the existing JWT authentication flow remains
+unchanged.
+
+The admin dashboard endpoint, `GET /api/admin/dashboard`, returns a single
+summary payload covering application version and server time, manager counts,
+tournament counts, career totals, achievement unlock totals, save-slot totals,
+autosave counts, active saves, Redis availability, and database connectivity.
+
+`GET /api/admin/health` returns a compact operational view with Redis status,
+database status, active save count, and active tournament count. Infrastructure
+checks reuse Actuator health information when available and fall back to direct
+database connectivity checks for the datasource.
+
+Tournament administration reuses the existing tournament service instead of
+duplicating tournament business logic. Admins can list tournaments, archive
+completed tournaments, reopen archived tournaments, reset tournament simulation
+state, and delete inactive tournaments:
+
+- `GET /api/admin/tournaments`
+- `PUT /api/admin/tournaments/{id}/archive`
+- `PUT /api/admin/tournaments/{id}/reopen`
+- `POST /api/admin/tournaments/{id}/reset`
+- `DELETE /api/admin/tournaments/{id}`
+
+Tournament reset returns the tournament to `UPCOMING`, clears match results,
+resets match status, removes generated match events/statistics/player ratings,
+and resets standings. Active tournaments cannot be deleted, completed
+tournaments must be archived before deletion, and archived tournaments must be
+reopened before reset.
+
+Admin tournament actions are persisted in `admin_audit_logs` with the admin
+username, action, entity type, entity id, and timestamp. The audit log is kept
+lightweight so future admin actions can be added without changing the core
+tournament flow.

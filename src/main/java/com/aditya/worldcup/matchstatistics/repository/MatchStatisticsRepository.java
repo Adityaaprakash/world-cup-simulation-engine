@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface MatchStatisticsRepository extends JpaRepository<MatchStatistics, Long> {
     Optional<MatchStatistics> findByMatchId(Long matchId);
     List<MatchStatistics> findByMatchIdIn(List<Long> matchIds);
+    void deleteByMatchIdIn(List<Long> matchIds);
 }
