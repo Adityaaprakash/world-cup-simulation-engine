@@ -376,3 +376,40 @@ Admin tournament actions are persisted in `admin_audit_logs` with the admin
 username, action, entity type, entity id, and timestamp. The audit log is kept
 lightweight so future admin actions can be added without changing the core
 tournament flow.
+
+## Football data management
+
+Phase 9J-2 extends `/api/admin` with administrator-only football dataset
+management. Player ratings can be updated individually or in a transactional
+bulk request. Bulk updates continue after invalid, duplicate, or unknown player
+entries and return updated and failed counts with structured validation
+messages. Player lifecycle actions support activation, deactivation, retirement,
+and restoration.
+
+National teams can be activated or deactivated, and administrators can update
+the linked country's FIFA ranking, a team's confederation, and manager. Squad
+refresh recalculates a team's overall rating from its active, non-retired
+national player pool and returns validation findings for persisted squads.
+
+`GET /api/admin/dataset/health` reports player and team status totals together
+with duplicate-player, invalid-rating, and invalid-squad findings. Dataset
+validation checks duplicate names within a national team, rating ranges,
+position, nationality, age, preferred foot, squad player references,
+national-team eligibility, duplicate squad entries, goalkeeper presence, empty
+squads, and the 26-player squad limit.
+
+Dataset actions are auditable through `admin_audit_logs`, including individual
+player updates and lifecycle changes, bulk updates, team changes, and squad
+refreshes. The data-management APIs are:
+
+- `GET /api/admin/dataset/health`
+- `PUT /api/admin/players/{id}`
+- `POST /api/admin/players/bulk-update`
+- `PUT /api/admin/players/{id}/activate`
+- `PUT /api/admin/players/{id}/deactivate`
+- `PUT /api/admin/players/{id}/retire`
+- `PUT /api/admin/players/{id}/restore`
+- `PUT /api/admin/teams/{id}`
+- `PUT /api/admin/teams/{id}/activate`
+- `PUT /api/admin/teams/{id}/deactivate`
+- `POST /api/admin/teams/{id}/refresh-squad`

@@ -57,4 +57,16 @@ public class Player {
 
     @Column(nullable = false)
     private Long marketValue;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean retired = false;
+
+    @Builder.Default
+    @Column(nullable = false, length = 10)
+    private String preferredFoot = "RIGHT";
 }

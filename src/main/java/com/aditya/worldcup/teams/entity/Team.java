@@ -32,4 +32,11 @@ public class Team {
 
     @Column(nullable = false)
     private Integer overallRating;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
+
+    @Column(length = 30)
+    private String confederation;
 }

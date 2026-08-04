@@ -1,10 +1,21 @@
 package com.aditya.worldcup.admin.controller;
 
 import com.aditya.worldcup.admin.dto.AdminHealthResponse;
+import com.aditya.worldcup.admin.dto.BulkPlayerUpdateRequest;
+import com.aditya.worldcup.admin.dto.BulkPlayerUpdateResponse;
 import com.aditya.worldcup.admin.dto.DashboardResponse;
+import com.aditya.worldcup.admin.dto.DatasetHealthResponse;
+import com.aditya.worldcup.admin.dto.PlayerUpdateRequest;
+import com.aditya.worldcup.admin.dto.TeamRefreshResponse;
+import com.aditya.worldcup.admin.dto.TeamUpdateRequest;
 import com.aditya.worldcup.admin.service.AdminDashboardService;
 import com.aditya.worldcup.admin.service.AdminHealthService;
+import com.aditya.worldcup.admin.service.AdminPlayerService;
+import com.aditya.worldcup.admin.service.AdminTeamService;
 import com.aditya.worldcup.admin.service.AdminTournamentService;
+import com.aditya.worldcup.admin.service.DatasetHealthService;
+import com.aditya.worldcup.players.dto.PlayerResponse;
+import com.aditya.worldcup.teams.dto.TeamResponse;
 import com.aditya.worldcup.tournaments.dto.TournamentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +43,9 @@ public class AdminController {
     private final AdminDashboardService adminDashboardService;
     private final AdminHealthService adminHealthService;
     private final AdminTournamentService adminTournamentService;
+    private final AdminPlayerService adminPlayerService;
+    private final AdminTeamService adminTeamService;
+    private final DatasetHealthService datasetHealthService;
 
     @GetMapping("/dashboard")
     @Operation(summary = "Get admin dashboard", description = "Returns a consolidated administrator dashboard with system, manager, tournament, career, save, and infrastructure metrics.")
@@ -45,6 +59,104 @@ public class AdminController {
     @ApiResponse(responseCode = "200", description = "Health summary returned")
     public AdminHealthResponse health() {
         return adminHealthService.healthSummary();
+    }
+
+    @GetMapping("/dataset/health")
+    @Operation(summary = "Get football dataset health", description = "Returns player and team status totals plus dataset validation findings.")
+    public DatasetHealthResponse datasetHealth() {
+        return datasetHealthService.health();
+    }
+
+    @PutMapping("/players/{id}")
+    @Operation(summary = "Update player ratings", description = "Updates one or more FIFA-style player ratings.")
+    public PlayerResponse updatePlayer(
+            @PathVariable @Positive Long id,
+            @RequestBody PlayerUpdateRequest request,
+            Authentication authentication) {
+
+        return adminPlayerService.updatePlayer(id, request, authentication);
+    }
+
+    @PostMapping("/players/bulk-update")
+    @Operation(summary = "Bulk update player ratings", description = "Processes every update and returns validation failures without abandoning valid updates.")
+    public BulkPlayerUpdateResponse bulkUpdatePlayers(
+            @RequestBody BulkPlayerUpdateRequest request,
+            Authentication authentication) {
+
+        return adminPlayerService.bulkUpdate(request, authentication);
+    }
+
+    @PutMapping("/players/{id}/activate")
+    @Operation(summary = "Activate player")
+    public PlayerResponse activatePlayer(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminPlayerService.activatePlayer(id, authentication);
+    }
+
+    @PutMapping("/players/{id}/deactivate")
+    @Operation(summary = "Deactivate player")
+    public PlayerResponse deactivatePlayer(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminPlayerService.deactivatePlayer(id, authentication);
+    }
+
+    @PutMapping("/players/{id}/retire")
+    @Operation(summary = "Retire player")
+    public PlayerResponse retirePlayer(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminPlayerService.retirePlayer(id, authentication);
+    }
+
+    @PutMapping("/players/{id}/restore")
+    @Operation(summary = "Restore retired player")
+    public PlayerResponse restorePlayer(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminPlayerService.restorePlayer(id, authentication);
+    }
+
+    @PutMapping("/teams/{id}")
+    @Operation(summary = "Update national team data", description = "Updates FIFA ranking, confederation, or manager details.")
+    public TeamResponse updateTeam(
+            @PathVariable @Positive Long id,
+            @RequestBody TeamUpdateRequest request,
+            Authentication authentication) {
+
+        return adminTeamService.updateTeam(id, request, authentication);
+    }
+
+    @PutMapping("/teams/{id}/activate")
+    @Operation(summary = "Activate national team")
+    public TeamResponse activateTeam(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminTeamService.activateTeam(id, authentication);
+    }
+
+    @PutMapping("/teams/{id}/deactivate")
+    @Operation(summary = "Deactivate national team")
+    public TeamResponse deactivateTeam(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminTeamService.deactivateTeam(id, authentication);
+    }
+
+    @PostMapping("/teams/{id}/refresh-squad")
+    @Operation(summary = "Refresh national team squad", description = "Recalculates the team rating from active national players and reports squad validation findings.")
+    public TeamRefreshResponse refreshTeamSquad(
+            @PathVariable @Positive Long id,
+            Authentication authentication) {
+
+        return adminTeamService.refreshSquad(id, authentication);
     }
 
     @GetMapping("/tournaments")

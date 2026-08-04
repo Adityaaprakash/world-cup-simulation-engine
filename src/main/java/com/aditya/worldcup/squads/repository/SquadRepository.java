@@ -10,5 +10,7 @@ public interface SquadRepository extends JpaRepository<Squad, Long> {
 
     List<Squad> findByUserId(Long userId);
 
+    List<Squad> findByTeamId(Long teamId);
+
     Optional<Squad> findFirstByTeamId(Long teamId);
 }

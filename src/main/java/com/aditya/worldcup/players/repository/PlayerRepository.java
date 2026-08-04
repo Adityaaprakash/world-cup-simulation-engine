@@ -9,4 +9,12 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
 
     List<Player> findByCountryId(Long countryId);
 
+    List<Player> findByCountryIdAndActiveTrueAndRetiredFalse(Long countryId);
+
+    long countByActiveTrueAndRetiredFalse();
+
+    long countByActiveFalseAndRetiredFalse();
+
+    long countByRetiredTrue();
+
 }
