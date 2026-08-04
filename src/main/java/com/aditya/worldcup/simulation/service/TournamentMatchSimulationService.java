@@ -46,9 +46,10 @@ public class TournamentMatchSimulationService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
 
-        if (tournament.getStatus() == TournamentStatus.COMPLETED) {
+        if (tournament.getStatus() == TournamentStatus.COMPLETED
+                || tournament.getStatus() == TournamentStatus.ARCHIVED) {
             throw new IllegalStateException(
-                    "Completed tournament cannot be simulated");
+                    "Completed or archived tournament cannot be simulated");
         }
 
         Match match = matchRepository.findById(matchId)
