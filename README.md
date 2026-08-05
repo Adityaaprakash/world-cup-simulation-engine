@@ -448,3 +448,35 @@ The operations endpoints are:
 - `GET /api/admin/audit`
 - `GET /api/admin/audit/history`
 - `GET /api/admin/maintenance`
+
+## Advanced search platform
+
+Phase 9K-1 adds authenticated, additive advanced-search endpoints under
+`/api/search`. Each endpoint accepts a JSON request body with optional filters,
+`page` (zero-based), `size` (default `20`, maximum `100`), and a `sort` array.
+Each sort item contains an allowed `field` and `direction` (`ASC` or `DESC`);
+multiple sort fields are applied in the listed order. Every response returns the
+current page, page size, total result count/page count, first/last flags, and
+the matching existing domain response DTOs.
+
+Player search combines name, nationality, national team, position, exact or
+range-based ratings, potential, preferred foot, age range, active/retired state,
+injury state, and suspension state. Team search supports name, confederation,
+FIFA ranking range, active state, and tournament participation. Manager search
+supports identity, nationality, reputation, level, trophies, and calculated
+career win percentage. Tournament search supports name, status, stage, year,
+champion, and archived state. Match search supports teams, tournament, stage,
+exact score components, participating player, and date range.
+
+The search APIs are:
+
+- `POST /api/search/players`
+- `POST /api/search/teams`
+- `POST /api/search/managers`
+- `POST /api/search/tournaments`
+- `POST /api/search/matches`
+
+Searches use pageable JPA specifications and correlated subqueries for player
+state, career statistics, tournament membership, tournament champions, and
+match events. Entity graphs load only the response-facing to-one associations
+for player, team, and match pages, avoiding collection fetches and N+1 reads.
