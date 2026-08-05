@@ -413,3 +413,38 @@ refreshes. The data-management APIs are:
 - `PUT /api/admin/teams/{id}/activate`
 - `PUT /api/admin/teams/{id}/deactivate`
 - `POST /api/admin/teams/{id}/refresh-squad`
+
+## Operations and maintenance center
+
+Phase 9J-3 completes the administrator module with operational tooling under
+`/api/admin`. Cache operations manage the existing analytics, leaderboard, and
+tournament in-memory caches without changing the caching architecture. A cache
+request may target `ALL`, `ANALYTICS`, `LEADERBOARD`, or `TOURNAMENT`; rebuild
+operations clear the selected cache and warm it from existing persisted data.
+
+Save maintenance lists orphaned save-slot references and can clean orphaned
+inactive slots, inactive autosaves, expired backup metadata, and duplicate
+backup metadata. Active save slots are never deleted or modified by cleanup.
+Maintenance responses report each cleanup count and the affected orphan ids.
+
+Database diagnostics provide public-schema table totals, approximate row totals,
+Flyway version and pending migration count, supported PostgreSQL database size,
+connection-pool statistics, and core repository counts. System operations
+report application uptime, JVM memory, processor count, Java and Spring Boot
+versions, Redis/database health, and active simulation/save totals.
+
+Audit history is searchable by username, action, entity type/id, and date range.
+Maintenance jobs are persisted separately in `maintenance_history`, retaining
+the operation, administrator, duration, status, details, and timestamp; audit
+records remain immutable and continue to record each operational action.
+
+The operations endpoints are:
+
+- `POST /api/admin/cache/clear`
+- `POST /api/admin/cache/rebuild`
+- `POST /api/admin/saves/cleanup`
+- `GET /api/admin/database`
+- `GET /api/admin/system`
+- `GET /api/admin/audit`
+- `GET /api/admin/audit/history`
+- `GET /api/admin/maintenance`

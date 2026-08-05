@@ -1,19 +1,33 @@
 package com.aditya.worldcup.admin.controller;
 
 import com.aditya.worldcup.admin.dto.AdminHealthResponse;
+import com.aditya.worldcup.admin.dto.AuditHistoryResponse;
 import com.aditya.worldcup.admin.dto.BulkPlayerUpdateRequest;
 import com.aditya.worldcup.admin.dto.BulkPlayerUpdateResponse;
+import com.aditya.worldcup.admin.dto.CacheOperationRequest;
+import com.aditya.worldcup.admin.dto.CacheOperationResponse;
+import com.aditya.worldcup.admin.dto.DatabaseDiagnosticsResponse;
 import com.aditya.worldcup.admin.dto.DashboardResponse;
 import com.aditya.worldcup.admin.dto.DatasetHealthResponse;
+import com.aditya.worldcup.admin.dto.MaintenanceHistoryResponse;
+import com.aditya.worldcup.admin.dto.MaintenanceSummaryResponse;
 import com.aditya.worldcup.admin.dto.PlayerUpdateRequest;
 import com.aditya.worldcup.admin.dto.TeamRefreshResponse;
 import com.aditya.worldcup.admin.dto.TeamUpdateRequest;
+import com.aditya.worldcup.admin.dto.SaveMaintenanceRequest;
+import com.aditya.worldcup.admin.dto.SystemOperationsResponse;
+import com.aditya.worldcup.admin.service.AdminAuditHistoryService;
+import com.aditya.worldcup.admin.service.AdminCacheService;
 import com.aditya.worldcup.admin.service.AdminDashboardService;
 import com.aditya.worldcup.admin.service.AdminHealthService;
 import com.aditya.worldcup.admin.service.AdminPlayerService;
 import com.aditya.worldcup.admin.service.AdminTeamService;
 import com.aditya.worldcup.admin.service.AdminTournamentService;
 import com.aditya.worldcup.admin.service.DatasetHealthService;
+import com.aditya.worldcup.admin.service.DatabaseDiagnosticsService;
+import com.aditya.worldcup.admin.service.AdminSaveMaintenanceService;
+import com.aditya.worldcup.admin.service.MaintenanceHistoryService;
+import com.aditya.worldcup.admin.service.SystemOperationsService;
 import com.aditya.worldcup.players.dto.PlayerResponse;
 import com.aditya.worldcup.teams.dto.TeamResponse;
 import com.aditya.worldcup.tournaments.dto.TournamentResponse;
@@ -29,7 +43,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -46,6 +62,12 @@ public class AdminController {
     private final AdminPlayerService adminPlayerService;
     private final AdminTeamService adminTeamService;
     private final DatasetHealthService datasetHealthService;
+    private final AdminCacheService adminCacheService;
+    private final AdminSaveMaintenanceService adminSaveMaintenanceService;
+    private final DatabaseDiagnosticsService databaseDiagnosticsService;
+    private final SystemOperationsService systemOperationsService;
+    private final AdminAuditHistoryService adminAuditHistoryService;
+    private final MaintenanceHistoryService maintenanceHistoryService;
 
     @GetMapping("/dashboard")
     @Operation(summary = "Get admin dashboard", description = "Returns a consolidated administrator dashboard with system, manager, tournament, career, save, and infrastructure metrics.")
@@ -65,6 +87,70 @@ public class AdminController {
     @Operation(summary = "Get football dataset health", description = "Returns player and team status totals plus dataset validation findings.")
     public DatasetHealthResponse datasetHealth() {
         return datasetHealthService.health();
+    }
+
+    @PostMapping("/cache/clear")
+    @Operation(summary = "Clear operational caches", description = "Clears all or a selected analytics, leaderboard, or tournament cache.")
+    public CacheOperationResponse clearCache(
+            @RequestBody(required = false) CacheOperationRequest request,
+            Authentication authentication) {
+
+        return adminCacheService.clear(request == null ? null : request.cache(), authentication);
+    }
+
+    @PostMapping("/cache/rebuild")
+    @Operation(summary = "Rebuild operational caches", description = "Clears and warms all or a selected analytics, leaderboard, or tournament cache.")
+    public CacheOperationResponse rebuildCache(
+            @RequestBody(required = false) CacheOperationRequest request,
+            Authentication authentication) {
+
+        return adminCacheService.rebuild(request == null ? null : request.cache(), authentication);
+    }
+
+    @PostMapping("/saves/cleanup")
+    @Operation(summary = "Run save maintenance", description = "Lists orphan saves and safely cleans selected inactive save or backup data.")
+    public MaintenanceSummaryResponse cleanupSaves(
+            @RequestBody(required = false) SaveMaintenanceRequest request,
+            Authentication authentication) {
+
+        return adminSaveMaintenanceService.cleanup(request, authentication);
+    }
+
+    @GetMapping("/database")
+    @Operation(summary = "Get database diagnostics")
+    public DatabaseDiagnosticsResponse databaseDiagnostics(Authentication authentication) {
+        return databaseDiagnosticsService.diagnostics(authentication);
+    }
+
+    @GetMapping("/system")
+    @Operation(summary = "Get system operations status")
+    public SystemOperationsResponse systemOperations(Authentication authentication) {
+        return systemOperationsService.operations(authentication);
+    }
+
+    @GetMapping("/audit")
+    @Operation(summary = "Search admin audit history")
+    public AuditHistoryResponse auditHistory(
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) @Positive Long entityId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+
+        return adminAuditHistoryService.history(username, action, entityType, entityId, from, to);
+    }
+
+    @GetMapping("/audit/history")
+    @Operation(summary = "Get recent audit and maintenance history")
+    public AuditHistoryResponse recentAuditHistory() {
+        return adminAuditHistoryService.history(null, null, null, null, null, null);
+    }
+
+    @GetMapping("/maintenance")
+    @Operation(summary = "Get maintenance job history")
+    public List<MaintenanceHistoryResponse> maintenanceHistory() {
+        return maintenanceHistoryService.recent();
     }
 
     @PutMapping("/players/{id}")

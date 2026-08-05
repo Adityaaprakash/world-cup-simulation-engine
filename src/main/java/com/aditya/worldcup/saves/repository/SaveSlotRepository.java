@@ -33,6 +33,11 @@ public interface SaveSlotRepository extends JpaRepository<SaveSlot, Long> {
 
     long countByActiveTrue();
 
+    List<SaveSlot> findByAutosaveTrueAndActiveFalse();
+
+    List<SaveSlot> findByBackupAvailableTrueAndBackupCreatedAtBefore(
+            java.time.LocalDateTime cutoff);
+
     @Query("SELECT COUNT(DISTINCT s.manager.id) FROM SaveSlot s WHERE s.active = true")
     long countActiveManagers();
 }
