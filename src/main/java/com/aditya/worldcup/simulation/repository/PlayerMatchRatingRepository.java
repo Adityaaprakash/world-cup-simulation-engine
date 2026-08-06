@@ -14,4 +14,7 @@ public interface PlayerMatchRatingRepository extends JpaRepository<PlayerMatchRa
 
     @Query("SELECT r.player, AVG(r.rating), COUNT(r) FROM PlayerMatchRating r WHERE r.player IS NOT NULL GROUP BY r.player ORDER BY AVG(r.rating) DESC")
     List<Object[]> findTopAverageRatedPlayers(Pageable pageable);
+
+    List<PlayerMatchRating> findByPlayerId(Long playerId);
+    List<PlayerMatchRating> findByPlayerIdIn(List<Long> playerIds);
 }

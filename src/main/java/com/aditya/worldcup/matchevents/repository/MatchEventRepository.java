@@ -20,4 +20,7 @@ public interface MatchEventRepository extends JpaRepository<MatchEvent, Long> {
 
     @Query("SELECT e.player, COUNT(e) FROM MatchEvent e WHERE (e.eventType = com.aditya.worldcup.matchevents.entity.MatchEventType.GOAL OR e.eventType = com.aditya.worldcup.matchevents.entity.MatchEventType.PENALTY) AND e.player IS NOT NULL GROUP BY e.player ORDER BY COUNT(e) DESC")
     List<Object[]> findTopScoringPlayers(Pageable pageable);
+
+    List<MatchEvent> findByPlayerId(Long playerId);
+    List<MatchEvent> findByPlayerIdIn(List<Long> playerIds);
 }
