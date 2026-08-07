@@ -6,6 +6,7 @@ import com.aditya.worldcup.managers.repository.ManagerAchievementRepository;
 import com.aditya.worldcup.matches.entity.Match;
 import com.aditya.worldcup.matches.entity.MatchRound;
 import com.aditya.worldcup.saves.service.SaveGameService;
+import com.aditya.worldcup.historical.service.HistoricalIntelligenceService;
 import com.aditya.worldcup.teams.entity.Team;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,7 @@ public class AchievementService {
     private final ManagerService managerService;
     private final CareerTimelineService timelineService;
     private final SaveGameService saveGameService;
+    private final HistoricalIntelligenceService historicalIntelligenceService;
 
     @Transactional
     public List<AchievementResponse> getCurrentAchievements(
@@ -129,6 +131,7 @@ public class AchievementService {
                 .build();
 
         achievementRepository.save(achievement);
+        historicalIntelligenceService.clearCache();
         timelineService.recordEvent(
                 manager,
                 TimelineEventType.ACHIEVEMENT,

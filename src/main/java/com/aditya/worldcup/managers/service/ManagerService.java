@@ -5,6 +5,7 @@ import com.aditya.worldcup.managers.entity.CoachingStyle;
 import com.aditya.worldcup.managers.entity.Manager;
 import com.aditya.worldcup.managers.entity.ManagerReputation;
 import com.aditya.worldcup.managers.repository.ManagerRepository;
+import com.aditya.worldcup.historical.service.HistoricalIntelligenceService;
 import com.aditya.worldcup.users.entity.User;
 import com.aditya.worldcup.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class ManagerService {
     private final ManagerRepository managerRepository;
     private final UserRepository userRepository;
     private final CareerProgressionService careerProgressionService;
+    private final HistoricalIntelligenceService historicalIntelligenceService;
 
     @Transactional
     public Manager getOrCreateManager(Authentication authentication) {
@@ -68,6 +70,7 @@ public class ManagerService {
                 manager.getLevel()));
         manager.setUpdatedAt(LocalDateTime.now());
         managerRepository.save(manager);
+        historicalIntelligenceService.clearCache();
 
         return new ProgressionResult(
                 previousLevel,

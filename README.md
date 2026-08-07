@@ -480,3 +480,35 @@ Searches use pageable JPA specifications and correlated subqueries for player
 state, career statistics, tournament membership, tournament champions, and
 match events. Entity graphs load only the response-facing to-one associations
 for player, team, and match pages, avoiding collection fetches and N+1 reads.
+
+## Historical intelligence and Hall of Fame
+
+Phase 9K-3 adds `/api/history`, a historical intelligence layer that combines
+the existing statistics, tournament summaries and awards, records, career
+history, manager progression, achievements, tactical analytics, and persisted
+match data. Player, team, and manager legacy profiles expose transparent
+legacy scores built from their already-calculated statistics, honours, awards,
+longevity, and progression data.
+
+Hall of Fame and global ranking responses provide data-driven player, team, and
+manager lists. Historical rivalries and head-to-head summaries support team,
+player, and manager comparisons. Era analysis groups persisted tournaments in
+four-year eras and reports leading teams, players, managers, nations, and the
+most-used tactical formation. The historical timeline records completed
+tournament champions, runners-up, award winners, upsets, and major scoring
+milestones.
+
+Historical intelligence is cached using the existing optimization cache
+duration. It is invalidated when a tournament completes, manager progression is
+updated, or an achievement is unlocked. The endpoints are:
+
+- `GET /api/history/players`
+- `GET /api/history/teams`
+- `GET /api/history/managers`
+- `GET /api/history/hall-of-fame`
+- `GET /api/history/rivalries`
+- `GET /api/history/head-to-head`
+- `GET /api/history/eras`
+- `GET /api/history/timeline`
+- `GET /api/history/rankings`
+- `GET /api/history/summary`

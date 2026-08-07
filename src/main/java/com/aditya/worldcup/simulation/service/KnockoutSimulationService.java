@@ -8,6 +8,7 @@ import com.aditya.worldcup.matches.repository.MatchRepository;
 import com.aditya.worldcup.matches.service.MatchService;
 import com.aditya.worldcup.managers.service.CareerHistoryService;
 import com.aditya.worldcup.managers.service.CareerStatisticsService;
+import com.aditya.worldcup.historical.service.HistoricalIntelligenceService;
 import com.aditya.worldcup.optimization.service.SimulationMetricsService;
 import com.aditya.worldcup.shared.exception.FixturesNotGeneratedException;
 import com.aditya.worldcup.shared.exception.TournamentNotFoundException;
@@ -46,6 +47,7 @@ public class KnockoutSimulationService {
     private final SimulationMetricsService simulationMetricsService;
     private final CareerStatisticsService careerStatisticsService;
     private final CareerHistoryService careerHistoryService;
+    private final HistoricalIntelligenceService historicalIntelligenceService;
 
     @Transactional
     public KnockoutSimulationResponse simulate(Long tournamentId) {
@@ -135,6 +137,7 @@ public class KnockoutSimulationService {
         tournament.setStatus(TournamentStatus.COMPLETED);
         tournamentRepository.save(tournament);
         careerHistoryService.recordCompletedTournament(tournament);
+        historicalIntelligenceService.clearCache();
 
         long duration = System.currentTimeMillis() - start;
         simulationMetricsService.recordExecutionTime("knockout-simulation", duration);
