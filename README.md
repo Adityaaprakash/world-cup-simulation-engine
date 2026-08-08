@@ -1,5 +1,23 @@
 # World Cup Simulation Engine
 
+## Frontend
+
+The frontend foundation lives in `frontend/` and uses React, Vite, JavaScript,
+Tailwind CSS, React Router, and Axios. It requires the Spring Boot backend to
+be running locally.
+
+```bash
+cd frontend
+npm install
+```
+
+Copy `.env.example` to `.env` and set `VITE_API_BASE_URL` (default:
+`http://localhost:8080`). Start the development server with:
+
+```bash
+npm run dev
+```
+
 ## Dynamic player state
 
 Each player has a persisted state separate from their base `overall_rating`. New
