@@ -18,6 +18,7 @@ export default function AppHeader() {
           <NavLink to="/dashboard" className="text-lg font-bold tracking-tight text-white">World Cup <span className="text-emerald-400">Manager</span></NavLink>
           <nav aria-label="Primary navigation" className="flex items-center gap-1 text-sm font-medium">
             <NavLink to="/dashboard" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Dashboard</NavLink>
+            <NavLink to="/teams" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Teams</NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-3"><span className="max-w-40 truncate text-sm text-slate-400 sm:max-w-none">{user?.email}</span><Button variant="secondary" onClick={handleLogout}>Log out</Button></div>
