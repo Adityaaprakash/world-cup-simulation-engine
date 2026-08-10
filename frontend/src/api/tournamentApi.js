@@ -6,3 +6,6 @@ export const getTournamentTeams = (tournamentId) => axiosClient.get(`/api/tourna
 export const getTournamentGroups = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/groups`)
 export const getTournamentStandings = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/standings`)
 export const getTournamentMatches = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/matches`)
+export const getTournamentSummary = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/summary`)
+export const getTournamentAwards = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/awards`)
+export const getTournamentTeamAwards = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/team-awards`)
