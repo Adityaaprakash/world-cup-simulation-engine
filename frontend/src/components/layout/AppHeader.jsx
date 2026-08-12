@@ -20,6 +20,7 @@ export default function AppHeader() {
             <NavLink to="/dashboard" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Dashboard</NavLink>
             <NavLink to="/teams" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Teams</NavLink>
             <NavLink to="/tournaments" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Tournaments</NavLink>
+            <NavLink to="/statistics" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Statistics</NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-3"><span className="max-w-40 truncate text-sm text-slate-400 sm:max-w-none">{user?.email}</span><Button variant="secondary" onClick={handleLogout}>Log out</Button></div>
