@@ -25,7 +25,7 @@ export default function AppHeader() {
             <NavLink to="/saves" className={({ isActive }) => `rounded-md px-3 py-2 transition ${isActive ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-400 hover:text-slate-100'}`}>Saves</NavLink>
           </nav>
         </div>
-        <div className="flex items-center gap-3"><span className="max-w-40 truncate text-sm text-slate-400 sm:max-w-none">{user?.email}</span><Button variant="secondary" onClick={handleLogout}>Log out</Button></div>
+        <div className="flex items-center gap-3"><span className="max-w-40 truncate text-sm text-slate-400 sm:max-w-none">{user?.email}</span><NavLink to="/profile" className={({ isActive }) => `text-sm font-semibold ${isActive ? 'text-emerald-300' : 'text-slate-300 hover:text-white'}`}>Profile</NavLink><NavLink to="/settings" className={({ isActive }) => `text-sm font-semibold ${isActive ? 'text-emerald-300' : 'text-slate-300 hover:text-white'}`}>Settings</NavLink><Button variant="secondary" onClick={handleLogout}>Log out</Button></div>
       </div>
     </header>
   )
