@@ -1,0 +1,9 @@
+import Card from '../common/Card'
+
+const label = (value) => value ? value.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase()) : null
+
+export default function CareerHeader({ manager }) {
+  if (!manager) return null
+  const name = manager.displayName || manager.username
+  return <Card className="border-emerald-400/25 bg-gradient-to-r from-emerald-400/10 to-slate-900"><div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Career centre</p><h1 className="mt-2 text-3xl font-bold text-white sm:text-4xl">{name}</h1><div className="mt-4 flex flex-wrap gap-2">{[['Reputation', label(manager.reputation)], ['Coaching style', label(manager.coachingStyle)], ['Preferred formation', manager.favoriteFormation], ['Preferred tactics', manager.favoriteTacticalProfile]].filter(([, value]) => value).map(([title, value]) => <span key={title} className="rounded-full border border-slate-700 bg-slate-950/50 px-3 py-1 text-sm text-slate-300"><span className="text-slate-500">{title}: </span>{value}</span>)}</div></div><div className="grid grid-cols-2 gap-3 sm:min-w-64"><div className="rounded-lg border border-emerald-400/25 bg-slate-950/50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Career level</p><p className="mt-1 text-3xl font-bold text-emerald-300">{manager.level ?? '—'}</p></div><div className="rounded-lg border border-slate-800 bg-slate-950/50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Experience</p><p className="mt-1 text-2xl font-bold text-slate-100">{manager.experiencePoints ?? '—'} XP</p></div></div></div></Card>
+}

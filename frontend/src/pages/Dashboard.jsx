@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Card from '../components/common/Card'
 import EmptyState from '../components/common/EmptyState'
 import ErrorMessage from '../components/common/ErrorMessage'
@@ -73,6 +74,7 @@ export default function Dashboard() {
       </div>
 
       <ErrorMessage message={error} />
+      <Link to="/career" className="inline-flex rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/20">View full career</Link>
 
       {manager ? <Card><div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"><div><SectionHeading title="Manager Overview" description={manager.nationality ? `National team manager from ${manager.nationality}.` : null} /><div className="flex flex-wrap gap-2">{[['Reputation', formatLabel(manager.reputation)], ['Coaching style', formatLabel(manager.coachingStyle)], ['Preferred formation', manager.favoriteFormation], ['Preferred tactics', manager.favoriteTacticalProfile]].map(([label, value]) => <span key={label} className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-sm text-slate-300"><span className="text-slate-500">{label}: </span>{value || '—'}</span>)}</div></div><div className="grid grid-cols-2 gap-3 sm:min-w-64"><Metric label="Level" value={number(manager.level)} accent /><Metric label="Experience" value={`${number(manager.experiencePoints)} XP`} /></div></div></Card> : <EmptyState title="Manager profile unavailable" description="Your manager profile could not be loaded. Try refreshing the page." />}
 
