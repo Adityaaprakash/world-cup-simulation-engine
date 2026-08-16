@@ -6,3 +6,4 @@ export const getCareerHistory = () => axiosClient.get('/api/managers/me/history'
 export const getAchievements = () => axiosClient.get('/api/managers/me/achievements')
 export const getCareerAnalytics = () => axiosClient.get('/api/managers/me/analytics')
 export const getCareerTimeline = () => axiosClient.get('/api/managers/me/timeline')
+export const getManagerLeaderboards = () => axiosClient.get('/api/managers/leaderboards')
