@@ -394,11 +394,11 @@ public class HistoricalIntelligenceService {
     }
 
     private boolean wonByPlayerNation(Player player, Match match) {
-        if (player.getCountry() == null || match.getHomeTeam() == null || match.getAwayTeam() == null) return false;
+        if (player.getCountry() == null || match.getHomeTeam() == null || match.getAwayTeam() == null || match.getHomeTeam().getCountry() == null || match.getAwayTeam().getCountry() == null) return false;
         boolean home = player.getCountry().getId().equals(match.getHomeTeam().getCountry().getId());
-        return home ? match.getHomeScore() > match.getAwayScore() : match.getAwayScore() > match.getHomeScore();
+        return home ? safe(match.getHomeScore()) > safe(match.getAwayScore()) : safe(match.getAwayScore()) > safe(match.getHomeScore());
     }
-    private boolean playerIsHome(Player player, Match match) { return player.getCountry() != null && match.getHomeTeam() != null && player.getCountry().getId().equals(match.getHomeTeam().getCountry().getId()); }
+    private boolean playerIsHome(Player player, Match match) { return player.getCountry() != null && match.getHomeTeam() != null && match.getHomeTeam().getCountry() != null && player.getCountry().getId().equals(match.getHomeTeam().getCountry().getId()); }
     private boolean plays(Team team, Match match) { return team != null && ((match.getHomeTeam() != null && team.getId().equals(match.getHomeTeam().getId())) || (match.getAwayTeam() != null && team.getId().equals(match.getAwayTeam().getId()))); }
     private boolean won(Team team, Match match) { return score(team, match) > opponentScore(team, match); }
     private int score(Team team, Match match) { return match.getHomeTeam().getId().equals(team.getId()) ? safe(match.getHomeScore()) : safe(match.getAwayScore()); }
