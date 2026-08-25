@@ -14,9 +14,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -76,8 +79,8 @@ public class GlobalExceptionHandler {
     handleDataIntegrityViolation(
             DataIntegrityViolationException ex,
             HttpServletRequest request) {
-
-        return error(HttpStatus.CONFLICT, getRootMessage(ex), request);
+        log.error("Database integrity violation: {}", getRootMessage(ex), ex);
+        return error(HttpStatus.CONFLICT, "Database integrity constraint violation", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -160,7 +163,7 @@ public class GlobalExceptionHandler {
     handleGenericException(
             Exception ex,
             HttpServletRequest request) {
-
+        log.error("Unexpected server error: {}", ex.getMessage(), ex);
         return error(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Unexpected server error",

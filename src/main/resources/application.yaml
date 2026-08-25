@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/worldcup
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/worldcup}
     username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD:admin123}
 
@@ -21,7 +21,7 @@ server:
   error:
     include-message: always
     include-binding-errors: always
-    include-stacktrace: always
+    include-stacktrace: never
 
 management:
   endpoints:
@@ -61,3 +61,6 @@ manager:
 logging:
   level:
     org.springframework.security: DEBUG
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
