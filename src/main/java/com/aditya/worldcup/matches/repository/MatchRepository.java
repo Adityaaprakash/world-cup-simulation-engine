@@ -44,4 +44,7 @@ public interface MatchRepository
 
     @Query("SELECT m FROM Match m WHERE m.status = com.aditya.worldcup.matches.entity.MatchStatus.FINISHED AND (m.homeTeam.id = :teamId OR m.awayTeam.id = :teamId) ORDER BY m.matchDate DESC, m.id DESC")
     List<Match> findCompletedMatchesByTeamId(@Param("teamId") Long teamId);
+
+    @Query("SELECT COUNT(m) > 0 FROM Match m WHERE (m.homeTeam.id = :teamId OR m.awayTeam.id = :teamId) AND m.status = com.aditya.worldcup.matches.entity.MatchStatus.LIVE")
+    boolean existsActiveMatchForTeam(@Param("teamId") Long teamId);
 }
