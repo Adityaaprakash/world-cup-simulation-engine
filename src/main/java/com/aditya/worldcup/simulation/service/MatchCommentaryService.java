@@ -60,6 +60,7 @@ public class MatchCommentaryService {
                     "An unfortunate own goal by %s.",
                     "The ball ends up in %s's own net."
             );
+            case INJURY -> injuryCommentary(event);
             case SUBSTITUTION -> substitutionCommentary(event);
         };
     }
@@ -97,6 +98,20 @@ public class MatchCommentaryService {
                 event,
                 "Fresh legs introduced.",
                 "A tactical substitution is made."
+        );
+    }
+
+    private String injuryCommentary(MatchEventResponse event) {
+
+        if (event.description() != null
+                && !event.description().isEmpty()) {
+            return event.description();
+        }
+
+        return selectTemplate(
+                event,
+                "%s sustains an injury.",
+                "%s goes down injured."
         );
     }
 

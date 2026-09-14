@@ -43,7 +43,7 @@ public class SubstitutionDecisionService {
         substituteUnavailablePlayers(starters, bench, decisions, maximumSubstitutions);
 
         Map<String, Integer> injuredPlayers = injuredPlayers(matchEvents);
-        
+
         for (Map.Entry<String, Integer> injuredEntry : injuredPlayers.entrySet()) {
             if (decisions.size() >= maximumSubstitutions) {
                 break;
