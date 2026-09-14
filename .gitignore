@@ -35,3 +35,9 @@ build/
 .env
 frontend/node_modules/
 frontend/dist/
+
+# Logs and Accidental Temporary Files
+*.log
+*.txt
+-Uri
+-Uri.txt

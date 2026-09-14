@@ -1,22 +1,65 @@
 # World Cup Simulation Engine
 
-## Frontend
+The World Cup Simulation Engine is an advanced, full-stack tournament simulation platform featuring dynamic player states, deep tactical configurations, persistent manager careers, save slots, hall of fame metrics, and robust historical intelligence.
 
-The frontend foundation lives in `frontend/` and uses React, Vite, JavaScript,
-Tailwind CSS, React Router, and Axios. It requires the Spring Boot backend to
-be running locally.
+## Getting Started
+
+### Prerequisites
+- **Java**: Java 22 is required.
+- **Node**: Node.js v22 (and npm) is required.
+- **Maven**: Included via `mvnw` wrapper.
+- **PostgreSQL**: Postgres 16 runs via Docker Compose on host port `5555`.
+
+### Configuration
+The application relies on environment variables defined in `.env` (copy `.env.example` to `.env` in the root folder):
+- `DB_USERNAME`: Database username (default: `admin`)
+- `DB_PASSWORD`: Database password (default: `admin123`)
+- `DB_URL`: Postgres JDBC URL (default: `jdbc:postgresql://localhost:5555/worldcup`)
+- `JWT_SECRET`: Base64 encoded stateless signing key for security
+- `CORS_ALLOWED_ORIGINS`: Allowed web client origins (default: `http://localhost:5173`)
+
+*Note: PostgreSQL is actively mapped to port 5555 to avoid native Windows port 5432 allocation collisions, and Flyway database migrations run automatically on startup to validate and prepopulate the schema.*
+
+### Backend Startup
+
+Start the PostgreSQL database via Docker:
+```bash
+docker-compose up -d
+```
+
+Start the Spring Boot backend:
+```bash
+.\mvnw spring-boot:run
+```
+
+Ensure unit and integration tests run successfully using the explicit UTC timezone to bypass native JDBC locale constraints:
+```bash
+.\mvnw test "-Duser.timezone=UTC"
+```
+*(The health endpoint will be active at `/api/health` returning a status payload).*
+
+### Frontend Startup
+
+The frontend foundation lives in `frontend/` and uses React, Vite, JavaScript, Tailwind CSS, React Router, and Axios. It requires the Spring Boot backend to be running locally.
 
 ```bash
 cd frontend
 npm install
 ```
 
-Copy `.env.example` to `.env` and set `VITE_API_BASE_URL` (default:
-`http://localhost:8080`). Start the development server with:
+Copy `frontend/.env.example` to `frontend/.env` (if applicable) and set `VITE_API_BASE_URL` (default: `http://localhost:8080`). Start the development server with:
 
 ```bash
 npm run dev
 ```
+
+### Application Flow
+1. **Authentication**: Stateless, JWT-driven. Users `Register` then `Login` to access protected views. Public endpoints are strictly isolated to authentication and health checks.
+2. **Dashboard**: Navigate through Profile, Manager Career, Teams, Squads, and Lineups.
+3. **Simulation**: Generate Tournaments → Group Stages → Knockout Stages.
+4. **Observation**: Track live progression via the Match Centre and observe dynamic Match Narrative events.
+5. **Analytics**: Review historical Statistics, Saves/Replays, and Global Rankings.
+6. **Logout**: Destroys the local token context.
 
 ## Dynamic player state
 
