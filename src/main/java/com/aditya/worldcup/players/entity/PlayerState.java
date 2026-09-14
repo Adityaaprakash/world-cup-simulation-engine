@@ -56,4 +56,12 @@ public class PlayerState {
     @Builder.Default
     @Column(nullable = false)
     private Integer injuryMatchesRemaining = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer developmentRating = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer progressionTracker = 0;
 }

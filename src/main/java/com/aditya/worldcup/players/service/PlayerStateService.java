@@ -300,6 +300,10 @@ public class PlayerStateService {
                 });
     }
 
+    public void saveAll(Collection<PlayerState> states) {
+        playerStateRepository.saveAll(states);
+    }
+
     private int between(Integer value, int minimum, int maximum) {
         return Math.max(minimum, Math.min(maximum, value));
     }

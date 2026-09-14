@@ -85,7 +85,9 @@ public record SaveExportResponse(
             Integer yellowCards,
             Integer redCardSuspension,
             InjuryStatus injuryStatus,
-            Integer injuryMatchesRemaining
+            Integer injuryMatchesRemaining,
+            Integer developmentRating,
+            Integer progressionTracker
     ) {
     }
 

@@ -26,7 +26,8 @@ public class PlayerEffectiveRatingService {
                 + (state.getConfidence() - 50) / 25.0
                 + (state.getFitness() - 100) / 20.0
                 - state.getFatigue() / 25.0
-                + (state.getMorale() - 50) / 25.0;
+                + (state.getMorale() - 50) / 25.0
+                + state.getDevelopmentRating();
 
         if (state.getInjuryStatus() == InjuryStatus.MINOR) {
             adjustment -= 2;

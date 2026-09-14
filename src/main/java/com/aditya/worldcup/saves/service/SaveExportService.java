@@ -222,7 +222,9 @@ public class SaveExportService {
                 playerState.getYellowCards(),
                 playerState.getRedCardSuspension(),
                 playerState.getInjuryStatus(),
-                playerState.getInjuryMatchesRemaining()
+                playerState.getInjuryMatchesRemaining(),
+                playerState.getDevelopmentRating(),
+                playerState.getProgressionTracker()
         );
     }
 
