@@ -7,5 +7,6 @@ public enum MatchEventType {
     RED_CARD,
     SUBSTITUTION,
     OWN_GOAL,
-    PENALTY
+    PENALTY,
+    INJURY
 }

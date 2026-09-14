@@ -19,6 +19,7 @@
 
 ### Phase 10B & Beyond (Planned Tasks)
 - [x] Construct comprehensive `PlayerForm` and `PlayerFatigue` engine extensions interacting actively with match timers/decisions.
+- [x] Implement deterministic Injury severity limits, recovery mapping, and immediate mid-match substitution directives dynamically (Phase 10C).
 - [ ] Construct Player Transfers & Training progressions resolving deterministic attributes dynamically across save epochs.
 - [ ] Establish `ManagerJob` configurations mapping strict Board Confidence analytics.
 - [ ] Deploy native Live Match experience integrations spanning UI interfaces.

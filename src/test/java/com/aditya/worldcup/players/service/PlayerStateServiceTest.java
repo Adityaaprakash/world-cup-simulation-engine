@@ -168,6 +168,84 @@ class PlayerStateServiceTest {
         assertThat(player.getOverallRating()).isEqualTo(80);
     }
 
+    @Test
+    void defaultInjuryStateIsHealthyAndAvailable() {
+        Player player = player(1L, 80);
+        PlayerState state = PlayerState.builder().player(player).build();
+        assertThat(state.getInjuryStatus()).isEqualTo(com.aditya.worldcup.players.entity.InjuryStatus.HEALTHY);
+        assertThat(state.getInjuryMatchesRemaining()).isZero();
+        assertThat(service.isAvailable(state)).isTrue();
+    }
+
+    @Test
+    void injuredPlayersAreUnavailable() {
+        Player player = player(1L, 80);
+        PlayerState state = PlayerState.builder().player(player)
+                .injuryStatus(com.aditya.worldcup.players.entity.InjuryStatus.MINOR)
+                .injuryMatchesRemaining(1).build();
+        
+        assertThat(service.isAvailable(state)).isFalse();
+    }
+
+    @Test
+    void applyEventEffectsParsesInjurySeverityCorrectly() {
+        Player player1 = player(1L, 80);
+        Player player2 = player(2L, 80);
+        Player player3 = player(3L, 80);
+        
+        PlayerState state1 = PlayerState.builder().player(player1).build();
+        PlayerState state2 = PlayerState.builder().player(player2).build();
+        PlayerState state3 = PlayerState.builder().player(player3).build();
+
+        when(squadPlayerRepository.findBySquadId(10L)).thenReturn(List.of(
+            squadPlayer(player1, true), squadPlayer(player2, true), squadPlayer(player3, true)
+        ));
+        when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of());
+        
+        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(state1));
+        when(playerStateRepository.findByPlayerId(2L)).thenReturn(java.util.Optional.of(state2));
+        when(playerStateRepository.findByPlayerId(3L)).thenReturn(java.util.Optional.of(state3));
+
+        List<MatchEventResponse> events = List.of(
+            new MatchEventResponse(10, "Player 1", MatchEventType.INJURY.name(), "Player 1 sustains a MINOR injury."),
+            new MatchEventResponse(20, "Player 2", MatchEventType.INJURY.name(), "Player 2 sustains a MODERATE injury."),
+            new MatchEventResponse(30, "Player 3", MatchEventType.INJURY.name(), "Player 3 sustains a MAJOR injury.")
+        );
+
+        service.updateAfterMatch(10L, 20L, 0, 0, events);
+
+        assertThat(state1.getInjuryStatus()).isEqualTo(com.aditya.worldcup.players.entity.InjuryStatus.MINOR);
+        assertThat(state1.getInjuryMatchesRemaining()).isEqualTo(1);
+        
+        assertThat(state2.getInjuryStatus()).isEqualTo(com.aditya.worldcup.players.entity.InjuryStatus.MODERATE);
+        assertThat(state2.getInjuryMatchesRemaining()).isEqualTo(3);
+        
+        assertThat(state3.getInjuryStatus()).isEqualTo(com.aditya.worldcup.players.entity.InjuryStatus.MAJOR);
+        assertThat(state3.getInjuryMatchesRemaining()).isEqualTo(5);
+    }
+    
+    @Test
+    void processInjuriesDecreasesMatchesAndRestoresHealth() {
+        PlayerState state = PlayerState.builder()
+                .injuryStatus(com.aditya.worldcup.players.entity.InjuryStatus.MINOR)
+                .injuryMatchesRemaining(1).build();
+        
+        service.processInjuries(List.of(state));
+        
+        assertThat(state.getInjuryMatchesRemaining()).isZero();
+        assertThat(state.getInjuryStatus()).isEqualTo(com.aditya.worldcup.players.entity.InjuryStatus.HEALTHY);
+    }
+    
+    @Test
+    void processInjuriesDoesNotBecomeNegative() {
+        PlayerState state = PlayerState.builder().injuryStatus(com.aditya.worldcup.players.entity.InjuryStatus.HEALTHY)
+                .injuryMatchesRemaining(0).build();
+        
+        service.processInjuries(List.of(state));
+        
+        assertThat(state.getInjuryMatchesRemaining()).isZero();
+    }
+
     private Player player(Long id, int rating) {
         Player player = new Player();
         player.setId(id);

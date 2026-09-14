@@ -2,7 +2,7 @@
 
 ## Existing Entities & Responsibilities
 - **`Player`**: Stores immutable base attributes (`overallRating`, `potential`, etc.). Validated source of truth mapping player identity to country structures.
-- **`PlayerState`**: Extends `Player` exclusively handling transient modifiers. Phase 10B has firmly implemented strict boundedness for `currentForm` `[-10, 10]` and precise `fatigue` arrays `[0, 100]` deriving deterministically from `MatchEventResponse` tracking actual minutes played instead of relying on loose starting booleans.
+- **`PlayerState`**: Extends `Player` exclusively handling transient modifiers. Phase 10B implemented exact bounded structures dynamically across Form `[-10, 10]` and Fatigue `[0, 100]`. Phase 10C implemented precise deterministic `InjuryStatus` bounds (MINOR: 1 match, MODERATE: 3 matches, MAJOR: 5 matches) restricting player availability flawlessly.
 - **`SquadPlayer`**: Acts as a junction table tying a `Player` sequentially to a tournament `Squad`.
 - **`Manager`**: Houses human user state mappings (reputation, coaching style).
 
@@ -28,4 +28,3 @@
 
 ## Open Design Questions
 1. **Transfer Frequency**: Specifically evaluating whether `TransferEvent` triggers daily internally via offline events or strictly upon simulation milestones (e.g. at the conclusion of a tournament epoch).
-2. **Injury Longevity**: Determining if injury history must be archived or completely bypassed by the currently implemented isolated integer `injuryMatchesRemaining`.

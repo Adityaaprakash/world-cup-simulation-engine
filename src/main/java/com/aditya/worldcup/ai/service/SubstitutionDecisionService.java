@@ -42,6 +42,25 @@ public class SubstitutionDecisionService {
 
         substituteUnavailablePlayers(starters, bench, decisions, maximumSubstitutions);
 
+        Map<String, Integer> injuredPlayers = injuredPlayers(matchEvents);
+        
+        for (Map.Entry<String, Integer> injuredEntry : injuredPlayers.entrySet()) {
+            if (decisions.size() >= maximumSubstitutions) {
+                break;
+            }
+            Optional<SquadPlayer> playerOff = starters.stream()
+                    .filter(p -> p.getPlayer().getName().equals(injuredEntry.getKey()))
+                    .findFirst();
+            if (playerOff.isPresent()) {
+                Optional<SquadPlayer> playerOn = choosePlayerOn(bench, playerOff.get(), goalDifference, importance, extraTime);
+                if (playerOn.isPresent()) {
+                    starters.remove(playerOff.get());
+                    bench.remove(playerOn.get());
+                    decisions.add(substitutionEvent(injuredEntry.getValue(), playerOff.get(), playerOn.get()));
+                }
+            }
+        }
+
         int[] minutes = extraTime ? new int[]{60, 70, 80, 105} : new int[]{60, 70, 80};
         for (int minute : minutes) {
             if (decisions.size() >= maximumSubstitutions) {
@@ -154,6 +173,14 @@ public class SubstitutionDecisionService {
                 .map(MatchEventResponse::player)
                 .forEach(players::add);
         return players;
+    }
+
+    private Map<String, Integer> injuredPlayers(List<MatchEventResponse> matchEvents) {
+        Map<String, Integer> injured = new HashMap<>();
+        matchEvents.stream()
+                .filter(event -> MatchEventType.INJURY.name().equals(event.eventType()))
+                .forEach(event -> injured.put(event.player(), event.minute()));
+        return injured;
     }
 
     private boolean tacticalFit(SquadPlayer playerOn,

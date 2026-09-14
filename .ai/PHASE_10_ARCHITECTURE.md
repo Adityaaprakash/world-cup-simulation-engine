@@ -41,8 +41,9 @@ The primary goal of Phase 10 is to heavily expand the World Cup Simulation Engin
 
 ## Proposed Phase 10 Component Boundaries
 1. **Fatigue & Form Engine [IMPLEMENTED - 10B]**: Integrated natively through `PlayerStateService.java`. It parses `MatchEventResponse` arrays intercepting exact minutes played per `player` safely scaling `fatigue` organically. Output operates globally restricting `currentForm` structurally to `[-10, 10]`.
-2. **Transfer Engine**: Managing global squad mutations dynamically resolving logic asynchronously between simulation milestones.
-3. **Manager Jobs Context**: Overlaying the historical simulation sequences by associating the `Manager` dynamically across entities based on reputation limits.
+2. **Injury & Recovery System [IMPLEMENTED - 10C]**: Integrated natively inside `MatchEventGenerationService.java` identifying synchronous event injuries bounded by MINOR, MODERATE, MAJOR string variables. Instantly intercepted via `SubstitutionDecisionService.java` mapping synchronous mid-match removal. Recovery scales post-match organically via `processInjuries`.
+3. **Transfer Engine**: Managing global squad mutations dynamically resolving logic asynchronously between simulation milestones.
+4. **Manager Jobs Context**: Overlaying the historical simulation sequences by associating the `Manager` dynamically across entities based on reputation limits.
 
 ## Explicit Non-Goals for Phase 10A
 - No feature logic implementation.

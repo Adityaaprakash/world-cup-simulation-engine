@@ -196,6 +196,16 @@ public class MatchEventGenerationService {
                 importance
         );
 
+        addInjuries(
+                events,
+                homePlayers,
+                awayPlayers,
+                context,
+                homeGoals,
+                awayGoals,
+                importance
+        );
+
         addSubstitutions(
                 events,
                 homeSquadPlayers
@@ -435,6 +445,40 @@ public class MatchEventGenerationService {
         );
         events.add(ownGoal);
         applyContextEvent(context, ownGoal, homeEvent, homeGoals, awayGoals, importance);
+    }
+
+    private void addInjuries(
+            List<MatchEventResponse> events,
+            List<SquadPlayer> homePlayers,
+            List<SquadPlayer> awayPlayers,
+            MatchContext context,
+            int homeGoals,
+            int awayGoals,
+            MatchImportance importance
+    ) {
+        if (random.nextInt(100) >= 6) {
+            return;
+        }
+        List<SquadPlayer> players = combinePlayers(homePlayers, awayPlayers);
+        if (players.isEmpty()) {
+            return;
+        }
+        SquadPlayer squadPlayer = chooseRandom(players);
+        Player player = squadPlayer.getPlayer();
+        boolean homeEvent = isHomePlayer(squadPlayer, homePlayers);
+        int minute = dynamicMatchMinute(homeEvent, homeGoals, awayGoals, context, importance);
+
+        int sev = random.nextInt(100);
+        String severity = sev < 50 ? "MINOR" : (sev < 85 ? "MODERATE" : "MAJOR");
+
+        MatchEventResponse injury = new MatchEventResponse(
+                minute,
+                player.getName(),
+                MatchEventType.INJURY.name(),
+                player.getName() + " sustains a " + severity + " injury and cannot continue."
+        );
+        events.add(injury);
+        applyContextEvent(context, injury, homeEvent, homeGoals, awayGoals, importance);
     }
 
     private void addSubstitutions(

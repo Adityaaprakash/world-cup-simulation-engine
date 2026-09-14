@@ -2,13 +2,13 @@
 
 ## Match-Engine Integration
 - Phase 10 additions must weave seamlessly via `MatchModifierService.java`. Currently, modifiers logically scale base team strength against momentum elements. The new fatigue architectures must systematically degrade specific sub-stats (e.g. pace dynamically falling as fatigue reaches 80% during simulations).
-- **Match Cycle Tracking (Phase 10B)**: `PlayerStateService.java` parses `events` globally post-match intercepting precise minutes. Duplicate applications are blocked explicitly by only recording calculations inside the terminal `updateAfterMatch` lifecycle, preserving purely transient mutation maps protecting `Player` base metrics natively.
+- **Match Cycle Tracking (Phase 10B/10C)**: `PlayerStateService.java` parses `events` globally post-match intercepting precise minutes. Duplicate applications are blocked explicitly by only recording calculations inside the terminal `updateAfterMatch` lifecycle, preserving purely transient mutation maps protecting `Player` base metrics natively. `MatchEventGenerationService.java` dynamically inserts synchronous Injuries which are parsed natively mid-match resolving accurate live substitutions.
 
 ## Player Availability Integration
 - `PlayerStateService.java` already encapsulates availability checks (`isAvailable`). Phase 10 will deepen this logic by incorporating contract eligibility (red card vs. cup-tied suspensions). These components seamlessly govern `SquadPlayer` availability blocks prior to API submission.
 
 ## Squad and Lineup Integration
-- Enhancements targeting advanced tactical substitutions map heavily mapped onto `SubstitutionDecisionService.java`. Future intelligence implementations will dictate exact substitution times triggered contextually (e.g. manager panic withdrawing defenders trailing heavily mapping toward offensive instructions).
+- Enhancements targeting advanced tactical substitutions map heavily mapped onto `SubstitutionDecisionService.java`. Phase 10C integrates synchronous active tracking forcing injured players dynamically into immediate substitution cycles regardless of static tactical thresholds.
 
 ## Manager Decision Integration
 - `Manager.java` operations flow outward mapping `CoachingStyle` to tactical decisions. The new Board Confidence vectors will parse Match resolutions passively, generating event triggers internally stored inside the pre-existing `CareerHistory` entities.

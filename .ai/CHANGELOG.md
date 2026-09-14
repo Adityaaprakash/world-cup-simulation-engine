@@ -3,6 +3,9 @@
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
+### Phase 10C: Injury & Recovery System
+- **Added**: Deterministic Injury mappings restricting injured players from entering the starting XI and enforcing instant mid-match substitutions synchronously when sustaining in-game injuries. Includes deterministic recovery loops scaling match progression natively.
+
 ### Phase 10B: Player Form & Fatigue Engine
 - **Added**: Real-time deterministic mapping parsing Match Events dynamically mapping exact minutes played mathematically resolving Form boundaries `[-10, 10]` and `Fatigue` ceilings `[0, 100]`. Full integration without mutating base `Player` attributes.
 

@@ -72,6 +72,9 @@ public class PlayerStateService {
         applyResultAndForm(homePlayers, states, minutesPlayed, Integer.compare(homeGoals, awayGoals));
         applyResultAndForm(awayPlayers, states, minutesPlayed, Integer.compare(awayGoals, homeGoals));
         
+        processSuspensions(states, existingSuspensions);
+        processInjuries(states.values());
+
         applyEventEffects(events, playersByName, states);
         applyCleanSheets(homePlayers, states, minutesPlayed, awayGoals == 0);
         applyCleanSheets(awayPlayers, states, minutesPlayed, homeGoals == 0);
@@ -79,8 +82,6 @@ public class PlayerStateService {
         recoverInactivePlayers(homePlayers, states, minutesPlayed, homeTactics);
         recoverInactivePlayers(awayPlayers, states, minutesPlayed, awayTactics);
         
-        processSuspensions(states, existingSuspensions);
-        processInjuries(states.values());
         playerStateRepository.saveAll(states.values());
     }
 
@@ -94,9 +95,8 @@ public class PlayerStateService {
 
     public boolean isAvailable(PlayerState state) {
         return state.getRedCardSuspension() == 0
-                && (state.getInjuryStatus() == InjuryStatus.HEALTHY
-                || state.getInjuryStatus() == InjuryStatus.MINOR
-                || state.getInjuryMatchesRemaining() == 0);
+                && state.getInjuryMatchesRemaining() == 0
+                && state.getInjuryStatus() == InjuryStatus.HEALTHY;
     }
 
     private Map<Long, Integer> calculateMinutesPlayed(List<SquadPlayer> allPlayers,
@@ -268,6 +268,17 @@ public class PlayerStateService {
             } else if (type == MatchEventType.RED_CARD) {
                 state.setRedCardSuspension(Math.max(1, state.getRedCardSuspension()));
                 state.setCurrentForm(between(state.getCurrentForm() - 2, -10, 10));
+            } else if (type == MatchEventType.INJURY) {
+                if (event.description().contains("MINOR")) {
+                    state.setInjuryStatus(InjuryStatus.MINOR);
+                    state.setInjuryMatchesRemaining(1);
+                } else if (event.description().contains("MODERATE")) {
+                    state.setInjuryStatus(InjuryStatus.MODERATE);
+                    state.setInjuryMatchesRemaining(3);
+                } else if (event.description().contains("MAJOR")) {
+                    state.setInjuryStatus(InjuryStatus.MAJOR);
+                    state.setInjuryMatchesRemaining(5);
+                }
             }
         });
     }
