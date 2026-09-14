@@ -2,6 +2,7 @@
 
 ## Match-Engine Integration
 - Phase 10 additions must weave seamlessly via `MatchModifierService.java`. Currently, modifiers logically scale base team strength against momentum elements. The new fatigue architectures must systematically degrade specific sub-stats (e.g. pace dynamically falling as fatigue reaches 80% during simulations).
+- **Match Cycle Tracking (Phase 10B)**: `PlayerStateService.java` parses `events` globally post-match intercepting precise minutes. Duplicate applications are blocked explicitly by only recording calculations inside the terminal `updateAfterMatch` lifecycle, preserving purely transient mutation maps protecting `Player` base metrics natively.
 
 ## Player Availability Integration
 - `PlayerStateService.java` already encapsulates availability checks (`isAvailable`). Phase 10 will deepen this logic by incorporating contract eligibility (red card vs. cup-tied suspensions). These components seamlessly govern `SquadPlayer` availability blocks prior to API submission.

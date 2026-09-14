@@ -2,7 +2,7 @@
 
 ## Existing Entities & Responsibilities
 - **`Player`**: Stores immutable base attributes (`overallRating`, `potential`, etc.). Validated source of truth mapping player identity to country structures.
-- **`PlayerState`**: Extends `Player` exclusively handling transient modifiers (`currentForm`, `morale`, `fatigue`, `injuryStatus`).
+- **`PlayerState`**: Extends `Player` exclusively handling transient modifiers. Phase 10B has firmly implemented strict boundedness for `currentForm` `[-10, 10]` and precise `fatigue` arrays `[0, 100]` deriving deterministically from `MatchEventResponse` tracking actual minutes played instead of relying on loose starting booleans.
 - **`SquadPlayer`**: Acts as a junction table tying a `Player` sequentially to a tournament `Squad`.
 - **`Manager`**: Houses human user state mappings (reputation, coaching style).
 

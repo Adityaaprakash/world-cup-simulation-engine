@@ -3,6 +3,9 @@
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
+### Phase 10B: Player Form & Fatigue Engine
+- **Added**: Real-time deterministic mapping parsing Match Events dynamically mapping exact minutes played mathematically resolving Form boundaries `[-10, 10]` and `Fatigue` ceilings `[0, 100]`. Full integration without mutating base `Player` attributes.
+
 ### Phase 10A: Architecture & Domain Audit
 - **Added**: Comprehensive domain audit and architectural blueprints (`PHASE_10_ARCHITECTURE.md`, `PHASE_10_DOMAIN_MODEL.md`, `PHASE_10_INTEGRATION_POINTS.md`) for building advanced Player Forms, Manager Objectives, Contracts, and Fatigue logic atop the tested Phase 9 foundations natively without modifying schemas or application tests.
 ## [Phase 9] - Historical Intelligence & Ecosystem Polish

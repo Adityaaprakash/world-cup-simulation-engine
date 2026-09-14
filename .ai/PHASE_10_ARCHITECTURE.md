@@ -40,7 +40,7 @@ The primary goal of Phase 10 is to heavily expand the World Cup Simulation Engin
 - Need structured unit tests modeling the exact deterministic deterioration of Player Fatigue configurations before full API tests can be deployed.
 
 ## Proposed Phase 10 Component Boundaries
-1. **Fatigue & Form Engine**: An isolated service operating alongside `MatchSimulationService` purely consuming Match Minutes per player and translating to `PlayerState` mutations safely.
+1. **Fatigue & Form Engine [IMPLEMENTED - 10B]**: Integrated natively through `PlayerStateService.java`. It parses `MatchEventResponse` arrays intercepting exact minutes played per `player` safely scaling `fatigue` organically. Output operates globally restricting `currentForm` structurally to `[-10, 10]`.
 2. **Transfer Engine**: Managing global squad mutations dynamically resolving logic asynchronously between simulation milestones.
 3. **Manager Jobs Context**: Overlaying the historical simulation sequences by associating the `Manager` dynamically across entities based on reputation limits.
 

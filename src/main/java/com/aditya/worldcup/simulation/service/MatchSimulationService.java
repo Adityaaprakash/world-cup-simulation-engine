@@ -282,7 +282,8 @@ public class MatchSimulationService {
                 awayGoals,
                 events,
                 homeTactics,
-                awayTactics
+                awayTactics,
+                extraTime
         );
         aiManagerService.planRotationForNextMatch(homeSquad);
         aiManagerService.planRotationForNextMatch(awaySquad);

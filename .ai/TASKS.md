@@ -18,7 +18,7 @@
 - [x] Phase 10A Status: Domain and Architecture Audit **Complete**. Evaluated `PlayerState` bindings, `Manager` constructs, and `SubstitutionDecisionService` logics natively without mutating source environments.
 
 ### Phase 10B & Beyond (Planned Tasks)
-- [ ] Construct comprehensive `PlayerForm` and `PlayerFatigue` engine extensions interacting actively with match timers/decisions.
+- [x] Construct comprehensive `PlayerForm` and `PlayerFatigue` engine extensions interacting actively with match timers/decisions.
 - [ ] Construct Player Transfers & Training progressions resolving deterministic attributes dynamically across save epochs.
 - [ ] Establish `ManagerJob` configurations mapping strict Board Confidence analytics.
 - [ ] Deploy native Live Match experience integrations spanning UI interfaces.
