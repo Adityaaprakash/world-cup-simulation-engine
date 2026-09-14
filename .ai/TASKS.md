@@ -12,4 +12,17 @@
 - [x] Assemble `README.md` updates indicating detailed operational behaviors.
 - [x] Create project `.ai` authoritative documentation marking engine closure.
 
-**Note:** All phase tasks across all architectural modules have been successfully audited and closed dynamically. No outstanding core feature implementations remain.
+**Note:** All phase tasks across all architectural modules have been successfully audited and closed dynamically. No outstanding core feature implementations remain from Phase 9.
+
+## Phase 10: Expanded Ecosystem Engineering
+- [x] Phase 10A Status: Domain and Architecture Audit **Complete**. Evaluated `PlayerState` bindings, `Manager` constructs, and `SubstitutionDecisionService` logics natively without mutating source environments.
+
+### Phase 10B & Beyond (Planned Tasks)
+- [ ] Construct comprehensive `PlayerForm` and `PlayerFatigue` engine extensions interacting actively with match timers/decisions.
+- [ ] Construct Player Transfers & Training progressions resolving deterministic attributes dynamically across save epochs.
+- [ ] Establish `ManagerJob` configurations mapping strict Board Confidence analytics.
+- [ ] Deploy native Live Match experience integrations spanning UI interfaces.
+
+#### Dependencies & Risks
+- Dependency: Complete JSON save-game serialization pipelines must be uniformly expanded concurrently when mapping new database schemas.
+- Risk: Disrupting deterministic match outcomes when incorporating advanced `Fatigue` and `Modifiers`. Stringent verification boundaries (`@SpringBootTest`) must guarantee that newly evaluated components perfectly compile logically atop the legacy foundation.
