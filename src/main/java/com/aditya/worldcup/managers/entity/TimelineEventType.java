@@ -6,5 +6,8 @@ public enum TimelineEventType {
     PROMOTION,
     REPUTATION_UPGRADE,
     ACHIEVEMENT,
-    MILESTONE
+    MILESTONE,
+    HIRED,
+    SACKED,
+    RESIGNED
 }

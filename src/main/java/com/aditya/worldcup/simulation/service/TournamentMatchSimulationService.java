@@ -5,6 +5,7 @@ import com.aditya.worldcup.matches.entity.MatchRound;
 import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.matches.repository.MatchRepository;
 import com.aditya.worldcup.managers.service.CareerStatisticsService;
+import com.aditya.worldcup.managers.service.ManagerJobService;
 import com.aditya.worldcup.optimization.service.SimulationMetricsService;
 import com.aditya.worldcup.simulation.dto.MatchSimulationRequest;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
@@ -35,6 +36,7 @@ public class TournamentMatchSimulationService {
     private final TournamentIntelligenceService tournamentIntelligenceService;
     private final SimulationMetricsService simulationMetricsService;
     private final CareerStatisticsService careerStatisticsService;
+    private final ManagerJobService managerJobService;
 
     @Transactional
     public TournamentMatchSimulationResponse simulate(
@@ -121,6 +123,7 @@ public class TournamentMatchSimulationService {
             careerStatisticsService.recordCompletedMatch(match);
         }
         tournamentIntelligenceService.applyCompletedMatchEffects(match);
+        managerJobService.evaluateMatchResult(match.getHomeTeam().getId(), match.getAwayTeam().getId(), simulation.homeGoals(), simulation.awayGoals());
         long duration = System.currentTimeMillis() - start;
         simulationMetricsService.recordExecutionTime("tournament-match-simulation", duration);
         log.info("Tournament match completed: tournament={}, match={}, durationMs={}",

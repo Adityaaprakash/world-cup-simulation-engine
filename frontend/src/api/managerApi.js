@@ -7,3 +7,6 @@ export const getAchievements = () => axiosClient.get('/api/managers/me/achieveme
 export const getCareerAnalytics = () => axiosClient.get('/api/managers/me/analytics')
 export const getCareerTimeline = () => axiosClient.get('/api/managers/me/timeline')
 export const getManagerLeaderboards = () => axiosClient.get('/api/managers/leaderboards')
+export const getMyJobs = () => axiosClient.get('/api/v1/managers/jobs')
+export const acceptJob = (teamId, objective) => axiosClient.post('/api/v1/managers/jobs/accept', { teamId, objective })
+export const resignFromJob = () => axiosClient.post('/api/v1/managers/jobs/resign')

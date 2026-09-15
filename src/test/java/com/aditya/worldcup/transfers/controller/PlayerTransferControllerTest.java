@@ -1,6 +1,6 @@
 package com.aditya.worldcup.transfers.controller;
 
-import com.aditya.worldcup.security.JwtAuthenticationFilter;
+import com.aditya.worldcup.security.jwt.JwtAuthenticationFilter;
 import com.aditya.worldcup.transfers.dto.TransferRequest;
 import com.aditya.worldcup.transfers.dto.TransferResponse;
 import com.aditya.worldcup.transfers.service.PlayerTransferService;
