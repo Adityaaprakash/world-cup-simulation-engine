@@ -228,4 +228,44 @@ class PlayerTransferServiceTest {
         assertThat(newSp.getStartingXi()).isFalse();
         assertThat(newSp.getCaptain()).isFalse();
     }
+
+    @Test
+    void sourceSquadDoesNotExist() {
+        when(squadRepository.findById(20L)).thenReturn(Optional.empty());
+
+        TransferRequest req = new TransferRequest(50L, 20L, 30L);
+        
+        Exception ex = assertThrows(com.aditya.worldcup.shared.exception.SquadNotFoundException.class, () -> 
+            playerTransferService.transferPlayer(req, authentication));
+            
+        assertThat(ex.getMessage()).contains("Source squad not found");
+    }
+
+    @Test
+    void destinationSquadDoesNotExist() {
+        when(squadRepository.findById(20L)).thenReturn(Optional.of(sourceSquad));
+        when(squadRepository.findById(30L)).thenReturn(Optional.empty());
+
+        TransferRequest req = new TransferRequest(50L, 20L, 30L);
+        
+        Exception ex = assertThrows(com.aditya.worldcup.shared.exception.SquadNotFoundException.class, () -> 
+            playerTransferService.transferPlayer(req, authentication));
+            
+        assertThat(ex.getMessage()).contains("Destination squad not found");
+    }
+
+    @Test
+    void playerDoesNotExist() {
+        when(squadRepository.findById(20L)).thenReturn(Optional.of(sourceSquad));
+        when(squadRepository.findById(30L)).thenReturn(Optional.of(destSquad));
+        when(matchRepository.existsActiveMatchForTeam(any())).thenReturn(false);
+        when(playerRepository.findById(50L)).thenReturn(Optional.empty());
+
+        TransferRequest req = new TransferRequest(50L, 20L, 30L);
+        
+        Exception ex = assertThrows(com.aditya.worldcup.shared.exception.PlayerNotFoundException.class, () -> 
+            playerTransferService.transferPlayer(req, authentication));
+            
+        assertThat(ex.getMessage()).contains("Player not found");
+    }
 }

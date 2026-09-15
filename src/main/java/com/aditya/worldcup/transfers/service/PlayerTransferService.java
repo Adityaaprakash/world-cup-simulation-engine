@@ -2,6 +2,8 @@ package com.aditya.worldcup.transfers.service;
 
 import com.aditya.worldcup.matches.repository.MatchRepository;
 import com.aditya.worldcup.players.entity.Player;
+import com.aditya.worldcup.shared.exception.PlayerNotFoundException;
+import com.aditya.worldcup.shared.exception.SquadNotFoundException;
 import com.aditya.worldcup.players.repository.PlayerRepository;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
@@ -41,10 +43,10 @@ public class PlayerTransferService {
         }
 
         Squad sourceSquad = squadRepository.findById(request.sourceSquadId())
-                .orElseThrow(() -> new RuntimeException("Source squad not found"));
+                .orElseThrow(() -> new SquadNotFoundException("Source squad not found"));
 
         Squad destSquad = squadRepository.findById(request.destinationSquadId())
-                .orElseThrow(() -> new RuntimeException("Destination squad not found"));
+                .orElseThrow(() -> new SquadNotFoundException("Destination squad not found"));
 
         if (!sourceSquad.getUser().getId().equals(user.getId()) || !destSquad.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You must own both the source and destination squads to transfer");
@@ -56,7 +58,7 @@ public class PlayerTransferService {
         }
 
         Player player = playerRepository.findById(request.playerId())
-                .orElseThrow(() -> new RuntimeException("Player not found"));
+                .orElseThrow(() -> new PlayerNotFoundException("Player not found"));
 
         if (!player.getCountry().getId().equals(destSquad.getTeam().getCountry().getId())) {
             throw new IllegalArgumentException("Player does not belong to the destination squad's country");
