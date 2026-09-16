@@ -24,8 +24,13 @@
 - [x] Integrate Player Form, Fatigue, Injuries, and Training into Match Simulation lifecycle preserving deterministic execution boundary restrictions (Phase 10E).
 - [x] Construct Player Transfers handling across environments, registering movements efficiently preserving internal JSON architecture logic (Phase 10F).
 - [x] Harden Transfers architecture explicitly auditing bounds checks gracefully projecting 404 boundaries blocking exception spillage (Phase 10G).
-- [ ] Establish `ManagerJob` configurations mapping strict Board Confidence analytics.
-- [ ] Deploy native Live Match experience integrations spanning UI interfaces.
+- [x] Establish `ManagerJob` configurations mapping strict Board Confidence analytics (Phase 10H).
+- [ ] Deploy native Live Match experience integrations spanning UI interfaces (Phase 10I).
+  - [x] Phase 10I-A: WebSocket/STOMP Infrastructure mapping.
+  - [x] Phase 10I-B: Live Match Broadcaster Engine.
+  - [x] Phase 10I-C: Live Simulation API Integration.
+  - [ ] Phase 10I-D: Frontend Client STOMP Integrations.
+  - [ ] Phase 10I-E: WebSocket Authentication & Hardening.
 
 #### Dependencies & Risks
 - Dependency: Complete JSON save-game serialization pipelines must be uniformly expanded concurrently when mapping new database schemas.

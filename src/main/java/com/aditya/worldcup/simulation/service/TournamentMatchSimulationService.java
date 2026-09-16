@@ -22,6 +22,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import com.aditya.worldcup.live.service.LiveMatchBroadcasterService;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +40,7 @@ public class TournamentMatchSimulationService {
     private final SimulationMetricsService simulationMetricsService;
     private final CareerStatisticsService careerStatisticsService;
     private final ManagerJobService managerJobService;
-
+    private final LiveMatchBroadcasterService liveMatchBroadcasterService;
     @Transactional
     public TournamentMatchSimulationResponse simulate(
             Long tournamentId,
@@ -130,6 +133,25 @@ public class TournamentMatchSimulationService {
                 tournamentId,
                 matchId,
                 duration);
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        liveMatchBroadcasterService.broadcastMatch(matchId, simulation);
+                    } catch (Exception e) {
+                        log.error("Failed to trigger live broadcast for match {}", matchId, e);
+                    }
+                }
+            });
+        } else {
+            try {
+                liveMatchBroadcasterService.broadcastMatch(matchId, simulation);
+            } catch (Exception e) {
+                log.error("Failed to trigger live broadcast for match {}", matchId, e);
+            }
+        }
 
         return new TournamentMatchSimulationResponse(
                 match.getId(),

@@ -3,6 +3,14 @@
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
+### Phase 10I: Live Match Experience (A, B & C)
+- **Added**: `WebSocketConfig` mapping `/ws` endpoints supporting decoupled unauthenticated STOMP infrastructure scaling safely across REST contexts.
+- **Added**: `LiveMatchBroadcasterService` scheduling sequences natively tracking progressive arrays tracking Match timelines seamlessly to active broadcast mappings mapping real-time simulation experiences safely.
+- **Added**: Live broadcaster integration in `TournamentMatchSimulationService` mapping transaction hooks to broadcast exactly once after the database safely commits the final timeline. Broadcast errors gracefully fail without disrupting the REST response lifecycle.
+
+### Phase 10H: Manager Job & Board Confidence System
+- **Added**: Continuous timeline algorithms dynamically mapping Manager objectives natively evaluating confidence metrics post-match structurally sacking active managers mapping dynamic bounds.
+
 ### Phase 10C: Injury & Recovery System
 - **Added**: Deterministic Injury mappings restricting injured players from entering the starting XI and enforcing instant mid-match substitutions synchronously when sustaining in-game injuries. Includes deterministic recovery loops scaling match progression natively.
 
