@@ -29,7 +29,7 @@
   - [x] Phase 10I-A: WebSocket/STOMP Infrastructure mapping.
   - [x] Phase 10I-B: Live Match Broadcaster Engine.
   - [x] Phase 10I-C: Live Simulation API Integration.
-  - [ ] Phase 10I-D: Frontend Client STOMP Integrations.
+  - [x] Phase 10I-D: Frontend Client STOMP Integrations.
   - [ ] Phase 10I-E: WebSocket Authentication & Hardening.
 
 #### Dependencies & Risks
