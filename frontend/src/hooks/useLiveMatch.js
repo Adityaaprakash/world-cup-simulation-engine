@@ -37,6 +37,9 @@ export default function useLiveMatch(matchId) {
 
     let client = null;
     let isSubscribed = true;
+    
+    // Retrieve the token from wherever it's stored. Using axiosClient logic as reference.
+    const token = localStorage.getItem('world-cup-auth-token');
 
     try {
       const baseUrl = getBaseUrl();
@@ -44,6 +47,9 @@ export default function useLiveMatch(matchId) {
 
       client = new Client({
         webSocketFactory: () => new SockJS(socketUrl),
+        connectHeaders: token ? {
+          Authorization: `Bearer ${token}`
+        } : {},
         reconnectDelay: 2000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
@@ -66,9 +72,9 @@ export default function useLiveMatch(matchId) {
                   
                   if (payload.matchEvent) {
                     setEvents(prev => {
-                      const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}`));
+                      const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}-${e.description}`));
                       const newE = payload.matchEvent;
-                      if (!existMap.has(`${newE.minute}-${newE.player}-${newE.eventType}`)) {
+                      if (!existMap.has(`${newE.minute}-${newE.player}-${newE.eventType}-${newE.description}`)) {
                         return [...prev, newE].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
                       }
                       return prev;

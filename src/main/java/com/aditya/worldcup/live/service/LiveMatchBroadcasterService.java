@@ -78,14 +78,24 @@ public class LiveMatchBroadcasterService {
         Instant startTime = Instant.now().plusMillis(broadcastDelayMs); // small initial delay
 
         // Start Event
-        tasks.add(taskScheduler.schedule(() -> sendPayload(LiveMatchEventPayload.started(matchId)), startTime));
+        tasks.add(taskScheduler.schedule(() -> {
+            try {
+                sendPayload(LiveMatchEventPayload.started(matchId));
+            } catch (Exception ex) {
+                log.error("Error broadcasting STARTED event for match {}", matchId, ex);
+            }
+        }, startTime));
 
         for (int minute = 0; minute <= maxMinute; minute++) {
             final int currentMinute = minute;
             Instant executionTime = startTime.plusMillis(broadcastDelayMs + (minute * broadcastDelayMs));
             
             tasks.add(taskScheduler.schedule(() -> {
-                sendTickEvents(matchId, currentMinute, eventsByMinute.get(currentMinute), commentaryByMinute.get(currentMinute));
+                try {
+                    sendTickEvents(matchId, currentMinute, eventsByMinute.get(currentMinute), commentaryByMinute.get(currentMinute));
+                } catch (Exception ex) {
+                    log.error("Error broadcasting events for match {}, minute {}", matchId, currentMinute, ex);
+                }
             }, executionTime));
         }
 
@@ -93,9 +103,14 @@ public class LiveMatchBroadcasterService {
         final int finalMaxMinute = maxMinute;
         Instant finishTime = startTime.plusMillis(broadcastDelayMs + ((maxMinute + 1) * broadcastDelayMs));
         tasks.add(taskScheduler.schedule(() -> {
-            sendPayload(LiveMatchEventPayload.finished(matchId, response, finalMaxMinute));
-            cleanup(matchId);
-            log.info("Completed broadcast for match {}", matchId);
+            try {
+                sendPayload(LiveMatchEventPayload.finished(matchId, response, finalMaxMinute));
+            } catch (Exception ex) {
+                log.error("Error broadcasting FINISHED event for match {}", matchId, ex);
+            } finally {
+                cleanup(matchId);
+                log.info("Completed broadcast for match {}", matchId);
+            }
         }, finishTime));
 
         scheduledTasks.put(matchId, tasks);

@@ -10,12 +10,17 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import com.aditya.worldcup.shared.security.WebSocketAuthenticationInterceptor;
 
 @SpringBootTest(classes = WebSocketConfig.class)
 class WebSocketConfigTest {
 
     @Autowired
     private ApplicationContext context;
+
+    @MockBean
+    private WebSocketAuthenticationInterceptor interceptor;
 
     @Autowired
     private WebSocketConfig webSocketConfig;

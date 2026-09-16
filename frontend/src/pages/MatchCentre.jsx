@@ -46,7 +46,7 @@ export default function MatchCentre() {
   // Merge live events/commentary, deduplicating based on minute+description etc.
   const displayEvents = match.events ? [...match.events] : [];
   liveEvents.forEach(le => {
-    if (!displayEvents.some(e => e.minute === le.minute && e.player === le.player && e.eventType === le.eventType)) {
+    if (!displayEvents.some(e => e.minute === le.minute && e.player === le.player && e.eventType === le.eventType && e.description === le.description)) {
       displayEvents.push(le);
     }
   });
