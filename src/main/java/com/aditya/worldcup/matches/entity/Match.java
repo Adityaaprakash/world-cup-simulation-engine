@@ -44,6 +44,14 @@ public class Match {
 
     private LocalDateTime matchDate;
 
+    private Boolean wentToExtraTime;
+
+    private Boolean wentToPenalties;
+
+    private Integer homePenaltiesScore;
+
+    private Integer awayPenaltiesScore;
+
     @Enumerated(EnumType.STRING)
     private MatchRound round;
 

@@ -3,6 +3,12 @@
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
+### Phase 10J: Tournament Operations & Competition Management (A, B & C)
+- **Added**: Built-in deterministic generation for Extra Time and Penalty Shootouts resolving drawn knockout parameters directly within `MatchSimulationService` via `MatchContext` bound updates mapping properly into updated Entity domains natively backed by `V31__add_extra_time_penalties_to_matches.sql` (10J-A).
+- **Added**: Sequential Knockout mapping (`KnockoutSimulationService` traversing Ro16 through Final) algorithmically scheduling next-round fixtures and resolving bracket progression tied definitively to winner decisions incorporating penalty shootouts (10J-B).
+- **Added**: Native `KnockoutBracketResponse` hierarchically structured endpoint dynamically exposed at `GET /api/tournaments/{id}/knockout/bracket` safely decoupling bracket telemetry UI integrations (10J-B).
+- **Changed**: Replaced the ambiguous `IN_PROGRESS` tournament lifecycle enum explicitly with separated `GROUP_STAGE` and `KNOCKOUT_STAGE` domains natively spanning backend dashboards mapped via idempotent Flyway migration `V32__split_tournament_status.sql` handling pre-existing records transparently (10J-C).
+
 ### Phase 10I: Live Match Experience (A, B, C, D & E)
 - **Added**: `WebSocketConfig` mapping `/ws` endpoints supporting decoupled unauthenticated STOMP infrastructure scaling safely across REST contexts.
 - **Added**: `LiveMatchBroadcasterService` scheduling sequences natively tracking progressive arrays tracking Match timelines seamlessly to active broadcast mappings mapping real-time simulation experiences safely.

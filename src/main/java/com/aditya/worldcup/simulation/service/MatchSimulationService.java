@@ -166,11 +166,35 @@ public class MatchSimulationService {
         homeTactics = matchModifierService.applyContext(homeTactics, matchContext, true);
         awayTactics = matchModifierService.applyContext(awayTactics, matchContext, false);
 
-        String winner;
+        boolean extraTime = matchImportance.extraTimePossible() && homeGoals == awayGoals;
+        matchContext.setExtraTime(extraTime);
+        boolean shootout = match != null && extraTime;
+        
+        if (shootout) {
+            int hp = 0;
+            int ap = 0;
+            for (int i = 0; i < 5; i++) {
+                if (random.nextDouble() > 0.3) hp++;
+                if (random.nextDouble() > 0.3) ap++;
+            }
+            while (hp == ap) {
+                if (random.nextDouble() > 0.3) hp++;
+                if (random.nextDouble() > 0.3) ap++;
+                if (hp > ap + 1) hp = ap + 1;
+                if (ap > hp + 1) ap = hp + 1;
+            }
+            matchContext.setHomePens(hp);
+            matchContext.setAwayPens(ap);
+        }
 
+        String winner;
         if (homeGoals > awayGoals) {
             winner = homeSquad.getName();
         } else if (awayGoals > homeGoals) {
+            winner = awaySquad.getName();
+        } else if (shootout && matchContext.getHomePens() > matchContext.getAwayPens()) {
+            winner = homeSquad.getName();
+        } else if (shootout && matchContext.getAwayPens() > matchContext.getHomePens()) {
             winner = awaySquad.getName();
         } else {
             winner = "DRAW";
@@ -187,8 +211,7 @@ public class MatchSimulationService {
                         matchContext,
                         matchImportance
                 );
-        boolean extraTime = matchImportance.extraTimePossible() && homeGoals == awayGoals;
-        matchContext.setExtraTime(extraTime);
+
         boolean homeRedCard = hasRedCard(generatedEvents, homeSquad);
         boolean awayRedCard = hasRedCard(generatedEvents, awaySquad);
         homeProfile = aiManagerService.adjustTacticsForMatchState(
@@ -262,6 +285,10 @@ public class MatchSimulationService {
                 homeGoals,
                 awayGoals,
                 winner,
+                extraTime,
+                shootout,
+                shootout ? matchContext.getHomePens() : null,
+                shootout ? matchContext.getAwayPens() : null,
                 homeOverall,
                 awayOverall,
                 events,
@@ -288,9 +315,6 @@ public class MatchSimulationService {
         aiManagerService.planRotationForNextMatch(homeSquad);
         aiManagerService.planRotationForNextMatch(awaySquad);
         long duration = System.currentTimeMillis() - simulationStart;
-        boolean shootout = match != null
-                && matchImportance.extraTimePossible()
-                && homeGoals == awayGoals;
         simulationMetricsService.recordMatchSimulation(
                 duration,
                 response,

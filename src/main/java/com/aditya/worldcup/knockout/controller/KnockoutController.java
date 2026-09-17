@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tournaments")
@@ -33,5 +34,18 @@ public class KnockoutController {
             @PathVariable @Positive Long id) {
 
         return knockoutQualificationService.generateKnockout(id);
+    }
+
+    @GetMapping("/{id}/knockout/bracket")
+    @Operation(summary = "Get knockout bracket", description = "Retrieves the current state of all knockout groups")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Knockout bracket retrieved"),
+            @ApiResponse(responseCode = "404", description = "Tournament not found")
+    })
+    public List<KnockoutBracketResponse> getKnockoutBracket(
+            @Parameter(description = "Tournament id")
+            @PathVariable @Positive Long id) {
+
+        return knockoutQualificationService.getKnockoutBracket(id);
     }
 }

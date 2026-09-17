@@ -47,7 +47,7 @@ class LiveMatchBroadcasterServiceTest {
     @Test
     void shouldScheduleEventsInChronologicalOrder() {
         MatchSimulationResponse response = new MatchSimulationResponse(
-                "Home", "Away", 1, 0, "Home", 80, 75,
+                "Home", "Away", 1, 0, "Home", false, false, null, null, 80, 75,
                 List.of(new MatchEventResponse(15, "Player", "GOAL", "Home Team Goal")),
                 null, List.of(), null,
                 List.of(new CommentaryResponse(15, "What a strike!"))
@@ -76,7 +76,7 @@ class LiveMatchBroadcasterServiceTest {
     @Test
     void shouldPreventDuplicateBroadcasts() {
         MatchSimulationResponse response = new MatchSimulationResponse(
-                "Home", "Away", 0, 0, "DRAW", 80, 80,
+                "Home", "Away", 0, 0, "DRAW", false, false, null, null, 80, 80,
                 List.of(), null, List.of(), null, List.of()
         );
 
@@ -90,7 +90,7 @@ class LiveMatchBroadcasterServiceTest {
     @Test
     void shouldHandleEmptyEventListsGracefully() {
         MatchSimulationResponse response = new MatchSimulationResponse(
-                "Home", "Away", 0, 0, "DRAW", 80, 80,
+                "Home", "Away", 0, 0, "DRAW", false, false, null, null, 80, 80,
                 null, null, null, null, null
         );
 

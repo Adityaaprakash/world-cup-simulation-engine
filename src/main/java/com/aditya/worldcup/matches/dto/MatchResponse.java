@@ -11,6 +11,10 @@ public record MatchResponse(
         String awayTeam,
         Integer homeScore,
         Integer awayScore,
+        Boolean wentToExtraTime,
+        Boolean wentToPenalties,
+        Integer homePenaltiesScore,
+        Integer awayPenaltiesScore,
         MatchStatus status
 ) {
 }

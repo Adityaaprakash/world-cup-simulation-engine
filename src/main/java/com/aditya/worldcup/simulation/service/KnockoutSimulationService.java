@@ -64,8 +64,8 @@ public class KnockoutSimulationService {
                     "Completed or archived tournament cannot be simulated");
         }
 
-        if (tournament.getStatus() == TournamentStatus.UPCOMING) {
-            tournament.setStatus(TournamentStatus.IN_PROGRESS);
+        if (tournament.getStatus() == TournamentStatus.GROUP_STAGE) {
+            tournament.setStatus(TournamentStatus.KNOCKOUT_STAGE);
             tournamentRepository.save(tournament);
         }
 
@@ -113,7 +113,6 @@ public class KnockoutSimulationService {
                                             + match.getId()
                             ));
 
-                    resolveDrawIfNeeded(simulatedMatch);
                     careerStatisticsService.recordCompletedMatch(
                             simulatedMatch);
                     simulatedMatches.add(
@@ -258,26 +257,19 @@ public class KnockoutSimulationService {
         if (match.getAwayScore() > match.getHomeScore()) {
             return match.getAwayTeam();
         }
+        
+        if (Boolean.TRUE.equals(match.getWentToPenalties())) {
+            if (match.getHomePenaltiesScore() > match.getAwayPenaltiesScore()) {
+                return match.getHomeTeam();
+            } else if (match.getAwayPenaltiesScore() > match.getHomePenaltiesScore()) {
+                return match.getAwayTeam();
+            }
+        }
 
         throw new IllegalArgumentException(
-                "Completed knockout match cannot end in a draw: "
+                "Completed knockout match cannot end in a draw without penalties: "
                         + match.getId()
         );
-    }
-
-    private void resolveDrawIfNeeded(Match match) {
-
-        if (!match.getHomeScore().equals(match.getAwayScore())) {
-            return;
-        }
-
-        if (penaltyShootoutService.homeWinsShootout(match)) {
-            match.setHomeScore(match.getHomeScore() + 1);
-        } else {
-            match.setAwayScore(match.getAwayScore() + 1);
-        }
-
-        matchRepository.save(match);
     }
 
     private int countCompletedKnockoutMatches(Long tournamentId) {

@@ -40,7 +40,9 @@ public class AdminDashboardService {
                 new DashboardResponse.TournamentSummary(
                         tournamentRepository.count(),
                         tournamentRepository.countByStatus(
-                                TournamentStatus.IN_PROGRESS),
+                                TournamentStatus.GROUP_STAGE) +
+                        tournamentRepository.countByStatus(
+                                TournamentStatus.KNOCKOUT_STAGE),
                         tournamentRepository.countByStatus(
                                 TournamentStatus.COMPLETED)
                 ),

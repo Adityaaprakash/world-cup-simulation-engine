@@ -49,6 +49,10 @@ public class MatchPersistenceService {
         // 1. Update Match score and status
         match.setHomeScore(simulation.homeGoals());
         match.setAwayScore(simulation.awayGoals());
+        match.setWentToExtraTime(simulation.wentToExtraTime());
+        match.setWentToPenalties(simulation.wentToPenalties());
+        match.setHomePenaltiesScore(simulation.homePenaltiesScore());
+        match.setAwayPenaltiesScore(simulation.awayPenaltiesScore());
         match.setStatus(MatchStatus.FINISHED);
 
         // 2. Resolve squads for lookups

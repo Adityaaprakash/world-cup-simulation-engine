@@ -1,10 +1,10 @@
 # Current System State
 
-## Status: IN PROGRESS (Phase 10I-E Complete)
-The application has successfully completed Phase 10H (Manager Job System) and subsequently mapped the core Live Match Experience infrastructure (Phases 10I-A through 10I-E). The unified frontend elegantly streams cleanly-deduplicated match timelines seamlessly over authenticated decoupled STOMP WebSockets, falling back dynamically into active REST payloads upon disconnects. Testing gracefully handles isolated setups without exposing internal connection loops natively. Native security interceptors strongly guard `/ws` STOMP configurations validating incoming session contexts actively bounding WebSocket connections to strictly authenticated connections mirroring active generic frontend user identities via Bearer tokens.
+## Status: IN PROGRESS (Phase 10J-C Complete)
+The application has successfully completed Phase 10J-A (Extra Time & Penalty Shootouts), Phase 10J-B (Bracket Generation & automated Knockout Progression) and Phase 10J-C (Tournament Lifecycle splits). The unified frontend elegantly streams cleanly-deduplicated match timelines seamlessly over authenticated decoupled STOMP WebSockets, falling back dynamically into active REST payloads upon disconnects. Testing gracefully handles isolated setups without exposing internal connection loops natively. Native security interceptors strongly guard `/ws` STOMP configurations validating incoming session contexts actively bounding WebSocket connections to strictly authenticated connections mirroring active generic frontend user identities via Bearer tokens.
 
 ### Backend Capabilities (Java 22 / Spring Boot 3)
-The backend engine compiles and fully tests perfectly when bypassed against native timezone inconsistencies (`-Duser.timezone=UTC`) directly validating the entire 28 file regression suite logic.
+The backend engine compiles successfully. Native unit and integration tests validate the entire regression suite, but full backend execution is currently BLOCKED locally if the Docker daemon (Testcontainers) is unavailable to spin up transient PostgreSQL states.
 All logic configurations for advanced simulation intelligence and tactical mappings are operating correctly via transient persistence logic. Advanced career integration algorithms safely manipulate saves and administrative data. No raw API tokens or stack traces are emitted in production contexts per the Phase 9M-5 security hardening.
 
 ### Postgres Requirements

@@ -35,7 +35,7 @@ public class SystemOperationsService {
                 new SystemOperationsResponse.InfrastructureSummary(
                         adminHealthService.redisStatus(), adminHealthService.databaseStatus()),
                 new SystemOperationsResponse.SimulationSummary(
-                        tournamentRepository.countByStatus(TournamentStatus.IN_PROGRESS),
+                        tournamentRepository.countByStatus(TournamentStatus.GROUP_STAGE) + tournamentRepository.countByStatus(TournamentStatus.KNOCKOUT_STAGE),
                         tournamentRepository.countByStatus(TournamentStatus.COMPLETED),
                         saveSlotRepository.countByActiveTrue()));
         adminAuditService.log(authentication == null ? "unknown" : authentication.getName(),

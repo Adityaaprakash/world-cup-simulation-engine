@@ -85,7 +85,7 @@ class TournamentMatchSimulationServiceTest {
         awaySquad.setId(2000L);
 
         simulationResponse = new MatchSimulationResponse(
-                "Home", "Away", 2, 1, "Home", 80, 75,
+                "Home", "Away", 2, 1, "Home", false, false, null, null, 80, 75,
                 null, null, null, null, null
         );
     }

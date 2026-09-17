@@ -16,6 +16,8 @@ public class MatchContext {
     private int homeConsecutiveAttacks;
     private int awayConsecutiveAttacks;
     private boolean extraTime;
+    private Integer homePens;
+    private Integer awayPens;
 
     public MatchContext(WeatherCondition weather) {
         this.weather = weather;
@@ -137,5 +139,21 @@ public class MatchContext {
 
     public void setExtraTime(boolean extraTime) {
         this.extraTime = extraTime;
+    }
+
+    public Integer getHomePens() {
+        return homePens;
+    }
+
+    public void setHomePens(Integer homePens) {
+        this.homePens = homePens;
+    }
+
+    public Integer getAwayPens() {
+        return awayPens;
+    }
+
+    public void setAwayPens(Integer awayPens) {
+        this.awayPens = awayPens;
     }
 }

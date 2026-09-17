@@ -32,7 +32,7 @@ public class AdminHealthService {
                 actuatorStatus("redis", NOT_CONFIGURED),
                 databaseStatus(),
                 saveSlotRepository.countByActiveTrue(),
-                tournamentRepository.countByStatus(TournamentStatus.IN_PROGRESS),
+                tournamentRepository.countByStatus(TournamentStatus.GROUP_STAGE) + tournamentRepository.countByStatus(TournamentStatus.KNOCKOUT_STAGE),
                 LocalDateTime.now()
         );
     }

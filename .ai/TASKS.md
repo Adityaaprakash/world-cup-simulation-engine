@@ -35,3 +35,9 @@
 #### Dependencies & Risks
 - Dependency: Complete JSON save-game serialization pipelines must be uniformly expanded concurrently when mapping new database schemas.
 - Risk: Disrupting deterministic match outcomes when incorporating advanced `Fatigue` and `Modifiers`. Stringent verification boundaries (`@SpringBootTest`) must guarantee that newly evaluated components perfectly compile logically atop the legacy foundation.
+
+### Phase 10J: Tournament Operations & Competition Management 
+- [x] Phase 10J-A: Extra Time & Penalty Shootout Simulation Extensions.
+- [x] Phase 10J-B: Bracket Generation & Automated Knockout Progression.
+- [x] Phase 10J-C: Tournament State Machine & Automated Scheduling.
+- [ ] Phase 10J-D: Frontend Knockout Tree Visualization & Penalty Telemetry.

@@ -45,7 +45,7 @@ public class GroupStageSimulationService {
         }
 
         if (tournament.getStatus() == TournamentStatus.UPCOMING) {
-            tournament.setStatus(TournamentStatus.IN_PROGRESS);
+            tournament.setStatus(TournamentStatus.GROUP_STAGE);
             tournamentRepository.save(tournament);
         }
 

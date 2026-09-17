@@ -19,6 +19,7 @@ import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.tournamentteams.entity.TournamentTeam;
 import com.aditya.worldcup.tournamentteams.repository.TournamentTeamRepository;
 import com.aditya.worldcup.tournaments.entity.Tournament;
+import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -87,14 +88,63 @@ public class KnockoutQualificationService {
         List<KnockoutMatchResponse> response = knockoutMatches.stream()
                 .map(match -> new KnockoutMatchResponse(
                         match.getHomeTeam().getName(),
-                        match.getAwayTeam().getName()
+                        match.getAwayTeam().getName(),
+                        match.getHomeScore(),
+                        match.getAwayScore(),
+                        match.getWentToExtraTime(),
+                        match.getWentToPenalties(),
+                        match.getHomePenaltiesScore(),
+                        match.getAwayPenaltiesScore(),
+                        match.getStatus().name(),
+                        match.getId()
                 ))
                 .toList();
+
+        tournament.setStatus(TournamentStatus.KNOCKOUT_STAGE);
+        tournamentRepository.save(tournament);
 
         return new KnockoutBracketResponse(
                 MatchRound.ROUND_OF_16,
                 response
         );
+    }
+
+    public List<KnockoutBracketResponse> getKnockoutBracket(Long tournamentId) {
+        if (!tournamentRepository.existsById(tournamentId)) {
+            throw new TournamentNotFoundException(tournamentId);
+        }
+
+        List<MatchRound> knockoutRounds = List.of(
+                MatchRound.ROUND_OF_16,
+                MatchRound.QUARTER_FINALS,
+                MatchRound.SEMI_FINALS,
+                MatchRound.FINAL
+        );
+
+        List<Match> matches = matchRepository.findByTournamentIdOrderById(tournamentId);
+
+        return knockoutRounds.stream()
+                .map(round -> {
+                    List<KnockoutMatchResponse> roundMatches = matches.stream()
+                            .filter(m -> m.getRound() == round)
+                            .sorted(Comparator.comparing(Match::getId))
+                            .map(match -> new KnockoutMatchResponse(
+                                    match.getHomeTeam().getName(),
+                                    match.getAwayTeam().getName(),
+                                    match.getHomeScore(),
+                                    match.getAwayScore(),
+                                    match.getWentToExtraTime(),
+                                    match.getWentToPenalties(),
+                                    match.getHomePenaltiesScore(),
+                                    match.getAwayPenaltiesScore(),
+                                    match.getStatus().name(),
+                                    match.getId()
+                            ))
+                            .toList();
+                    return new KnockoutBracketResponse(round, roundMatches);
+                })
+                .filter(response -> !response.matches().isEmpty())
+                .toList();
     }
 
     private GroupQualifier getGroupQualifier(

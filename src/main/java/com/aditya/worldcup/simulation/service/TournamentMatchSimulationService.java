@@ -111,7 +111,7 @@ public class TournamentMatchSimulationService {
                 );
 
         if (tournament.getStatus() == TournamentStatus.UPCOMING) {
-            tournament.setStatus(TournamentStatus.IN_PROGRESS);
+            tournament.setStatus(TournamentStatus.GROUP_STAGE);
             tournamentRepository.save(tournament);
         }
 
@@ -160,6 +160,10 @@ public class TournamentMatchSimulationService {
                 simulation.homeGoals(),
                 simulation.awayGoals(),
                 simulation.winner(),
+                simulation.wentToExtraTime(),
+                simulation.wentToPenalties(),
+                simulation.homePenaltiesScore(),
+                simulation.awayPenaltiesScore(),
                 match.getStatus().name(),
                 simulation.events(),
                 simulation.statistics(),

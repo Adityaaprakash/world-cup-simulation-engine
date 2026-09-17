@@ -90,7 +90,7 @@ public class TournamentService {
         Tournament tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new TournamentNotFoundException(id));
 
-        if (tournament.getStatus() == TournamentStatus.IN_PROGRESS) {
+        if (tournament.getStatus() == TournamentStatus.GROUP_STAGE || tournament.getStatus() == TournamentStatus.KNOCKOUT_STAGE) {
             throw new IllegalStateException(
                     "Tournament in progress cannot be deleted");
         }
@@ -170,7 +170,7 @@ public class TournamentService {
     public void deleteInactiveTournament(Long id) {
         Tournament tournament = findTournament(id);
 
-        if (tournament.getStatus() == TournamentStatus.IN_PROGRESS) {
+        if (tournament.getStatus() == TournamentStatus.GROUP_STAGE || tournament.getStatus() == TournamentStatus.KNOCKOUT_STAGE) {
             throw new IllegalStateException(
                     "Active tournaments cannot be deleted");
         }

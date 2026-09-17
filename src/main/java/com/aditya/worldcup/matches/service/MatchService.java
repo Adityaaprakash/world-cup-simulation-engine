@@ -118,6 +118,10 @@ public class MatchService {
                 match.getAwayTeam().getName(),
                 match.getHomeScore(),
                 match.getAwayScore(),
+                match.getWentToExtraTime(),
+                match.getWentToPenalties(),
+                match.getHomePenaltiesScore(),
+                match.getAwayPenaltiesScore(),
                 match.getStatus()
         );
     }
