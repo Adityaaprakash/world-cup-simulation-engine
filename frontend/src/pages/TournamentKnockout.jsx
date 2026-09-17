@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getTournament, getTournamentMatches } from '../api/tournamentApi'
+import { getTournament, getTournamentKnockoutBracket } from '../api/tournamentApi'
 import { getTournamentStatistics } from '../api/statisticsApi'
 import Card from '../components/common/Card'
 import EmptyState from '../components/common/EmptyState'
@@ -18,10 +18,10 @@ export default function TournamentKnockout() {
     setIsLoading(true); setError('')
     try {
       const { data: tournament } = await getTournament(tournamentId)
-      const [matchesResult, statisticsResult] = await Promise.allSettled([getTournamentMatches(tournamentId), getTournamentStatistics(tournament.name, tournament.year)])
+      const [bracketResult, statisticsResult] = await Promise.allSettled([getTournamentKnockoutBracket(tournamentId), getTournamentStatistics(tournament.name, tournament.year)])
       const statistics = statisticsResult.status === 'fulfilled' ? statisticsResult.value.data.content?.find((item) => item.tournamentId === tournament.id) || null : null
-      setData({ tournament, matches: matchesResult.status === 'fulfilled' ? matchesResult.value.data : [], statistics })
-      const failure = [matchesResult, statisticsResult].find((result) => result.status === 'rejected')
+      setData({ tournament, bracket: bracketResult.status === 'fulfilled' ? bracketResult.value.data : [], statistics })
+      const failure = [bracketResult, statisticsResult].find((result) => result.status === 'rejected')
       if (failure) setError(failure.reason?.message || 'Some knockout information could not be loaded.')
     } catch (requestError) { setError(requestError.message || 'Unable to load knockout fixtures.') } finally { setIsLoading(false) }
   }, [tournamentId])
@@ -29,7 +29,11 @@ export default function TournamentKnockout() {
   useEffect(() => { load() }, [load])
   if (isLoading) return <Loading label="Loading knockout bracket..." />
   if (!data.tournament) return <ErrorMessage message={error || 'Tournament not found.'} />
-  const knockoutMatches = data.matches.filter((match) => match.round && match.round !== 'GROUP_STAGE')
+  let knockoutMatches = []
+  if (data.bracket) {
+    knockoutMatches = data.bracket.flatMap((b) => b.matches.map((m) => ({ ...m, round: b.round, id: m.matchId })))
+  }
+
   const remaining = knockoutMatches.filter((match) => match.status !== 'FINISHED').length
   const champion = data.tournament.status === 'COMPLETED' ? data.statistics?.champion : null
 

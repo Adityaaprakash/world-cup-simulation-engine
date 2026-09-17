@@ -4,7 +4,23 @@ import { formatLabel } from '../../utils/football'
 
 function MatchCard({ match, tournamentId }) {
   const finished = match.status === 'FINISHED'
-  return <Link to={`/matches/${match.id}`} state={{ tournamentId }} className="block rounded-lg border border-slate-700 bg-slate-950/70 p-3 transition hover:border-emerald-400 hover:bg-emerald-400/5"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Match {match.id}</span><StatusBadge status={match.status} /></div><div className="mt-3 grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-sm"><span className="truncate font-semibold text-slate-100">{match.homeTeam}</span><span className="font-bold text-white">{finished ? match.homeScore : '-'}</span><span className="truncate font-semibold text-slate-100">{match.awayTeam}</span><span className="font-bold text-white">{finished ? match.awayScore : '-'}</span></div></Link>
+  return <Link to={`/matches/${match.id}`} state={{ tournamentId }} className="block rounded-lg border border-slate-700 bg-slate-950/70 p-3 transition hover:border-emerald-400 hover:bg-emerald-400/5">
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Match {match.id}</span>
+      <StatusBadge status={match.status} />
+    </div>
+    <div className="mt-3 grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 text-sm">
+      <span className="truncate font-semibold text-slate-100">{match.homeTeam} {match.wentToPenalties && <span className="text-xs text-amber-400 ml-1">({match.homePenaltiesScore})</span>}</span>
+      <span className="font-bold text-white">{finished ? match.homeScore : '-'}</span>
+      <span className="truncate font-semibold text-slate-100">{match.awayTeam} {match.wentToPenalties && <span className="text-xs text-amber-400 ml-1">({match.awayPenaltiesScore})</span>}</span>
+      <span className="font-bold text-white">{finished ? match.awayScore : '-'}</span>
+    </div>
+    {(match.wentToExtraTime || match.wentToPenalties) && (
+      <div className="mt-2 text-[10px] uppercase font-bold text-emerald-400/80 tracking-wider text-right">
+        {match.wentToPenalties ? 'Penalties' : 'After Extra Time'}
+      </div>
+    )}
+  </Link>
 }
 
 export default function KnockoutBracket({ matches, tournamentId }) {
