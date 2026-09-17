@@ -1,0 +1,75 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  backend-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 22
+        uses: actions/setup-java@v4
+        with:
+          java-version: '22'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile Backend
+        run: ./mvnw clean compile -DskipTests
+
+      - name: Run Backend Tests
+        run: ./mvnw test -Duser.timezone=UTC
+        env:
+          MAVEN_OPTS: "-Duser.timezone=UTC"
+
+  frontend-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Linter
+        working-directory: frontend
+        run: |
+          if node -e "const pkg = require('./package.json'); if (pkg.scripts && pkg.scripts.lint) { process.exit(0); } else { process.exit(1); }"; then
+            npm run lint
+          else
+            echo "Lint script not configured, skipping."
+          fi
+
+      - name: Run Tests
+        working-directory: frontend
+        run: npm run test
+
+      - name: Build Production Assets
+        working-directory: frontend
+        run: npm run build
+
+  container-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose config
+
+      - name: Dry Run Backend Dockerfile
+        run: docker build -t worldcup-backend:test . -f Dockerfile
+
+      - name: Dry Run Frontend Dockerfile
+        run: docker build -t worldcup-frontend:test ./frontend -f frontend/Dockerfile

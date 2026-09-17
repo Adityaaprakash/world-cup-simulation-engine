@@ -3,6 +3,13 @@
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
+### Phase 10M: Cloud Delivery Infrastructure & CI/CD Readiness
+- **Added**: Full-stack GitHub Actions pipeline (`ci.yml`) validating Java tests dynamically alongside standard Node JS frontend mapping parameters. No explicit deployments are scheduled statically.
+- **Added**: Nginx fallback architectures explicitly resolving internal Vue/React path dependencies directly off `/dist` structures via `frontend/Dockerfile`.
+- **Added**: Dedicated `backend` Spring Boot `Dockerfile` routing exclusively via non-root Temurin distributions maximizing security layers.
+- **Added**: Complete `Helm` capabilities located at `deploy/helm/worldcup/` natively bridging config maps alongside Base64 encoded Kubernetes Secrets isolated securely off volatile configurations.
+- **Changed**: Improved root `docker-compose.yml` natively encapsulating isolated bridges interconnecting backend and UI seamlessly beside established Postgres 16 integrations.
+
 ### Phase 10K: Frontend Knockout Tree Visualization & Penalty Telemetry
 - **Added**: Real-time integration supporting Extra time (`AET`) and Penalty markers (`Pens`) directly within `MatchHeader.jsx` components scaling gracefully between Live STOMP streams and standard REST endpoints without layout fractures.
 - **Added**: `KnockoutBracketResponse` JSON mappings into native React DOM structural arrays within `KnockoutBracket.jsx` dynamically projecting frontend hierarchies without manipulating backend logic workflows.

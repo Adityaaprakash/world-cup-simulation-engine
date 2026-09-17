@@ -61,6 +61,14 @@ npm run dev
 5. **Analytics**: Review historical Statistics, Saves/Replays, and Global Rankings.
 6. **Logout**: Destroys the local token context.
 
+## Cloud Deployment & CI/CD
+Building towards modern continuous delivery, Phase 10M introduces a lightweight orchestration layer:
+- **Docker Compose Full Stack**: Now runs the `backend`, `frontend`, and `postgres` together via `docker-compose up --build -d`.
+- **Backend & Frontend Containers**: Standalone Dockerfiles leveraging unprivileged users and multi-stage Alpine builds for strict security and tiny images.
+- **GitHub Actions (CI/CD)**: Validates code dynamically pushing commits/PRs against `maven test -Duser.timezone=UTC`, `npm run test`, and `npm run build`.
+- **Helm Charts**: `deploy/helm/worldcup/` provides Kubernetes bindings securely abstracting credentials across ConfigMaps and dynamically mapped Secrets templates. No real cloud environment is configured by default.
+*(Note: Real production environments require overriding `values.yaml` secrets dynamically within Kubernetes.)*
+
 ## Dynamic player state
 
 Each player has a persisted state separate from their base `overall_rating`. New
