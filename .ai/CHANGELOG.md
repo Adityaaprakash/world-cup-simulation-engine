@@ -3,6 +3,11 @@
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
+### Phase 10K: Frontend Knockout Tree Visualization & Penalty Telemetry
+- **Added**: Real-time integration supporting Extra time (`AET`) and Penalty markers (`Pens`) directly within `MatchHeader.jsx` components scaling gracefully between Live STOMP streams and standard REST endpoints without layout fractures.
+- **Added**: `KnockoutBracketResponse` JSON mappings into native React DOM structural arrays within `KnockoutBracket.jsx` dynamically projecting frontend hierarchies without manipulating backend logic workflows.
+- **Changed**: Reconfigured `tournamentApi.js` seamlessly switching from legacy flat REST sequences to explicit `/api/tournaments/{tournamentId}/knockout/bracket` endpoints.
+
 ### Phase 10J: Tournament Operations & Competition Management (A, B & C)
 - **Added**: Built-in deterministic generation for Extra Time and Penalty Shootouts resolving drawn knockout parameters directly within `MatchSimulationService` via `MatchContext` bound updates mapping properly into updated Entity domains natively backed by `V31__add_extra_time_penalties_to_matches.sql` (10J-A).
 - **Added**: Sequential Knockout mapping (`KnockoutSimulationService` traversing Ro16 through Final) algorithmically scheduling next-round fixtures and resolving bracket progression tied definitively to winner decisions incorporating penalty shootouts (10J-B).

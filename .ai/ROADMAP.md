@@ -15,12 +15,16 @@ The World Cup Simulation Engine backend modeling framework and ecosystem integra
    - Saves importing, autosave functionality, and JSON backup exporting.
    - Advanced search, Admin panel maintenance APIs, and dynamic datasets.
 
-## Phase 10J (Partially Complete - Backend)
+## Phase 10J (Complete)
 - **Tournament Operations, Scheduling & Competition Management**: 
    - Dynamic Knockout Tree generation and progression natively integrated into simulation cycles cleanly routing `nextRoundFixtures`.
    - Extra time and penalty shootout simulation bounds mathematically generated maintaining simulation deterministic bounds seamlessly tested via REST endpoints.
    - Migrated legacy states implementing strictly typed `GROUP_STAGE` and `KNOCKOUT_STAGE` tournament properties.
-   - *Future Work: Frontend React Tree visualization mapping these elements natively is deferred.*
+
+## Phase 10K (Complete)
+- **Frontend Knockout Tree Visualization & Penalty Telemetry**:
+   - Replaced deferred native React Tree visualization mapping elements natively using the `/api/tournaments/{id}/knockout/bracket` REST integration.
+   - Added `(After Extra Time)` and `(Pens)` properties to both live match headers and the knockout brackets dynamically.
 
 ## Future Explorations
 - **Cloud Delivery Infrastructure**: Implement Kubernetes/Helm definitions mapping this Docker-compose artifact to active AWS EKS or GCP clusters.

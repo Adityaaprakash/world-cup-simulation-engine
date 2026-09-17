@@ -18,7 +18,7 @@ export default function MatchHeader({ match }) {
       </div>
       <div>
         <div className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 sm:px-7">
-          <p className="text-3xl font-black tracking-tight text-white sm:text-5xl">{score(match.homeScore)} <span className="text-emerald-400">–</span> {score(match.awayScore)}</p>
+          <p className="text-3xl font-black tracking-tight text-white sm:text-5xl">{score(match.homeScore ?? match.homeGoals)} <span className="text-emerald-400">–</span> {score(match.awayScore ?? match.awayGoals)}</p>
         </div>
         <div className="mt-3 flex flex-col gap-1 items-center">
           <StatusBadge status={match.status} />
