@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,14 +22,18 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class LiveMatchBroadcasterService {
 
     private final SimpMessagingTemplate messagingTemplate;
-    
-    @Qualifier("liveMatchTaskScheduler")
     private final TaskScheduler taskScheduler;
+
+    @Autowired
+    public LiveMatchBroadcasterService(SimpMessagingTemplate messagingTemplate,
+                                       @Qualifier("liveMatchTaskScheduler") TaskScheduler taskScheduler) {
+        this.messagingTemplate = messagingTemplate;
+        this.taskScheduler = taskScheduler;
+    }
 
     @Value("${live.match.broadcast.delayMs:200}")
     private long broadcastDelayMs;

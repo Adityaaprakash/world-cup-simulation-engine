@@ -37,7 +37,7 @@ export default function useLiveMatch(matchId) {
 
     let client = null;
     let isSubscribed = true;
-    
+
     // Retrieve the token from wherever it's stored. Using axiosClient logic as reference.
     const token = localStorage.getItem('world-cup-auth-token');
 
@@ -69,7 +69,7 @@ export default function useLiveMatch(matchId) {
 
                 case 'EVENT': {
                   setLastEvent(payload);
-                  
+
                   if (payload.matchEvent) {
                     setEvents(prev => {
                       const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}-${e.description}`));

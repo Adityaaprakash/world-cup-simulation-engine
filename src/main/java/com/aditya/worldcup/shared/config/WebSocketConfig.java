@@ -23,7 +23,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Value("${cors.allowed-origins:*}")
     private List<String> allowedOrigins;
-    
+
     private final WebSocketAuthenticationInterceptor webSocketAuthenticationInterceptor;
 
     @Bean
@@ -45,7 +45,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         String[] originsArray = allowedOrigins.stream()
                 .filter(o -> !o.isBlank() && !o.equals("*"))
                 .toArray(String[]::new);
-                
+
         if (originsArray.length == 0) {
             registry.addEndpoint("/ws").withSockJS();
         } else {
