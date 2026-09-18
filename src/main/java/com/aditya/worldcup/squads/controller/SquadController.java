@@ -257,4 +257,14 @@ public class SquadController {
     ) {
         return squadPlayerService.getStartingXi(squadId);
     }
+
+    @GetMapping("/{squadId}/analysis")
+    @Operation(summary = "Get squad analysis", description = "Returns a basic depth analysis of the squad highlighting weaknesses based on position counts")
+    @ApiResponse(responseCode = "200", description = "Squad analysis returned")
+    public com.aditya.worldcup.squadplayers.dto.SquadAnalysisResponse getSquadAnalysis(
+            @Parameter(description = "Squad id")
+            @PathVariable @Positive Long squadId
+    ) {
+        return squadPlayerService.getSquadAnalysis(squadId);
+    }
 }

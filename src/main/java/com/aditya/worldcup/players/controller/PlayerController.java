@@ -56,4 +56,26 @@ public class PlayerController {
 
         return playerService.getPlayersByCountry(countryId);
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get player details", description = "Returns detailed player attributes and current form/fitness")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Player details returned"),
+            @ApiResponse(responseCode = "404", description = "Player not found")
+    })
+    public com.aditya.worldcup.players.dto.PlayerDetailsResponse getPlayerDetails(
+            @Parameter(description = "Player id")
+            @PathVariable @Positive Long id
+    ) {
+        return playerService.getPlayerDetails(id);
+    }
+
+    @PostMapping("/compare")
+    @Operation(summary = "Compare players", description = "Returns details for multiple players to compare them side-by-side")
+    @ApiResponse(responseCode = "200", description = "Player comparison returned")
+    public List<com.aditya.worldcup.players.dto.PlayerDetailsResponse> comparePlayers(
+            @jakarta.validation.Valid @RequestBody com.aditya.worldcup.players.dto.ComparePlayersRequest request
+    ) {
+        return playerService.comparePlayers(request.playerIds());
+    }
 }

@@ -14,6 +14,7 @@ import java.util.List;
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
+    private final com.aditya.worldcup.players.service.PlayerStateService playerStateService;
 
     public List<PlayerResponse> getAllPlayers() {
 
@@ -52,5 +53,46 @@ public class PlayerService {
                         player.getOverallRating()
                 ))
                 .toList();
+    }
+
+    public com.aditya.worldcup.players.dto.PlayerDetailsResponse getPlayerDetails(Long id) {
+        com.aditya.worldcup.players.entity.Player player = playerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Player not found"));
+        return buildDetailsResponse(player);
+    }
+
+    public List<com.aditya.worldcup.players.dto.PlayerDetailsResponse> comparePlayers(List<Long> playerIds) {
+        return playerIds.stream()
+                .map(this::getPlayerDetails)
+                .toList();
+    }
+
+    private com.aditya.worldcup.players.dto.PlayerDetailsResponse buildDetailsResponse(com.aditya.worldcup.players.entity.Player player) {
+        com.aditya.worldcup.players.entity.PlayerState state = playerStateService.getOrCreateState(player);
+        boolean available = playerStateService.isAvailable(state);
+
+        return new com.aditya.worldcup.players.dto.PlayerDetailsResponse(
+                player.getId(),
+                player.getName(),
+                player.getCountry().getName(),
+                player.getPosition().name(),
+                player.getAge(),
+                player.getOverallRating(),
+                player.getPotential(),
+                player.getPace(),
+                player.getShooting(),
+                player.getPassing(),
+                player.getDribbling(),
+                player.getDefending(),
+                player.getPhysical(),
+                player.getPreferredFoot(),
+                player.getActive(),
+                player.getRetired(),
+                state.getCurrentForm(),
+                state.getFitness(),
+                state.getFatigue(),
+                state.getInjuryStatus(),
+                available
+        );
     }
 }

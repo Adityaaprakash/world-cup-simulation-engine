@@ -10,3 +10,4 @@ export const assignPosition = (squadId, playerId, positionSlot) => axiosClient.p
 export const setCaptain = (squadId, playerId) => axiosClient.put(`/api/squads/${squadId}/captain`, { playerId })
 export const validateLineup = (squadId) => axiosClient.get(`/api/squads/${squadId}/validate`)
 export const getSquadReadyStatus = (squadId) => axiosClient.get(`/api/squads/${squadId}/ready`)
+export const getSquadAnalysis = (squadId) => axiosClient.get(`/api/squads/${squadId}/analysis`)

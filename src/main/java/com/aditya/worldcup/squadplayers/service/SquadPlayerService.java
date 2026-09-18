@@ -465,4 +465,54 @@ public class SquadPlayerService {
                 "Squad is ready for match simulation"
         );
     }
+
+    public com.aditya.worldcup.squadplayers.dto.SquadAnalysisResponse getSquadAnalysis(Long squadId) {
+        List<SquadPlayer> players = squadPlayerRepository.findBySquadId(squadId);
+
+        long gkCount = players.stream()
+                .filter(sp -> "GK".equals(sp.getPlayer().getPosition().name()))
+                .count();
+
+        long defCount = players.stream()
+                .filter(sp -> List.of("LB", "CB", "RB", "LWB", "RWB")
+                        .contains(sp.getPlayer().getPosition().name()))
+                .count();
+
+        long midCount = players.stream()
+                .filter(sp -> List.of("CDM", "CM", "CAM", "LM", "RM")
+                        .contains(sp.getPlayer().getPosition().name()))
+                .count();
+
+        long attCount = players.stream()
+                .filter(sp -> List.of("LW", "RW", "ST", "CF")
+                        .contains(sp.getPlayer().getPosition().name()))
+                .count();
+
+        long unavailableCount = players.stream()
+                .filter(sp -> !playerStateService.isAvailable(
+                        playerStateService.getOrCreateState(sp.getPlayer())))
+                .count();
+
+        String recommendation = "Squad is well balanced.";
+        if (gkCount < 2) {
+            recommendation = "Goalkeeper depth is limited.";
+        } else if (defCount < 6) {
+            recommendation = "Defense depth is limited.";
+        } else if (midCount < 6) {
+            recommendation = "Midfield depth is limited.";
+        } else if (attCount < 4) {
+            recommendation = "Attack depth is limited.";
+        }
+
+        return new com.aditya.worldcup.squadplayers.dto.SquadAnalysisResponse(
+                players.size(),
+                gkCount,
+                defCount,
+                midCount,
+                attCount,
+                unavailableCount,
+                recommendation,
+                players.size() <= 26
+        );
+    }
 }
