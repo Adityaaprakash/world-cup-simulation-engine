@@ -2,6 +2,12 @@
 
 All notable changes to the World Cup Simulation Engine are documented here. The system operates on a phase-based rollout mapping core structures to historical completions.
 
+## [Phase 11] - Career System Enhancements
+### Phase 11B: Contracts & Player Lifecycle
+- **Added**: Player Contract system linking real-world management paradigms mapping contract validations pre-entry to tournament squads natively.
+- **Added**: Dynamic `PlayerLifecycleService` capturing permanent international retirements accurately and feeding directly into native `CareerTimeline` events globally.
+- **Added**: Frontend UI configurations rendering strict contract management controls seamlessly inside the pre-existing Squad management dashboard.
+
 ## [Phase 10] - Advanced Simulation & Manager Ecosystem
 ### Phase 10M: Cloud Delivery Infrastructure & CI/CD Readiness
 - **Added**: Full-stack GitHub Actions pipeline (`ci.yml`) validating Java tests dynamically alongside standard Node JS frontend mapping parameters. No explicit deployments are scheduled statically.

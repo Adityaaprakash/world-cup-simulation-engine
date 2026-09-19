@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { addSquadPlayer, removeSquadPlayer, getMySquads, getSquadPlayers, getSquadAnalysis } from '../api/squadApi'
 import { getTeam, getTeamPlayers } from '../api/teamApi'
 import { comparePlayers, getPlayerDetails } from '../api/playerApi'
+import { retirePlayer, reactivatePlayer } from '../api/contractApi'
 import Card from '../components/common/Card'
 import EmptyState from '../components/common/EmptyState'
 import ErrorMessage from '../components/common/ErrorMessage'
@@ -130,6 +131,19 @@ export default function Squad() {
     } catch (e) {}
   }
 
+  const handleToggleRetirement = async (id, isRetired) => {
+    try {
+      if (isRetired) {
+        await reactivatePlayer(id)
+      } else {
+        await retirePlayer(id)
+      }
+      showDetails(id)
+    } catch (e) {
+      setActionError(e.response?.data?.message || 'Failed to update retirement status')
+    }
+  }
+
   if (isLoading) return <Loading label="Loading team squad..." />
   if (!team) return <ErrorMessage message={error || 'Team not found.'} />
 
@@ -190,10 +204,18 @@ export default function Squad() {
       )}
 
       {inspectPlayer && (
-        <Card className="border-emerald-500 border-2">
+        <Card className="border-emerald-500 border-2 relative">
+           {inspectPlayer.retired && (
+             <div className="absolute -top-3 left-4 bg-red-600 font-bold tracking-widest text-white px-2 py-1 rounded text-xs">RETIRED</div>
+           )}
            <div className="flex justify-between items-center">
              <h3 className="text-xl font-bold text-white">{inspectPlayer.name} Profile</h3>
-             <Button variant="primary" onClick={() => setInspectPlayer(null)}>Close</Button>
+             <div className="flex gap-2 items-center">
+               <Button variant="secondary" onClick={() => handleToggleRetirement(inspectPlayer.id, inspectPlayer.retired)}>
+                 {inspectPlayer.retired ? 'Reactivate' : 'Retire Player'}
+               </Button>
+               <Button variant="primary" onClick={() => setInspectPlayer(null)}>Close</Button>
+             </div>
            </div>
            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
              <div><p className="text-emerald-300 font-semibold text-sm">Age</p><p className="text-white font-bold">{inspectPlayer.age}</p></div>

@@ -47,3 +47,7 @@
   - [x] Integrate Docker CLI validations natively across existing `docker-compose.yml`.
   - [x] Implement robust Kubernetes Helm Chart architectures covering config and dynamically linked Secrets.
   - [x] Deploy strict GitHub Actions workflows verifying Maven testing logic without publishing rogue credentials.
+
+## Phase 11 (Complete)
+- [x] Phase 11A: Player Acquisition & Advanced Squad Building.
+- [x] Phase 11B: Contracts & Player Lifecycle. Manager tools for tracking and terminating contracts, capturing retirement timeline events safely integrated natively preventing selections globally.

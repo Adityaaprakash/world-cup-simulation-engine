@@ -33,5 +33,9 @@ The World Cup Simulation Engine backend modeling framework and ecosystem integra
    - Unified `docker-compose.yaml` to orchestrate isolated Database, API, and UI containers deterministically.
    - Bootstrapped native Helm Charts securely separating volatile configuration maps from dynamically formatted external Kubernetes Secrets.
 
+## Phase 11 (Complete)
+- **Phase 11A**: Player Acquisition & Advanced Squad Building.
+- **Phase 11B**: Contracts & Player Lifecycle. Managed national team career relationships, dynamic contract renewals, commitment levels, and permanent international retirements natively feeding into the `CareerTimeline`.
+
 ## Future Explorations
 - **Localized Mobile Applications**: Generate a React Native target interfacing directly with these unified APIs.
