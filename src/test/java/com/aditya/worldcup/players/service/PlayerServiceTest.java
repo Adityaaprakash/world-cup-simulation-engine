@@ -15,7 +15,9 @@ class PlayerServiceTest {
 
     private final PlayerRepository playerRepository = mock(PlayerRepository.class);
     private final PlayerStateService playerStateService = mock(PlayerStateService.class);
-    private final PlayerService service = new PlayerService(playerRepository, playerStateService);
+    private final com.aditya.worldcup.managers.service.ManagerService managerService = mock(com.aditya.worldcup.managers.service.ManagerService.class);
+    private final com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository playerLifecycleRepository = mock(com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository.class);
+    private final PlayerService service = new PlayerService(playerRepository, playerStateService, managerService, playerLifecycleRepository);
 
     @Test
     void comparePlayersReturnsMappedResponses() {

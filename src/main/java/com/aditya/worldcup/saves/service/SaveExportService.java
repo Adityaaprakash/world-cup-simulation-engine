@@ -19,6 +19,10 @@ import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.repository.TacticalProfileRepository;
+import com.aditya.worldcup.contracts.entity.PlayerContract;
+import com.aditya.worldcup.contracts.entity.PlayerLifecycle;
+import com.aditya.worldcup.contracts.repository.PlayerContractRepository;
+import com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +48,8 @@ public class SaveExportService {
     private final SquadPlayerRepository squadPlayerRepository;
     private final PlayerStateRepository playerStateRepository;
     private final TacticalProfileRepository tacticalProfileRepository;
+    private final PlayerContractRepository playerContractRepository;
+    private final PlayerLifecycleRepository playerLifecycleRepository;
 
     @Transactional(readOnly = true)
     public SaveExportResponse exportSave(
@@ -63,7 +69,9 @@ public class SaveExportService {
                 tournamentSnapshot(saveSlot),
                 squadSelections(manager),
                 playerStates(),
-                tacticalProfiles()
+                tacticalProfiles(),
+                playerContracts(manager),
+                playerLifecycles(manager)
         );
     }
 
@@ -256,6 +264,44 @@ public class SaveExportService {
                 tacticalProfile.getHighPress(),
                 tacticalProfile.getOffsideTrap(),
                 tacticalProfile.getTimeWasting()
+        );
+    }
+
+    private List<SaveExportResponse.PlayerContractSnapshot> playerContracts(Manager manager) {
+        return playerContractRepository.findByManagerId(manager.getId())
+                .stream()
+                .map(this::mapPlayerContract)
+                .toList();
+    }
+
+    private SaveExportResponse.PlayerContractSnapshot mapPlayerContract(PlayerContract contract) {
+        return new SaveExportResponse.PlayerContractSnapshot(
+                contract.getId(),
+                contract.getPlayer().getId(),
+                contract.getPlayer().getName(),
+                contract.getStatus(),
+                contract.getStartSeason(),
+                contract.getExpirySeason(),
+                contract.getCommitmentLevel(),
+                contract.getRenewalCount()
+        );
+    }
+
+    private List<SaveExportResponse.PlayerLifecycleSnapshot> playerLifecycles(Manager manager) {
+        return playerLifecycleRepository.findAll()
+                .stream()
+                .filter(lifecycle -> lifecycle.getManager().getId().equals(manager.getId()))
+                .map(this::mapPlayerLifecycle)
+                .toList();
+    }
+
+    private SaveExportResponse.PlayerLifecycleSnapshot mapPlayerLifecycle(PlayerLifecycle lifecycle) {
+        return new SaveExportResponse.PlayerLifecycleSnapshot(
+                lifecycle.getId(),
+                lifecycle.getPlayer().getId(),
+                lifecycle.getPlayer().getName(),
+                lifecycle.getActive(),
+                lifecycle.getRetired()
         );
     }
 

@@ -24,8 +24,12 @@ class SquadPlayerServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final PlayerStateService playerStateService = mock(PlayerStateService.class);
 
+    private final com.aditya.worldcup.contracts.repository.PlayerContractRepository contractRepo = mock(com.aditya.worldcup.contracts.repository.PlayerContractRepository.class);
+    private final com.aditya.worldcup.managers.repository.ManagerRepository managerRepo = mock(com.aditya.worldcup.managers.repository.ManagerRepository.class);
+    private final com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository playerLifecycleRepository = mock(com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository.class);
+
     private final SquadPlayerService service = new SquadPlayerService(
-            squadPlayerRepository, squadRepository, playerRepository, userRepository, playerStateService);
+            squadPlayerRepository, squadRepository, playerRepository, userRepository, playerStateService, contractRepo, managerRepo, playerLifecycleRepository);
 
     @Test
     void squadAnalysisReturnsGoalkeeperLimitation() {

@@ -2,10 +2,14 @@ package com.aditya.worldcup.players.service;
 
 import com.aditya.worldcup.players.dto.PlayerResponse;
 import com.aditya.worldcup.players.repository.PlayerRepository;
+import com.aditya.worldcup.managers.service.ManagerService;
+import com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -15,6 +19,8 @@ public class PlayerService {
 
     private final PlayerRepository playerRepository;
     private final com.aditya.worldcup.players.service.PlayerStateService playerStateService;
+    private final ManagerService managerService;
+    private final PlayerLifecycleRepository playerLifecycleRepository;
 
     public List<PlayerResponse> getAllPlayers() {
 
@@ -71,6 +77,24 @@ public class PlayerService {
         com.aditya.worldcup.players.entity.PlayerState state = playerStateService.getOrCreateState(player);
         boolean available = playerStateService.isAvailable(state);
 
+        boolean active = player.getActive();
+        boolean retired = player.getRetired();
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            try {
+                com.aditya.worldcup.managers.entity.Manager manager = managerService.getOrCreateManager(auth);
+                java.util.Optional<com.aditya.worldcup.contracts.entity.PlayerLifecycle> lifecycleOpt =
+                    playerLifecycleRepository.findByManagerIdAndPlayerId(manager.getId(), player.getId());
+                if (lifecycleOpt.isPresent()) {
+                    active = lifecycleOpt.get().getActive();
+                    retired = lifecycleOpt.get().getRetired();
+                }
+            } catch (Exception e) {
+                // Ignore and fallback to global state if manager cannot be resolved
+            }
+        }
+
         return new com.aditya.worldcup.players.dto.PlayerDetailsResponse(
                 player.getId(),
                 player.getName(),
@@ -86,8 +110,8 @@ public class PlayerService {
                 player.getDefending(),
                 player.getPhysical(),
                 player.getPreferredFoot(),
-                player.getActive(),
-                player.getRetired(),
+                active,
+                retired,
                 state.getCurrentForm(),
                 state.getFitness(),
                 state.getFatigue(),

@@ -12,6 +12,9 @@ import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.users.entity.User;
 import com.aditya.worldcup.users.repository.UserRepository;
+import com.aditya.worldcup.contracts.entity.ContractStatus;
+import com.aditya.worldcup.contracts.repository.PlayerContractRepository;
+import com.aditya.worldcup.managers.repository.ManagerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.AccessDeniedException;
@@ -35,6 +38,11 @@ public class SquadPlayerService {
     private final PlayerRepository playerRepository;
     private final UserRepository userRepository;
     private final PlayerStateService playerStateService;
+    private final PlayerContractRepository playerContractRepository;
+    private final ManagerRepository managerRepository;
+    private final com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository playerLifecycleRepository;
+
+    private static final int MAX_SQUAD_SIZE = 26;
 
     public void addPlayer(
             Long squadId,
@@ -66,6 +74,30 @@ public class SquadPlayerService {
                     "Player does not belong to selected country");
         }
 
+        managerRepository.findByUsername(email).ifPresent(manager -> {
+            boolean active = true;
+            boolean retired = false;
+
+            java.util.Optional<com.aditya.worldcup.contracts.entity.PlayerLifecycle> lifecycleOpt =
+                playerLifecycleRepository.findByManagerIdAndPlayerId(manager.getId(), player.getId());
+            if (lifecycleOpt.isPresent()) {
+                active = lifecycleOpt.get().getActive();
+                retired = lifecycleOpt.get().getRetired();
+            }
+            if (!active || retired) {
+                throw new IllegalStateException("Player is inactive or retired and cannot be selected.");
+            }
+
+            boolean hasValidContract = playerContractRepository.findByPlayerIdAndManagerIdAndStatusIn(
+                    player.getId(), manager.getId(), List.of(ContractStatus.ACTIVE, ContractStatus.EXPIRING)
+            ).isPresent();
+
+            if (!hasValidContract) {
+                throw new IllegalStateException("Player does not have an active or expiring contract with this manager.");
+            }
+        });
+
+
         if (squadPlayerRepository.existsBySquadIdAndPlayerId(
                 squadId,
                 player.getId())) {
@@ -74,9 +106,9 @@ public class SquadPlayerService {
                     "Player already exists in squad");
         }
 
-        if (squadPlayerRepository.countBySquadId(squadId) >= 26) {
+        if (squadPlayerRepository.countBySquadId(squadId) >= MAX_SQUAD_SIZE) {
             throw new IllegalStateException(
-                    "Squad already contains 26 players");
+                    "Squad already contains " + MAX_SQUAD_SIZE + " players");
         }
 
         SquadPlayer squadPlayer = SquadPlayer.builder()
@@ -466,7 +498,13 @@ public class SquadPlayerService {
         );
     }
 
-    public com.aditya.worldcup.squadplayers.dto.SquadAnalysisResponse getSquadAnalysis(Long squadId) {
+    /**
+     * Get squad analysis including position breakdown and recommendations.
+     * @param squadId the squad ID
+     * @return the squad analysis response
+     */
+    public com.aditya.worldcup.squadplayers.dto.SquadAnalysisResponse getSquadAnalysis(
+            Long squadId) {
         List<SquadPlayer> players = squadPlayerRepository.findBySquadId(squadId);
 
         long gkCount = players.stream()
@@ -512,7 +550,7 @@ public class SquadPlayerService {
                 attCount,
                 unavailableCount,
                 recommendation,
-                players.size() <= 26
+                players.size() <= MAX_SQUAD_SIZE
         );
     }
 }

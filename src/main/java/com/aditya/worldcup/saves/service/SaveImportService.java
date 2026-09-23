@@ -195,6 +195,22 @@ public class SaveImportService {
                                 + selection.playerId());
             }
         }
+
+        for (SaveExportResponse.PlayerContractSnapshot contract
+                : safeList(exportData.playerContracts())) {
+            if (contract.playerId() != null && !playerRepository.existsById(contract.playerId())) {
+                throw new IllegalArgumentException(
+                        "Contract player not found: " + contract.playerId());
+            }
+        }
+
+        for (SaveExportResponse.PlayerLifecycleSnapshot lifecycle
+                : safeList(exportData.playerLifecycles())) {
+            if (lifecycle.playerId() != null && !playerRepository.existsById(lifecycle.playerId())) {
+                throw new IllegalArgumentException(
+                        "Lifecycle player not found: " + lifecycle.playerId());
+            }
+        }
     }
 
     private String importedSlotName(

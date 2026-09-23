@@ -47,12 +47,16 @@ class PlayerContractServiceTest {
     private CareerTimelineEventRepository careerTimelineEventRepository;
     @Mock
     private Authentication authentication;
+    @Mock
+    private com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository playerLifecycleRepository;
 
     @InjectMocks
     private PlayerContractService playerContractService;
 
     private Manager manager;
     private Player player;
+
+    private com.aditya.worldcup.contracts.entity.PlayerLifecycle lifecycle;
 
     @BeforeEach
     void setUp() {
@@ -62,14 +66,19 @@ class PlayerContractServiceTest {
         player = new Player();
         player.setId(10L);
         player.setName("Kylian Mbappe");
-        player.setActive(true);
-        player.setRetired(false);
+
+        lifecycle = new com.aditya.worldcup.contracts.entity.PlayerLifecycle();
+        lifecycle.setManager(manager);
+        lifecycle.setPlayer(player);
+        lifecycle.setActive(true);
+        lifecycle.setRetired(false);
     }
 
     @Test
     void createContract_activePlayer_success() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
         when(playerRepository.findById(10L)).thenReturn(Optional.of(player));
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         when(playerContractRepository.findByPlayerIdAndManagerIdAndStatusIn(10L, 1L, List.of(ContractStatus.ACTIVE, ContractStatus.EXPIRING)))
                 .thenReturn(Optional.empty());
 
@@ -104,18 +113,20 @@ class PlayerContractServiceTest {
 
     @Test
     void createContract_inactivePlayer_throwsException() {
-        player.setActive(false);
+        lifecycle.setActive(false);
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
         when(playerRepository.findById(10L)).thenReturn(Optional.of(player));
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
 
         assertThrows(IllegalStateException.class, () -> playerContractService.createContract(10L, authentication));
     }
 
     @Test
     void createContract_retiredPlayer_throwsException() {
-        player.setRetired(true);
+        lifecycle.setRetired(true);
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
         when(playerRepository.findById(10L)).thenReturn(Optional.of(player));
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
 
         assertThrows(IllegalStateException.class, () -> playerContractService.createContract(10L, authentication));
     }
@@ -124,6 +135,7 @@ class PlayerContractServiceTest {
     void createContract_duplicateActive_throwsException() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
         when(playerRepository.findById(10L)).thenReturn(Optional.of(player));
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         when(playerContractRepository.findByPlayerIdAndManagerIdAndStatusIn(10L, 1L, List.of(ContractStatus.ACTIVE, ContractStatus.EXPIRING)))
                 .thenReturn(Optional.of(new PlayerContract()));
 
@@ -142,6 +154,7 @@ class PlayerContractServiceTest {
     void createContract_fallbackSeason_success() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
         when(playerRepository.findById(10L)).thenReturn(Optional.of(player));
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         when(playerContractRepository.findByPlayerIdAndManagerIdAndStatusIn(10L, 1L, List.of(ContractStatus.ACTIVE, ContractStatus.EXPIRING)))
                 .thenReturn(Optional.empty());
 
@@ -160,6 +173,7 @@ class PlayerContractServiceTest {
     @Test
     void renewContract_activeContract_success() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         
         PlayerContract contract = new PlayerContract();
         contract.setId(100L);
@@ -186,6 +200,7 @@ class PlayerContractServiceTest {
     @Test
     void renewContract_expiringContract_success() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         
         PlayerContract contract = new PlayerContract();
         contract.setId(100L);
@@ -208,6 +223,7 @@ class PlayerContractServiceTest {
     @Test
     void renewContract_terminatedContract_throwsException() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         PlayerContract contract = new PlayerContract();
         contract.setId(100L);
         contract.setPlayer(player);
@@ -221,6 +237,7 @@ class PlayerContractServiceTest {
     @Test
     void renewContract_expiredContract_throwsException() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         PlayerContract contract = new PlayerContract();
         contract.setId(100L);
         contract.setPlayer(player);
@@ -235,7 +252,8 @@ class PlayerContractServiceTest {
     void renewContract_inactivePlayer_throwsException() {
         when(managerService.getOrCreateManager(authentication)).thenReturn(manager);
         
-        player.setActive(false);
+        lifecycle.setActive(false);
+        when(playerLifecycleRepository.findByManagerIdAndPlayerId(1L, 10L)).thenReturn(Optional.of(lifecycle));
         PlayerContract contract = new PlayerContract();
         contract.setId(100L);
         contract.setPlayer(player);
@@ -256,6 +274,7 @@ class PlayerContractServiceTest {
         PlayerContract contract = new PlayerContract();
         contract.setId(100L);
         contract.setManager(otherManager);
+        // Player is 10L, Manager is 1L
         
         when(playerContractRepository.findById(100L)).thenReturn(Optional.of(contract));
         

@@ -24,7 +24,9 @@ public record SaveExportResponse(
         TournamentSnapshot tournamentState,
         List<SquadSelectionSnapshot> squadSelections,
         List<PlayerStateSnapshot> playerStates,
-        List<TacticalProfileSnapshot> tacticalSettings
+        List<TacticalProfileSnapshot> tacticalSettings,
+        List<PlayerContractSnapshot> playerContracts,
+        List<PlayerLifecycleSnapshot> playerLifecycles
 ) {
 
     public record TournamentSnapshot(
@@ -111,4 +113,23 @@ public record SaveExportResponse(
             Boolean timeWasting
     ) {
     }
+
+    public record PlayerContractSnapshot(
+            Long contractId,
+            Long playerId,
+            String playerName,
+            com.aditya.worldcup.contracts.entity.ContractStatus status,
+            Integer startSeason,
+            Integer expirySeason,
+            com.aditya.worldcup.contracts.entity.CommitmentLevel commitmentLevel,
+            Integer renewalCount
+    ) {}
+
+    public record PlayerLifecycleSnapshot(
+            Long lifecycleId,
+            Long playerId,
+            String playerName,
+            Boolean active,
+            Boolean retired
+    ) {}
 }
