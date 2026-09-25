@@ -172,6 +172,7 @@ public class PlayerStateService {
                 .filter(player -> minutesPlayed.getOrDefault(player.getPlayer().getId(), 0) == 0)
                 .map(player -> states.get(player.getPlayer().getId()))
                 .forEach(state -> {
+                    state.setWorkload(between(state.getWorkload() != null ? state.getWorkload() - 15 : 0, 0, 100));
                     state.setFitness(between(state.getFitness() + Math.max(2, recovery), 0, 100));
                     state.setFatigue(between(state.getFatigue() - Math.max(3, recovery + 1), 0, 100));
                 });
@@ -214,6 +215,7 @@ public class PlayerStateService {
                                     Map<Long, Integer> minutesPlayed,
                                     TacticalMatchModifiers tactics) {
         int baseFatigue = 8 + (int) Math.round(Math.max(0, tactics.fatigueModifier()) * 3);
+        int baseWorkload = 20; // 90 min match creates significant workload
         
         players.stream()
                 .filter(player -> minutesPlayed.getOrDefault(player.getPlayer().getId(), 0) > 0)
@@ -221,11 +223,20 @@ public class PlayerStateService {
                 .forEach(state -> {
                     int mins = minutesPlayed.getOrDefault(state.getPlayer().getId(), 0);
                     double ratio = Math.min(1.0, mins / 90.0);
-                    int fatigueIncrease = (int) Math.round(baseFatigue * ratio);
-                    int fitnessDecrease = (int) Math.round(5 * ratio);
+                    
+                    int currentWorkload = state.getWorkload() != null ? state.getWorkload() : 0;
+                    int workloadIncrease = (int) Math.round(baseWorkload * ratio);
+                    state.setWorkload(between(currentWorkload + workloadIncrease, 0, 100));
+                    
+                    double workloadMultiplier = state.getWorkload() > 70 ? 1.5 : 1.0;
+                    
+                    int fatigueIncrease = (int) Math.round(baseFatigue * ratio * workloadMultiplier);
+                    int fitnessDecrease = (int) Math.round(5 * ratio * workloadMultiplier);
                     
                     state.setFatigue(between(state.getFatigue() + fatigueIncrease, 0, 100));
-                    state.setFitness(between(state.getFitness() - fitnessDecrease, 0, 100));
+                    
+                    int highFatiguePenalty = state.getFatigue() > 75 ? 5 : 0;
+                    state.setFitness(between(state.getFitness() - fitnessDecrease - highFatiguePenalty, 0, 100));
                 });
     }
 

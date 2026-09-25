@@ -80,6 +80,7 @@ class PlayerTrainingServiceTest {
 
         assertThat(youngState.getProgressionTracker()).isZero();
         assertThat(youngState.getFatigue()).isEqualTo(30);
+        assertThat(youngState.getWorkload()).isZero();
     }
 
     @Test
@@ -134,5 +135,18 @@ class PlayerTrainingServiceTest {
         
         assertThat(youngState.getDevelopmentRating()).isEqualTo(10);
         assertThat(youngState.getProgressionTracker()).isZero();
+    }
+    
+    @Test
+    void repeatedIntenseTrainingCompoundsFatigueAndWorkload() {
+        when(playerStateService.isAvailable(youngState)).thenReturn(true);
+        youngState.setWorkload(75);
+        
+        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE);
+        
+        // Intensity INTENSE = 25 workload. Baseline fatigue increase = 25.
+        // Since workload > 70 previously -> multiplier is 1.5. 25 * 1.5 = 38 fatigue!
+        assertThat(youngState.getWorkload()).isEqualTo(100);
+        assertThat(youngState.getFatigue()).isEqualTo(48); // 10 original + 38
     }
 }

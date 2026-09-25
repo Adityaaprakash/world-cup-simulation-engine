@@ -22,10 +22,15 @@ public class PlayerEffectiveRatingService {
             return 0;
         }
 
-        double adjustment = state.getCurrentForm() * 0.4
+        double fitnessPenalty = state.getFitness() < 60 ? (60 - state.getFitness()) / 5.0 : 0.0;
+        double fatiguePenalty = state.getFatigue() > 70 ? (state.getFatigue() - 70) / 5.0 : 0.0;
+
+        double adjustment = state.getCurrentForm() * 0.5
                 + (state.getConfidence() - 50) / 25.0
-                + (state.getFitness() - 100) / 20.0
-                - state.getFatigue() / 25.0
+                + (state.getFitness() - 100) / 15.0
+                - state.getFatigue() / 15.0
+                - fitnessPenalty
+                - fatiguePenalty
                 + (state.getMorale() - 50) / 25.0
                 + state.getDevelopmentRating();
 

@@ -1,0 +1,1 @@
+ALTER TABLE player_states ADD COLUMN workload INTEGER NOT NULL DEFAULT 0;

@@ -115,6 +115,7 @@ public class PlayerService {
                 state.getCurrentForm(),
                 state.getFitness(),
                 state.getFatigue(),
+                state.getWorkload() != null ? state.getWorkload() : 0,
                 state.getInjuryStatus(),
                 available
         );

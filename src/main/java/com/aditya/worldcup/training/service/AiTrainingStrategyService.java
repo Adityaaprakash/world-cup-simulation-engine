@@ -24,11 +24,18 @@ public class AiTrainingStrategyService {
         String form = tournamentIntelligenceService.formForTeam(tournamentId, team.getId());
         double momentum = tournamentIntelligenceService.momentumForTeam(tournamentId, team.getId());
         
+        double avgWorkload = playerTrainingService.getAverageSquadWorkload(squadId);
+        
         TrainingCategory category = TrainingCategory.TACTICAL;
         TrainingIntensity intensity = TrainingIntensity.NORMAL;
         
+        // Strategy: Overworked squads MUST rest
+        if (avgWorkload > 75) {
+            category = TrainingCategory.REST;
+            intensity = TrainingIntensity.LIGHT;
+        }
         // Strategy: High momentum teams train rest and light technical to prevent fatigue
-        if (momentum > 0.7 || form.contains("WW")) {
+        else if (momentum > 0.7 || form.contains("WW")) {
             category = TrainingCategory.REST;
             intensity = TrainingIntensity.LIGHT;
         } 

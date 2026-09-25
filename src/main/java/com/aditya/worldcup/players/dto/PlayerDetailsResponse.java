@@ -22,6 +22,7 @@ public record PlayerDetailsResponse(
         Integer currentForm,
         Integer fitness,
         Integer fatigue,
+        Integer workload,
         InjuryStatus injuryStatus,
         Boolean available
 ) {}

@@ -43,6 +43,10 @@ public class PlayerState {
 
     @Builder.Default
     @Column(nullable = false)
+    private Integer workload = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
     private Integer morale = 50;
 
     @Builder.Default

@@ -58,7 +58,9 @@ public class PlayerTrainingService {
         
         if (category == TrainingCategory.REST) {
             int newFatigue = Math.max(0, state.getFatigue() - 20);
+            int newWorkload = Math.max(0, state.getWorkload() - 15);
             state.setFatigue(newFatigue);
+            state.setWorkload(newWorkload);
             state.setMorale(Math.min(100, state.getMorale() + 2));
             return;
         }
@@ -69,11 +71,23 @@ public class PlayerTrainingService {
         }
 
         // Workload & fatigue interactions
-        int fatigueIncrease = switch (intensity) {
+        int workloadIncrease = switch (intensity) {
+            case LIGHT -> 8;
+            case NORMAL -> 15;
+            case INTENSE -> 25;
+        };
+        
+        int currentWorkload = state.getWorkload();
+        int newWorkload = Math.min(100, currentWorkload + workloadIncrease);
+        state.setWorkload(newWorkload);
+        
+        double workloadMultiplier = currentWorkload > 70 ? 1.5 : 1.0;
+        
+        int fatigueIncrease = (int) Math.round(switch (intensity) {
             case LIGHT -> 5;
             case NORMAL -> 12;
             case INTENSE -> 25;
-        };
+        } * workloadMultiplier);
 
         int currentFatigue = state.getFatigue();
         // High fatigue penalties starting from 50
@@ -175,5 +189,15 @@ public class PlayerTrainingService {
         
         state.setProgressionTracker(currentTracker);
         state.setDevelopmentRating(currentRating);
+    }
+    
+    @Transactional(readOnly = true)
+    public double getAverageSquadWorkload(Long squadId) {
+        return squadPlayerRepository.findBySquadId(squadId).stream()
+                .map(SquadPlayer::getPlayer)
+                .map(playerStateService::getOrCreateState)
+                .mapToInt(state -> state.getWorkload() != null ? state.getWorkload() : 0)
+                .average()
+                .orElse(0.0);
     }
 }

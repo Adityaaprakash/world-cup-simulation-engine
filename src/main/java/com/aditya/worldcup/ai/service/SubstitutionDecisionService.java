@@ -112,7 +112,7 @@ public class SubstitutionDecisionService {
                 .max(Comparator.comparingDouble(player ->
                         playerEvaluationService.evaluatePlayer(player.getPlayer())
                                 + rotationService.availabilityScore(player.getPlayer(), importance)
-                                + freshnessBoost(player, extraTime)));
+                                + freshnessBoost(player)));
     }
 
     private double rotationPressure(SquadPlayer player,
@@ -124,12 +124,18 @@ public class SubstitutionDecisionService {
         double suspensionRisk = state.getYellowCards() >= 1 ? 2.5 : 0.0;
         double captainProtection = Boolean.TRUE.equals(player.getCaptain()) ? -4.0 : 0.0;
         double extraTimePressure = extraTime ? state.getFatigue() * 0.08 : 0.0;
+        
+        double fitnessPenalty = (100 - state.getFitness()) * 0.2;
+        double fatiguePressure = state.getFatigue() > 70 ? (state.getFatigue() - 70) * 0.3 : 0.0;
+        
         return playerEvaluationService.evaluatePlayer(player.getPlayer()) * -0.15
                 + rotationService.availabilityScore(player.getPlayer(), importance) * -1
                 + bookingRisk
                 + suspensionRisk
                 + captainProtection
-                + extraTimePressure;
+                + extraTimePressure
+                + fitnessPenalty
+                + fatiguePressure;
     }
 
     private void substituteUnavailablePlayers(List<SquadPlayer> starters,
@@ -211,12 +217,9 @@ public class SubstitutionDecisionService {
         };
     }
 
-    private double freshnessBoost(SquadPlayer player, boolean extraTime) {
-        if (!extraTime) {
-            return 0;
-        }
+    private double freshnessBoost(SquadPlayer player) {
         PlayerState state = playerStateService.getOrCreateState(player.getPlayer());
-        return state.getFitness() * 0.04 - state.getFatigue() * 0.08;
+        return state.getFitness() * 0.05 - state.getFatigue() * 0.08;
     }
 
     private boolean isDefenderOrMidfielder(SquadPlayer player) {

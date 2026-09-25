@@ -267,7 +267,8 @@ export default function Squad() {
                  <p>OVR: <span className="text-white font-bold">{p.overallRating}</span></p>
                  <p>PAC/SHO/PAS: {p.pace}/{p.shooting}/{p.passing}</p>
                  <p>DRI/DEF/PHY: {p.dribbling}/{p.defending}/{p.physical}</p>
-                 <p>Form: {p.currentForm}%</p>
+                 <p>Fit: {p.fitness}% | Fat: {p.fatigue}%</p>
+                 <p>Form: {p.currentForm}% | WkLd: {p.workload}%</p>
                </div>
              ))}
            </div>
@@ -293,6 +294,16 @@ export default function Squad() {
              <div><p className="text-emerald-300 font-semibold text-sm">POT</p><p className="text-white font-bold">{inspectPlayer.potential}</p></div>
              <div><p className="text-emerald-300 font-semibold text-sm">Form</p><p className="text-white font-bold">{inspectPlayer.currentForm}%</p></div>
              <div><p className="text-emerald-300 font-semibold text-sm">Fitness</p><p className="text-white font-bold">{inspectPlayer.fitness}%</p></div>
+             <div><p className="text-emerald-300 font-semibold text-sm">Fatigue</p><p className="text-white font-bold">{inspectPlayer.fatigue}%</p></div>
+             <div>
+                <p className="text-emerald-300 font-semibold text-sm">Workload</p>
+                <p className={`font-bold ${inspectPlayer.workload > 75 ? 'text-red-500' : 'text-white'}`}>
+                   {inspectPlayer.workload}% {inspectPlayer.workload > 75 && '(High Risk)'}
+                </p>
+             </div>
+             {inspectPlayer.injuryStatus !== 'HEALTHY' && (
+               <div><p className="text-red-400 font-semibold text-sm">Injury</p><p className="text-red-500 font-bold">{inspectPlayer.injuryStatus}</p></div>
+             )}
            </div>
         </Card>
       )}
