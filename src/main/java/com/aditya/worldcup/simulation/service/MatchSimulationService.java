@@ -26,6 +26,7 @@ import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import com.aditya.worldcup.tactics.service.TacticalModifierService;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
+import com.aditya.worldcup.tactics.service.MatchPlanService;
 import com.aditya.worldcup.ai.service.AiManagerService;
 import com.aditya.worldcup.ai.service.MatchImportance;
 import com.aditya.worldcup.matchevents.entity.MatchEventType;
@@ -60,6 +61,7 @@ public class MatchSimulationService {
     private final TacticalProfileService tacticalProfileService;
     private final TacticalModifierService tacticalModifierService;
     private final AiManagerService aiManagerService;
+    private final MatchPlanService matchPlanService;
     private final MatchModifierService matchModifierService;
     private final TournamentIntelligenceService tournamentIntelligenceService;
     private final com.aditya.worldcup.optimization.service.SimulationMetricsService simulationMetricsService;
@@ -137,6 +139,15 @@ public class MatchSimulationService {
                 homeSquad.getTeam());
         TacticalProfile awayProfile = tacticalProfileService.getOrCreateProfile(
                 awaySquad.getTeam());
+
+        Long saveContextId = com.aditya.worldcup.saves.context.SaveContextHolder.getManagerId();
+        Long currentMatchId = match != null ? match.getId() : null;
+        var homePlan = matchPlanService.getMatchPlan(currentMatchId, homeSquad.getId(), saveContextId);
+        var awayPlan = matchPlanService.getMatchPlan(currentMatchId, awaySquad.getId(), saveContextId);
+
+        homeProfile = matchPlanService.applyMatchPlanOverrides(homeProfile, homePlan.orElse(null));
+        awayProfile = matchPlanService.applyMatchPlanOverrides(awayProfile, awayPlan.orElse(null));
+
         TacticalMatchModifiers homeTactics = tacticalModifierService
                 .calculateModifiers(homeProfile, awayProfile);
         TacticalMatchModifiers awayTactics = tacticalModifierService
