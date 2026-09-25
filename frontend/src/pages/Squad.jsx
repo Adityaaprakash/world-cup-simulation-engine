@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { addSquadPlayer, removeSquadPlayer, getMySquads, getSquadPlayers, getSquadAnalysis } from '../api/squadApi'
+import { addSquadPlayer, removeSquadPlayer, getMySquads, getSquadPlayers, getSquadAnalysis, trainSquad } from '../api/squadApi'
 import { getTeam, getTeamPlayers } from '../api/teamApi'
 import { comparePlayers, getPlayerDetails } from '../api/playerApi'
 import { retirePlayer, reactivatePlayer } from '../api/contractApi'
@@ -30,6 +30,11 @@ export default function Squad() {
   const [compareIds, setCompareIds] = useState([])
   const [comparisonResults, setComparisonResults] = useState(null)
   const [inspectPlayer, setInspectPlayer] = useState(null)
+
+  // Training state
+  const [trainingCategory, setTrainingCategory] = useState("TECHNICAL")
+  const [trainingIntensity, setTrainingIntensity] = useState("NORMAL")
+  const [isTraining, setIsTraining] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true); setError('')
@@ -105,6 +110,26 @@ export default function Squad() {
     }
   }
 
+  const handleTrainSquad = async () => {
+    if (!squad) return;
+    setActionError('');
+    setIsTraining(true);
+    try {
+      await trainSquad(squad.id, trainingCategory, trainingIntensity);
+      // Refresh players and analysis to show updated fatigue/stats
+      const [playersResponse, analysisResponse] = await Promise.all([
+        getTeamPlayers(teamId),
+        getSquadAnalysis(squad.id)
+      ]);
+      setPlayers(playersResponse.data);
+      setAnalysis(analysisResponse.data);
+    } catch (requestError) {
+      setActionError(requestError.response?.data?.message || 'Failed to train squad.');
+    } finally {
+      setIsTraining(false);
+    }
+  }
+
   const handleCompareToggle = (id) => {
     setCompareIds(curr => {
       if (curr.includes(id)) return curr.filter(x => x !== id);
@@ -161,6 +186,52 @@ export default function Squad() {
         </div>
       </Card>
       <ErrorMessage message={error || actionError} />
+      
+      {squad && (
+        <Card className="border-emerald-500/30">
+          <h2 className="text-lg font-semibold mb-3 text-emerald-400">Squad Training Plan & Development</h2>
+          <div className="flex flex-col sm:flex-row items-end flex-wrap gap-4">
+            <div className="flex-1 w-full min-w-[200px]">
+              <label className="block text-sm font-medium text-slate-300 mb-1">Focus Category</label>
+              <select 
+                className="w-full px-4 py-2 border border-slate-700 bg-slate-900 rounded-md focus:ring-emerald-500 text-white font-medium"
+                value={trainingCategory}
+                onChange={(e) => setTrainingCategory(e.target.value)}
+              >
+                <option value="TECHNICAL">Technical & Skill</option>
+                <option value="PHYSICAL">Physical & Fitness</option>
+                <option value="TACTICAL">Tactical & Setup</option>
+                <option value="MENTAL">Mental & Focus</option>
+                <option value="REST">Active Rest</option>
+              </select>
+            </div>
+            <div className="flex-1 w-full min-w-[200px]">
+              <label className="block text-sm font-medium text-slate-300 mb-1">Session Intensity</label>
+              <select 
+                className="w-full px-4 py-2 border border-slate-700 bg-slate-900 rounded-md focus:ring-emerald-500 text-white font-medium"
+                value={trainingIntensity}
+                onChange={(e) => setTrainingIntensity(e.target.value)}
+              >
+                <option value="LIGHT">Light Recovery (Low Fatigue)</option>
+                <option value="NORMAL">Medium Group (High Growth)</option>
+                <option value="INTENSE">Heavy Drill (Max Fatigue)</option>
+              </select>
+            </div>
+            <div className="w-full sm:w-auto">
+              <button 
+                onClick={handleTrainSquad}
+                disabled={isTraining}
+                className="w-full inline-flex rounded-lg bg-emerald-500 px-6 py-2 font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-50"
+              >
+                {isTraining ? 'Executing Session...' : 'Execute Squad Session'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">
+            * Higher intensity yields more progression but heavily spikes fatigue. Ensure players are recovered before a major match.
+          </p>
+        </Card>
+      )}
       
       {squad ? (
         <Card className="border-emerald-500/30">

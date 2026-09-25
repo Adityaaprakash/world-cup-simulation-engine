@@ -11,3 +11,4 @@ export const setCaptain = (squadId, playerId) => axiosClient.put(`/api/squads/${
 export const validateLineup = (squadId) => axiosClient.get(`/api/squads/${squadId}/validate`)
 export const getSquadReadyStatus = (squadId) => axiosClient.get(`/api/squads/${squadId}/ready`)
 export const getSquadAnalysis = (squadId) => axiosClient.get(`/api/squads/${squadId}/analysis`)
+export const trainSquad = (squadId, category, intensity) => axiosClient.post(`/api/v1/training/squads/${squadId}`, { category, intensity })

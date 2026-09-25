@@ -58,17 +58,31 @@ public class SaveIsolationIT {
         
         Manager managerA = Manager.builder()
                 .username("managerA@test.com")
-                .provider("LOCAL")
-                .providerId("A")
-                .currentSeason(2024)
+                .displayName("Manager A")
+                .nationality("UK")
+                .favoriteFormation("4-4-2")
+                .favoriteTacticalProfile("Balanced")
+                .coachingStyle(com.aditya.worldcup.managers.entity.CoachingStyle.BALANCED)
+                .reputation(com.aditya.worldcup.managers.entity.ManagerReputation.AMATEUR)
+                .experiencePoints(0)
+                .level(1)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
         managerRepository.save(managerA);
 
         Manager managerB = Manager.builder()
                 .username("managerB@test.com")
-                .provider("LOCAL")
-                .providerId("B")
-                .currentSeason(2024)
+                .displayName("Manager B")
+                .nationality("UK")
+                .favoriteFormation("4-4-2")
+                .favoriteTacticalProfile("Balanced")
+                .coachingStyle(com.aditya.worldcup.managers.entity.CoachingStyle.BALANCED)
+                .reputation(com.aditya.worldcup.managers.entity.ManagerReputation.AMATEUR)
+                .experiencePoints(0)
+                .level(1)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
         managerRepository.save(managerB);
 
@@ -89,7 +103,7 @@ public class SaveIsolationIT {
                 .manager(managerA)
                 .player(playerX)
                 .status(ContractStatus.ACTIVE)
-                .commitmentLevel(CommitmentLevel.HIGH)
+                .commitmentLevel(CommitmentLevel.FULL_CYCLE)
                 .startSeason(2024)
                 .expirySeason(2026)
                 .renewalCount(1)
@@ -136,7 +150,7 @@ public class SaveIsolationIT {
         SaveExportResponse exportA = saveExportService.exportSave(saveA.getId(), authA);
         assertThat(exportA.playerContracts()).hasSize(1);
         assertThat(exportA.playerContracts().get(0).status()).isEqualTo(ContractStatus.ACTIVE);
-        assertThat(exportA.playerContracts().get(0).commitmentLevel()).isEqualTo(CommitmentLevel.HIGH);
+        assertThat(exportA.playerContracts().get(0).commitmentLevel()).isEqualTo(CommitmentLevel.FULL_CYCLE);
         assertThat(exportA.playerContracts().get(0).renewalCount()).isEqualTo(1);
         assertThat(exportA.playerContracts().get(0).expirySeason()).isEqualTo(2026);
         
@@ -157,7 +171,7 @@ public class SaveIsolationIT {
 
         // Verify Import restores missing state correctly 
         // Import validates existence constraints which is the target architecture currently
-        ImportSaveRequest importReq = new ImportSaveRequest(2, "Restored Save B", "Desc", true, exportB);
+        ImportSaveRequest importReq = new ImportSaveRequest(exportB, 2, "Restored Save B", "Desc", true);
         saveImportService.importSave(importReq, authB);
         
         // At this point validation passes. If saveImportService explicitly reinstantiated models,

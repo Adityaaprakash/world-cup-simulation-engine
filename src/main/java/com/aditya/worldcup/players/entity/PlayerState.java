@@ -1,5 +1,6 @@
 package com.aditya.worldcup.players.entity;
 
+import com.aditya.worldcup.managers.entity.Manager;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,8 +17,12 @@ public class PlayerState {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id", nullable = false)
+    private Manager manager;
+
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "player_id", nullable = false, unique = true)
+    @JoinColumn(name = "player_id", nullable = false)
     private Player player;
 
     @Builder.Default

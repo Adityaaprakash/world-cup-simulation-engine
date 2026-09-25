@@ -9,6 +9,7 @@ import com.aditya.worldcup.players.repository.PlayerStateRepository;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
+import com.aditya.worldcup.saves.context.SaveContextHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,8 +88,16 @@ public class PlayerStateService {
 
     @Transactional
     public PlayerState getOrCreateState(Player player) {
-        return playerStateRepository.findByPlayerId(player.getId())
+        Long managerId = SaveContextHolder.getManagerId();
+        if (managerId == null) {
+            // Fallback for tests or background processes without context
+            managerId = 1L;
+        }
+        
+        final Long finalManagerId = managerId;
+        return playerStateRepository.findByManagerIdAndPlayerId(managerId, player.getId())
                 .orElseGet(() -> playerStateRepository.save(PlayerState.builder()
+                        .manager(com.aditya.worldcup.managers.entity.Manager.builder().id(finalManagerId).build())
                         .player(player)
                         .build()));
     }
