@@ -8,6 +8,8 @@ import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.tactics.entity.TacticalProfile;
+import com.aditya.worldcup.tactics.dto.MatchPlanDto;
+import com.aditya.worldcup.tactics.service.MatchPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +29,11 @@ public class AiManagerService {
     private final PlayerEvaluationService playerEvaluationService;
     private final MatchImportanceService matchImportanceService;
     private final SquadRepository squadRepository;
+    private final MatchPlanService matchPlanService;
 
     @Transactional
     public void prepareForMatch(Squad squad, Squad opponent) {
         prepareForMatch(squad, opponent, MatchImportance.GROUP_STAGE);
-    }
-
-    @Transactional
-    public void prepareForMatch(Squad squad, Squad opponent, Match match) {
-        prepareForMatch(squad, opponent, matchImportanceService.determine(match));
     }
 
     @Transactional
@@ -45,7 +43,27 @@ public class AiManagerService {
         List<SquadPlayer> matchSquad = selectMatchSquad(squad, importance);
         Formation formation = formationSelectionService.selectFormation(
                 matchSquad, squadQuality, opponentQuality, squad.getFormation());
-        chooseTacticalProfile(squad, matchSquad, opponent);
+                
+        chooseTacticalProfile(squad, matchSquad, opponent, null);
+        
+        selectStartingEleven(squad, formation, importance);
+        squadRepository.save(squad);
+        chooseCaptain(squad);
+        selectBench(squad, importance);
+    }
+
+    @Transactional
+    public void prepareForMatch(Squad squad, Squad opponent, Match match) {
+        MatchImportance importance = matchImportanceService.determine(match);
+        int squadQuality = squad.getTeam().getOverallRating();
+        int opponentQuality = opponent.getTeam().getOverallRating();
+        List<SquadPlayer> matchSquad = selectMatchSquad(squad, importance);
+        Formation formation = formationSelectionService.selectFormation(
+                matchSquad, squadQuality, opponentQuality, squad.getFormation());
+                
+        // 11F Integration: AI Manager generates a MatchPlan for the match context
+        chooseTacticalProfile(squad, matchSquad, opponent, match);
+        
         selectStartingEleven(squad, formation, importance);
         squadRepository.save(squad);
         chooseCaptain(squad);
@@ -90,12 +108,22 @@ public class AiManagerService {
 
     public TacticalProfile chooseTacticalProfile(Squad squad,
                                                  List<SquadPlayer> matchSquad,
-                                                 Squad opponent) {
-        return tacticalSelectionService.selectTactics(
+                                                 Squad opponent,
+                                                 Match match) {
+        TacticalProfile profile = tacticalSelectionService.selectTactics(
                 squad.getTeam(),
                 matchSquad,
                 squad.getTeam().getOverallRating(),
                 opponent.getTeam().getOverallRating());
+                
+        if (match != null) {
+            MatchPlanDto planDto = tacticalSelectionService.generateMatchPlan(
+                    squad, opponent, profile, match.getId());
+            Long saveContextId = com.aditya.worldcup.saves.context.SaveContextHolder.getManagerId();
+            matchPlanService.saveMatchPlan(match.getId(), saveContextId, planDto);
+        }
+        
+        return profile;
     }
 
     @Transactional

@@ -96,8 +96,8 @@ public class MatchSimulationService {
 
         MatchImportance matchImportance = aiManagerService.determineMatchImportance(match);
         MatchContext matchContext = createMatchContext(match, matchImportance);
-        aiManagerService.prepareForMatch(homeSquad, awaySquad, matchImportance);
-        aiManagerService.prepareForMatch(awaySquad, homeSquad, matchImportance);
+        aiManagerService.prepareForMatch(homeSquad, awaySquad, match);
+        aiManagerService.prepareForMatch(awaySquad, homeSquad, match);
         SquadReadyResponse homeReady =
                 squadPlayerService.getSquadReadyStatus(
                         homeSquad.getId()

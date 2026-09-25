@@ -8,7 +8,14 @@ import com.aditya.worldcup.tactics.entity.BuildUpStyle;
 import com.aditya.worldcup.tactics.entity.ChanceCreation;
 import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
+import com.aditya.worldcup.tactics.dto.MatchPlanDto;
+import com.aditya.worldcup.tactics.entity.TacticalApproach;
+import com.aditya.worldcup.tactics.entity.BuildUpStyle;
+import com.aditya.worldcup.tactics.entity.ChanceCreation;
+import com.aditya.worldcup.tactics.entity.TacticalProfile;
+import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import com.aditya.worldcup.teams.entity.Team;
+import com.aditya.worldcup.squads.entity.Squad;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -126,6 +133,38 @@ public class TacticalSelectionService {
             profile.setPassingRisk(Math.max(1, profile.getPassingRisk() - 4));
         }
         return tacticalProfileService.saveProfile(profile);
+    }
+    
+    public MatchPlanDto generateMatchPlan(Squad squad, Squad opponent, TacticalProfile profile, Long matchId) {
+        TacticalApproach approach = TacticalApproach.BALANCED;
+        
+        // Derive pseudomanager personality / tactical approach
+        int diff = squad.getTeam().getOverallRating() - opponent.getTeam().getOverallRating();
+        if (diff > 5) {
+            approach = TacticalApproach.ATTACKING;
+        } else if (diff < -5) {
+            approach = TacticalApproach.DEFENSIVE;
+        } else {
+            if (profile.getHighPress()) {
+                approach = TacticalApproach.HIGH_PRESS;
+            } else if (profile.getBuildUpStyle() == BuildUpStyle.SLOW_POSSESSION) {
+                approach = TacticalApproach.POSSESSION;
+            } else if (profile.getCounterAttack()) {
+                approach = TacticalApproach.COUNTER_ATTACK;
+            }
+        }
+        
+        return MatchPlanDto.builder()
+                .matchId(matchId)
+                .squadId(squad.getId())
+                .tacticalApproach(approach)
+                .pressingIntensity(profile.getPressingIntensity())
+                .tempo(profile.getPassingRisk() > 60 ? 70 : 50)
+                .defensiveLine(profile.getDefensiveLine())
+                .attackingWidth(profile.getAttackingWidth())
+                .counterAttack(profile.getCounterAttack())
+                .offsideTrap(profile.getOffsideTrap())
+                .build();
     }
 
     private void applySquadStrengths(TacticalProfile profile,
