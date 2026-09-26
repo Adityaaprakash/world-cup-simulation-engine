@@ -1,8 +1,12 @@
 package com.aditya.worldcup.training.service;
 
+import com.aditya.worldcup.managers.entity.ManagerEconomy;
+import com.aditya.worldcup.managers.repository.ManagerEconomyRepository;
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.entity.PlayerState;
 import com.aditya.worldcup.players.service.PlayerStateService;
+import com.aditya.worldcup.squads.entity.Squad;
+import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.training.entity.TrainingCategory;
@@ -23,20 +27,30 @@ public class PlayerTrainingService {
 
     private final PlayerStateService playerStateService;
     private final SquadPlayerRepository squadPlayerRepository;
+    private final SquadRepository squadRepository;
+    private final ManagerEconomyRepository managerEconomyRepository;
 
     @Transactional
     public void trainSquad(Long squadId, TrainingCategory category, TrainingIntensity intensity) {
+        Squad squad = squadRepository.findById(squadId).orElseThrow();
+        ManagerEconomy economy = managerEconomyRepository.findByManagerId(squad.getUser().getId()).orElse(null);
+        
         List<SquadPlayer> players = squadPlayerRepository.findBySquadId(squadId);
         
         List<Player> playerList = players.stream()
                 .map(SquadPlayer::getPlayer)
                 .collect(Collectors.toList());
                 
-        trainPlayers(playerList, category, intensity);
+        trainPlayersWithEconomy(playerList, category, intensity, economy);
     }
     
     @Transactional
     public void trainPlayers(List<Player> players, TrainingCategory category, TrainingIntensity intensity) {
+        trainPlayersWithEconomy(players, category, intensity, null);
+    }
+    
+    @Transactional
+    public void trainPlayersWithEconomy(List<Player> players, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy) {
         if (players == null || players.isEmpty()) {
             return;
         }
@@ -46,22 +60,33 @@ public class PlayerTrainingService {
                 .collect(Collectors.toList());
 
         for (PlayerState state : states) {
-            processPlayerTraining(state, category, intensity);
+            processPlayerTraining(state, category, intensity, economy);
         }
 
         playerStateService.saveAll(states);
     }
 
-    public void processPlayerTraining(PlayerState state, TrainingCategory category, TrainingIntensity intensity) {
+    public void processPlayerTraining(PlayerState state, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy) {
         
         boolean isAvailable = playerStateService.isAvailable(state);
         
+        int medicalBonus = 0;
+        int trainingBonus = 0;
+        if (economy != null) {
+            // max 20% bonus from investments
+            medicalBonus = Math.min(20, economy.getMedicalAllocation() / 5);
+            trainingBonus = Math.min(20, economy.getTrainingAllocation() / 5);
+        }
+        
         if (category == TrainingCategory.REST) {
-            int newFatigue = Math.max(0, state.getFatigue() - 20);
+            int baseFatigueRecovery = 20;
+            int fatigueRecovery = baseFatigueRecovery + (baseFatigueRecovery * medicalBonus / 100);
+            
+            int newFatigue = Math.max(0, state.getFatigue() - fatigueRecovery);
             int newWorkload = Math.max(0, state.getWorkload() - 15);
             state.setFatigue(newFatigue);
             state.setWorkload(newWorkload);
-            state.setMorale(Math.min(100, state.getMorale() + 2));
+            state.setMorale(Math.min(100, state.getMorale() + (2 + medicalBonus / 10)));
             return;
         }
 
@@ -95,7 +120,8 @@ public class PlayerTrainingService {
         
         // Progression
         int baseProgression = calculateBaseProgression(state.getPlayer(), intensity, category);
-        int actualProgression = (int) Math.round(baseProgression * (1.0 - fatiguePenalty));
+        int finalProgressionBase = baseProgression + (baseProgression * trainingBonus / 100);
+        int actualProgression = (int) Math.round(finalProgressionBase * (1.0 - fatiguePenalty));
         
         // Morale and fitness interactions
         applySecondaryEffects(state, intensity);

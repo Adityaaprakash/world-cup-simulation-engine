@@ -50,7 +50,9 @@ class Phase10EIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        playerStateService = new PlayerStateService(playerStateRepository, squadPlayerRepository);
+        playerStateService = new PlayerStateService(playerStateRepository, squadPlayerRepository, 
+            mock(com.aditya.worldcup.squads.repository.SquadRepository.class),
+            mock(com.aditya.worldcup.managers.repository.ManagerEconomyRepository.class));
         playerEffectiveRatingService = new PlayerEffectiveRatingService(playerStateService);
         teamStrengthService = new TeamStrengthService(squadPlayerRepository, playerEffectiveRatingService);
         rotationService = new RotationService(playerStateService);
@@ -88,7 +90,7 @@ class Phase10EIntegrationTest {
                     .fatigue(0).fitness(100).currentForm(0).morale(50).confidence(50)
                     .developmentRating(0).injuryStatus(InjuryStatus.HEALTHY).build();
 
-            lenient().when(playerStateRepository.findByPlayerId(i)).thenReturn(Optional.of(state));
+            lenient().when(playerStateRepository.findByManagerIdAndPlayerId(1L, i)).thenReturn(Optional.of(state));
         }
 
         lenient().when(squadPlayerRepository.findBySquadId(10L)).thenReturn(squadPlayers);
@@ -100,7 +102,7 @@ class Phase10EIntegrationTest {
     @Test
     void test1_effectiveRatingUsesFormFatigueAndDevelopment() {
         Player player = squadPlayers.get(0).getPlayer();
-        PlayerState state = playerStateRepository.findByPlayerId(player.getId()).get();
+        PlayerState state = playerStateRepository.findByManagerIdAndPlayerId(1L, player.getId()).get();
 
         int normalRating = playerEffectiveRatingService.calculate(player, state);
 
@@ -125,7 +127,7 @@ class Phase10EIntegrationTest {
 
         // Fatigued team
         for (SquadPlayer sp : squadPlayers) {
-            PlayerState state = playerStateRepository.findByPlayerId(sp.getPlayer().getId()).get();
+            PlayerState state = playerStateRepository.findByManagerIdAndPlayerId(1L, sp.getPlayer().getId()).get();
             state.setFatigue(50);
         }
         
@@ -137,7 +139,7 @@ class Phase10EIntegrationTest {
     void test3_injuredPlayersExcludedFromStartingXI() {
         // Player 2 is a CB
         Player injuredPlayer = squadPlayers.get(1).getPlayer();
-        PlayerState injuredState = playerStateRepository.findByPlayerId(injuredPlayer.getId()).get();
+        PlayerState injuredState = playerStateRepository.findByManagerIdAndPlayerId(1L, injuredPlayer.getId()).get();
         injuredState.setInjuryStatus(InjuryStatus.MODERATE);
         injuredState.setInjuryMatchesRemaining(2);
 
@@ -161,7 +163,7 @@ class Phase10EIntegrationTest {
 
         playerStateService.updateAfterMatch(10L, 99L, 1, 0, events);
 
-        PlayerState state = playerStateRepository.findByPlayerId(3L).get();
+        PlayerState state = playerStateRepository.findByManagerIdAndPlayerId(1L, 3L).get();
         assertThat(state.getInjuryStatus()).isEqualTo(InjuryStatus.MINOR);
         assertThat(state.getInjuryMatchesRemaining()).isEqualTo(1);
     }
@@ -189,7 +191,7 @@ class Phase10EIntegrationTest {
         playerStateService.updateAfterMatch(10L, 99L, 2, 1, List.of());
 
         // Player 1 played full match (starting XI)
-        PlayerState state = playerStateRepository.findByPlayerId(1L).get();
+        PlayerState state = playerStateRepository.findByManagerIdAndPlayerId(1L, 1L).get();
         assertThat(state.getFatigue()).isGreaterThan(0);
         assertThat(state.getFitness()).isLessThan(100);
     }

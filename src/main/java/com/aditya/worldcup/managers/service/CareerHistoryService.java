@@ -34,6 +34,7 @@ public class CareerHistoryService {
     private final ManagerService managerService;
     private final CareerStatisticsService careerStatisticsService;
     private final SaveGameService saveGameService;
+    private final ManagerEconomyService managerEconomyService;
 
     @Transactional
     public List<CareerHistoryResponse> getCurrentHistory(
@@ -167,6 +168,21 @@ public class CareerHistoryService {
                         ? "Autosave after trophy win"
                         : "Autosave after tournament completion"
         );
+
+        // Phase 11G: Issue Federation Rewards
+        issueTournamentRewards(manager, tournament.getId(), tournamentVictory, reachedFinal, reachedSemiFinal, reachedKnockout, record.wins());
+    }
+
+    private void issueTournamentRewards(Manager manager, Long tournamentId, boolean winner, boolean finalist, boolean semi, boolean knockout, int wins) {
+        int reward = 20; // Base participation
+        reward += wins * 5; // Win bonus
+        if (winner) reward += 150;
+        else if (finalist) reward += 100;
+        else if (semi) reward += 70;
+        else if (knockout) reward += 40;
+
+        String idempotencyKey = "TOURN_REWARD_" + tournamentId;
+        managerEconomyService.addFunds(manager, reward, "Tournament Performance Reward", idempotencyKey);
     }
 
     private TeamTournamentRecord buildRecord(List<Match> matches, Team team) {

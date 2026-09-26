@@ -21,6 +21,7 @@ import Career from './pages/Career'
 import Achievements from './pages/Achievements'
 import ManagerLeaderboard from './pages/ManagerLeaderboard'
 import ProtectedRoute from './routes/ProtectedRoute'
+import ManagerEconomy from './pages/ManagerEconomy'
 
 import Contracts from './pages/Contracts'
 
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/career" element={<Career />} />
           <Route path="/career/contracts" element={<Contracts />} />
+          <Route path="/career/economy" element={<ManagerEconomy />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/leaderboards/managers" element={<ManagerLeaderboard />} />
           <Route path="/settings" element={<Settings />} />

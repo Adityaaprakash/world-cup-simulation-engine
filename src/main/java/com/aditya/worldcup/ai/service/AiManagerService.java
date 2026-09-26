@@ -10,6 +10,10 @@ import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.dto.MatchPlanDto;
 import com.aditya.worldcup.tactics.service.MatchPlanService;
+import com.aditya.worldcup.managers.entity.Manager;
+import com.aditya.worldcup.managers.entity.CoachingStyle;
+import com.aditya.worldcup.managers.repository.ManagerRepository;
+import com.aditya.worldcup.managers.service.ManagerEconomyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +34,8 @@ public class AiManagerService {
     private final MatchImportanceService matchImportanceService;
     private final SquadRepository squadRepository;
     private final MatchPlanService matchPlanService;
+    private final ManagerRepository managerRepository;
+    private final ManagerEconomyService managerEconomyService;
 
     @Transactional
     public void prepareForMatch(Squad squad, Squad opponent) {
@@ -68,6 +74,27 @@ public class AiManagerService {
         squadRepository.save(squad);
         chooseCaptain(squad);
         selectBench(squad, importance);
+        
+        // Phase 11G: AI Economy integration
+        manageEconomy(squad);
+    }
+
+    private void manageEconomy(Squad squad) {
+        Long userId = squad.getUser().getId();
+        managerRepository.findById(userId).ifPresent(manager -> {
+            var economy = managerEconomyService.getOrCreateEconomy(manager);
+            int budget = economy.getBalance();
+            if (budget > 0 && economy.getTrainingAllocation() == 0 && economy.getMedicalAllocation() == 0 && economy.getScoutingAllocation() == 0) {
+                int training, medical, scouting;
+                switch (manager.getCoachingStyle()) {
+                    case ATTACKING: training = budget * 60 / 100; medical = budget * 20 / 100; scouting = budget - training - medical; break;
+                    case POSSESSION: scouting = budget * 50 / 100; training = budget * 30 / 100; medical = budget - training - scouting; break;
+                    case HIGH_PRESS: medical = budget * 50 / 100; training = budget * 30 / 100; scouting = budget - training - medical; break;
+                    default: training = budget / 3; medical = budget / 3; scouting = budget - training - medical;
+                }
+                managerEconomyService.allocateResources(manager, training, medical, scouting);
+            }
+        });
     }
 
     public List<SquadPlayer> selectMatchSquad(Squad squad) {

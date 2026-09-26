@@ -20,8 +20,11 @@ class PlayerStateServiceTest {
 
     private final PlayerStateRepository playerStateRepository = mock(PlayerStateRepository.class);
     private final SquadPlayerRepository squadPlayerRepository = mock(SquadPlayerRepository.class);
+    private final com.aditya.worldcup.squads.repository.SquadRepository squadRepository = mock(com.aditya.worldcup.squads.repository.SquadRepository.class);
+    private final com.aditya.worldcup.managers.repository.ManagerEconomyRepository managerEconomyRepository = mock(com.aditya.worldcup.managers.repository.ManagerEconomyRepository.class);
+    
     private final PlayerStateService service = new PlayerStateService(
-            playerStateRepository, squadPlayerRepository);
+            playerStateRepository, squadPlayerRepository, squadRepository, managerEconomyRepository);
 
     @Test
     void updateAfterMatchIncreasesFatigueForFullMatchParticipants() {
@@ -31,7 +34,7 @@ class PlayerStateServiceTest {
 
         when(squadPlayerRepository.findBySquadId(10L)).thenReturn(List.of(starter));
         when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of());
-        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(state));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 1L)).thenReturn(java.util.Optional.of(state));
 
         // 90 minutes mapped dynamically across 
         service.updateAfterMatch(10L, 20L, 1, 0, List.of());
@@ -53,8 +56,8 @@ class PlayerStateServiceTest {
 
         when(squadPlayerRepository.findBySquadId(10L)).thenReturn(List.of(starter, sub));
         when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of());
-        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(starterState));
-        when(playerStateRepository.findByPlayerId(2L)).thenReturn(java.util.Optional.of(subState));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 1L)).thenReturn(java.util.Optional.of(starterState));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 2L)).thenReturn(java.util.Optional.of(subState));
 
         MatchEventResponse substitution = new MatchEventResponse(
                 45, "Player 2", MatchEventType.SUBSTITUTION.name(), "Player 2 replaces Player 1.");
@@ -73,7 +76,7 @@ class PlayerStateServiceTest {
 
         when(squadPlayerRepository.findBySquadId(10L)).thenReturn(List.of(bench));
         when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of());
-        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(state));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 1L)).thenReturn(java.util.Optional.of(state));
 
         service.updateAfterMatch(10L, 20L, 1, 0, List.of());
 
@@ -94,8 +97,8 @@ class PlayerStateServiceTest {
         when(squadPlayerRepository.findBySquadId(10L)).thenReturn(List.of(starter1));
         when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of(starter2));
         
-        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(ceiling));
-        when(playerStateRepository.findByPlayerId(2L)).thenReturn(java.util.Optional.of(floor));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 1L)).thenReturn(java.util.Optional.of(ceiling));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 2L)).thenReturn(java.util.Optional.of(floor));
 
         // Team 1 wins, adding form. Ceiling is reached. Team 2 loses, dropping form. Floor is reached.
         service.updateAfterMatch(10L, 20L, 2, 0, List.of());
@@ -112,7 +115,7 @@ class PlayerStateServiceTest {
 
         when(squadPlayerRepository.findBySquadId(10L)).thenReturn(List.of(starter));
         when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of());
-        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(state));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 1L)).thenReturn(java.util.Optional.of(state));
 
         MatchEventResponse goal = new MatchEventResponse(
                 45, "Player 1", MatchEventType.GOAL.name(), "Goal.");
@@ -128,8 +131,8 @@ class PlayerStateServiceTest {
         Player player = player(1L, 80);
         PlayerState state = PlayerState.builder().player(player).fitness(90).fatigue(10).build();
 
-        service.recoverInactivePlayers(List.of(squadPlayer(player, false)),
-                Map.of(1L, state), Set.of());
+        service.recoverInactivePlayers(null, List.of(squadPlayer(player, false)),
+                Map.of(1L, state), Map.of(), com.aditya.worldcup.tactics.service.TacticalMatchModifiers.balanced());
 
         assertThat(state.getFitness()).isEqualTo(94);
         assertThat(state.getFatigue()).isEqualTo(5);
@@ -202,9 +205,9 @@ class PlayerStateServiceTest {
         ));
         when(squadPlayerRepository.findBySquadId(20L)).thenReturn(List.of());
 
-        when(playerStateRepository.findByPlayerId(1L)).thenReturn(java.util.Optional.of(state1));
-        when(playerStateRepository.findByPlayerId(2L)).thenReturn(java.util.Optional.of(state2));
-        when(playerStateRepository.findByPlayerId(3L)).thenReturn(java.util.Optional.of(state3));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 1L)).thenReturn(java.util.Optional.of(state1));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 2L)).thenReturn(java.util.Optional.of(state2));
+        when(playerStateRepository.findByManagerIdAndPlayerId(1L, 3L)).thenReturn(java.util.Optional.of(state3));
 
         List<MatchEventResponse> events = List.of(
             new MatchEventResponse(10, "Player 1", MatchEventType.INJURY.name(), "Player 1 sustains a MINOR injury."),

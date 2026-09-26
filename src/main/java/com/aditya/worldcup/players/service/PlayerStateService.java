@@ -2,10 +2,13 @@ package com.aditya.worldcup.players.service;
 
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.matchevents.entity.MatchEventType;
+import com.aditya.worldcup.managers.repository.ManagerEconomyRepository;
+import com.aditya.worldcup.managers.entity.ManagerEconomy;
 import com.aditya.worldcup.players.entity.InjuryStatus;
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.entity.PlayerState;
 import com.aditya.worldcup.players.repository.PlayerStateRepository;
+import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
@@ -24,6 +27,8 @@ public class PlayerStateService {
 
     private final PlayerStateRepository playerStateRepository;
     private final SquadPlayerRepository squadPlayerRepository;
+    private final SquadRepository squadRepository;
+    private final ManagerEconomyRepository managerEconomyRepository;
 
     @Transactional
     public void updateAfterMatch(Long homeSquadId, Long awaySquadId,
@@ -80,8 +85,8 @@ public class PlayerStateService {
         applyCleanSheets(homePlayers, states, minutesPlayed, awayGoals == 0);
         applyCleanSheets(awayPlayers, states, minutesPlayed, homeGoals == 0);
         
-        recoverInactivePlayers(homePlayers, states, minutesPlayed, homeTactics);
-        recoverInactivePlayers(awayPlayers, states, minutesPlayed, awayTactics);
+        recoverInactivePlayers(homeSquadId, homePlayers, states, minutesPlayed, homeTactics);
+        recoverInactivePlayers(awaySquadId, awayPlayers, states, minutesPlayed, awayTactics);
         
         playerStateRepository.saveAll(states.values());
     }
@@ -160,21 +165,30 @@ public class PlayerStateService {
         // legacy testing helper mapping set back to map
         Map<Long, Integer> activeMins = new HashMap<>();
         playersWhoPlayed.forEach(id -> activeMins.put(id, 90));
-        recoverInactivePlayers(players, states, activeMins, TacticalMatchModifiers.balanced());
+        recoverInactivePlayers(null, players, states, activeMins, TacticalMatchModifiers.balanced());
     }
 
-    private void recoverInactivePlayers(List<SquadPlayer> players,
-                                        Map<Long, PlayerState> states,
-                                        Map<Long, Integer> minutesPlayed,
-                                        TacticalMatchModifiers tactics) {
+    public void recoverInactivePlayers(Long squadId,
+                                       List<SquadPlayer> players,
+                                       Map<Long, PlayerState> states,
+                                       Map<Long, Integer> minutesPlayed,
+                                       TacticalMatchModifiers tactics) {
+        
+        final int medicalBonus = squadId != null ? squadRepository.findById(squadId)
+            .flatMap(s -> managerEconomyRepository.findByManagerId(s.getUser().getId()))
+            .map(ManagerEconomy::getMedicalAllocation)
+            .map(alloc -> Math.min(20, alloc / 5)) // max 20% bonus from 100 allocation
+            .orElse(0) : 0;
+                                       
         int recovery = 4 - (int) Math.round(Math.max(0, tactics.fatigueModifier()));
         players.stream()
                 .filter(player -> minutesPlayed.getOrDefault(player.getPlayer().getId(), 0) == 0)
                 .map(player -> states.get(player.getPlayer().getId()))
+                .filter(Objects::nonNull)
                 .forEach(state -> {
                     state.setWorkload(between(state.getWorkload() != null ? state.getWorkload() - 15 : 0, 0, 100));
-                    state.setFitness(between(state.getFitness() + Math.max(2, recovery), 0, 100));
-                    state.setFatigue(between(state.getFatigue() - Math.max(3, recovery + 1), 0, 100));
+                    state.setFitness(between(state.getFitness() + Math.max(2, recovery + (recovery * medicalBonus / 100)), 0, 100));
+                    state.setFatigue(between(state.getFatigue() - Math.max(3, recovery + 1 + medicalBonus / 10), 0, 100));
                 });
     }
 
