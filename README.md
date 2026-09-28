@@ -581,3 +581,15 @@ updated, or an achievement is unlocked. The endpoints are:
 - `GET /api/history/timeline`
 - `GET /api/history/rankings`
 - `GET /api/history/summary`
+
+## Manager Gameplay System (Phase 11)
+
+Phase 11 adds a completely functioning National-Team Manager Simulator ecosystem on top of the simulation engine. This phase enables deep, session-persisted manager gameplay:
+- **Player Acquisition & Contracts**: Build national squads through detailed player selection. Contracts and player lifecycles dictate availability dynamically, tracking authentic retirements.
+- **Training, Fitness, & Workload**: Training routines manipulate conditioning, directly translating to match-day consequences around fatigue, form, and fitness.
+- **Advanced Match AI & Preparation**: Comprehensive AI Managers handle unassigned squads, rigorously enforcing tactical preparation bounds.
+- **Federation Economy & Objectives**: Earn configurable federation resources through dynamic objective completion constraints. Use resources to scale squad capabilities safely.
+- **Events & Decisions**: Engage in reactive contextual managerial events carrying persistent consequences for the save file's overall state.
+- **Manager Hub UI**: A comprehensive React-driven `Dashboard` aggregates operational states centrally. (Note: "Upcoming Fixtures" tracking relies strictly on existing historical tournament data representations to prevent API calculation duplication and remains deferred structurally from the Dashboard until a unified canonical endpoint is architected).
+
+Phase 11 represents the final integration step for the Manager Ecosystem, structurally audited without any domain leakage or logic conflicts.
