@@ -28,6 +28,9 @@ import com.aditya.worldcup.tactics.service.TacticalModifierService;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import com.aditya.worldcup.tactics.service.MatchPlanService;
 import com.aditya.worldcup.ai.service.AiManagerService;
+import com.aditya.worldcup.managers.service.ManagerEventGeneratorService;
+import com.aditya.worldcup.managers.entity.Manager;
+import com.aditya.worldcup.managers.service.ManagerService;
 import com.aditya.worldcup.ai.service.MatchImportance;
 import com.aditya.worldcup.matchevents.entity.MatchEventType;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
@@ -65,6 +68,8 @@ public class MatchSimulationService {
     private final MatchModifierService matchModifierService;
     private final TournamentIntelligenceService tournamentIntelligenceService;
     private final com.aditya.worldcup.optimization.service.SimulationMetricsService simulationMetricsService;
+    private final ManagerEventGeneratorService managerEventGeneratorService;
+    private final ManagerService managerService;
 
     private final Random random = new Random();
 
@@ -338,6 +343,15 @@ public class MatchSimulationService {
                 awayGoals,
                 awaySquad.getName(),
                 duration);
+
+        if (match != null && homeSquad.getUser() != null) {
+            Manager homeManager = managerService.getOrCreateManager(homeSquad.getUser().getEmail());
+            managerEventGeneratorService.generatePostMatchEvents(match, homeManager);
+        }
+        if (match != null && awaySquad.getUser() != null) {
+            Manager awayManager = managerService.getOrCreateManager(awaySquad.getUser().getEmail());
+            managerEventGeneratorService.generatePostMatchEvents(match, awayManager);
+        }
 
         return response;
     }

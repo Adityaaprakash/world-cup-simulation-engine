@@ -11,9 +11,11 @@ import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.dto.MatchPlanDto;
 import com.aditya.worldcup.tactics.service.MatchPlanService;
 import com.aditya.worldcup.managers.entity.Manager;
-import com.aditya.worldcup.managers.entity.CoachingStyle;
 import com.aditya.worldcup.managers.repository.ManagerRepository;
 import com.aditya.worldcup.managers.service.ManagerEconomyService;
+import com.aditya.worldcup.managers.service.ManagerEventService;
+import com.aditya.worldcup.managers.dto.ManagerEventResponse;
+import com.aditya.worldcup.managers.dto.DecisionOptionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class AiManagerService {
     private final MatchPlanService matchPlanService;
     private final ManagerRepository managerRepository;
     private final ManagerEconomyService managerEconomyService;
+    private final ManagerEventService managerEventService;
 
     @Transactional
     public void prepareForMatch(Squad squad, Squad opponent) {
@@ -77,6 +80,9 @@ public class AiManagerService {
         
         // Phase 11G: AI Economy integration
         manageEconomy(squad);
+        
+        // Phase 11I: AI Event Resolution
+        resolvePendingEvents(squad);
     }
 
     private void manageEconomy(Squad squad) {
@@ -93,6 +99,20 @@ public class AiManagerService {
                     default: training = budget / 3; medical = budget / 3; scouting = budget - training - medical;
                 }
                 managerEconomyService.allocateResources(manager, training, medical, scouting);
+            }
+        });
+    }
+
+    private void resolvePendingEvents(Squad squad) {
+        Long userId = squad.getUser().getId();
+        managerRepository.findById(userId).ifPresent(manager -> {
+            try {
+                // Not using SaveContextHolder for AI, so we use internal methods or pass Manager directly
+                // Wait, ManagerEventService methods are mapped to SaveContextHolder!
+                // We should expose an internal method in ManagerEventService for AI bypass
+                managerEventService.resolvePendingEventsForAi(manager);
+            } catch (Exception e) {
+                // Ignore AI resolution failures
             }
         });
     }

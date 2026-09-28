@@ -29,7 +29,8 @@ public record SaveExportResponse(
         List<PlayerLifecycleSnapshot> playerLifecycles,
         ManagerEconomySnapshot managerEconomy,
         List<ResourceTransactionSnapshot> resourceTransactions,
-        List<ManagerObjectiveSnapshot> managerObjectives
+        List<ManagerObjectiveSnapshot> managerObjectives,
+        List<ManagerEventSnapshot> managerEvents
 ) {
 
     public record TournamentSnapshot(
@@ -167,5 +168,23 @@ public record SaveExportResponse(
             Integer rewardAmount,
             LocalDateTime createdAt,
             LocalDateTime completedAt
+    ) {}
+
+    public record ManagerEventSnapshot(
+            Long eventId,
+            Long managerId,
+            com.aditya.worldcup.managers.entity.ManagerEventType type,
+            String title,
+            String description,
+            String contextId,
+            com.aditya.worldcup.managers.entity.ManagerEventStatus status,
+            String selectedDecision,
+            String resolutionText,
+            Long relatedPlayerId,
+            Long relatedMatchId,
+            Long relatedTournamentId,
+            LocalDateTime createdAt,
+            LocalDateTime expiresAt,
+            LocalDateTime resolvedAt
     ) {}
 }

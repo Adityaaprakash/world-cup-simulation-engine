@@ -29,6 +29,8 @@ import com.aditya.worldcup.managers.repository.ManagerObjectiveRepository;
 import com.aditya.worldcup.managers.entity.ManagerEconomy;
 import com.aditya.worldcup.managers.entity.ResourceTransaction;
 import com.aditya.worldcup.managers.entity.ManagerObjective;
+import com.aditya.worldcup.managers.entity.ManagerEvent;
+import com.aditya.worldcup.managers.repository.ManagerEventRepository;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,7 @@ public class SaveExportService {
     private final ManagerEconomyRepository managerEconomyRepository;
     private final ResourceTransactionRepository resourceTransactionRepository;
     private final ManagerObjectiveRepository managerObjectiveRepository;
+    private final ManagerEventRepository managerEventRepository;
 
     @Transactional(readOnly = true)
     public SaveExportResponse exportSave(
@@ -83,7 +86,8 @@ public class SaveExportService {
                 playerLifecycles(manager),
                 managerEconomySnapshot(manager),
                 resourceTransactions(manager),
-                managerObjectives(manager)
+                managerObjectives(manager),
+                managerEvents(manager)
         );
     }
 
@@ -373,6 +377,33 @@ public class SaveExportService {
                 objective.getRewardAmount(),
                 objective.getCreatedAt(),
                 objective.getCompletedAt()
+        );
+    }
+
+    private List<SaveExportResponse.ManagerEventSnapshot> managerEvents(Manager manager) {
+        return managerEventRepository.findByManagerIdOrderByCreatedAtDesc(manager.getId())
+                .stream()
+                .map(this::mapManagerEvent)
+                .toList();
+    }
+
+    private SaveExportResponse.ManagerEventSnapshot mapManagerEvent(ManagerEvent event) {
+        return new SaveExportResponse.ManagerEventSnapshot(
+                event.getId(),
+                event.getManager().getId(),
+                event.getType(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getContextId(),
+                event.getStatus(),
+                event.getSelectedDecision(),
+                event.getResolutionText(),
+                event.getRelatedPlayer() != null ? event.getRelatedPlayer().getId() : null,
+                event.getRelatedMatch() != null ? event.getRelatedMatch().getId() : null,
+                event.getRelatedTournament() != null ? event.getRelatedTournament().getId() : null,
+                event.getCreatedAt(),
+                event.getExpiresAt(),
+                event.getResolvedAt()
         );
     }
 

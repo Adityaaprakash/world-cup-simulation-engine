@@ -1,0 +1,9 @@
+package com.aditya.worldcup.managers.entity;
+
+public enum ManagerEventType {
+    PLAYER_FATIGUE_WARNING,
+    PLAYER_TRAINING_BREAKTHROUGH,
+    SQUAD_SELECTION_CONFLICT,
+    TACTICAL_PREPARATION_DILEMMA,
+    FEDERATION_RESOURCE_GRANT
+}

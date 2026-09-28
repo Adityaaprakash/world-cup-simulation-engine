@@ -14,6 +14,7 @@ import com.aditya.worldcup.training.entity.TrainingIntensity;
 import com.aditya.worldcup.managers.entity.Manager;
 import com.aditya.worldcup.managers.service.ManagerObjectiveService;
 import com.aditya.worldcup.managers.service.ManagerService;
+import com.aditya.worldcup.managers.service.ManagerEventGeneratorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class PlayerTrainingService {
     private final ManagerEconomyRepository managerEconomyRepository;
     private final ManagerObjectiveService managerObjectiveService;
     private final ManagerService managerService;
+    private final ManagerEventGeneratorService eventGeneratorService;
 
     @Transactional
     public void trainSquad(Long squadId, TrainingCategory category, TrainingIntensity intensity) {
@@ -72,6 +74,8 @@ public class PlayerTrainingService {
         }
 
         playerStateService.saveAll(states);
+        
+        eventGeneratorService.generatePostTrainingEvents(manager, states);
     }
 
     public void processPlayerTraining(PlayerState state, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy, Manager manager) {

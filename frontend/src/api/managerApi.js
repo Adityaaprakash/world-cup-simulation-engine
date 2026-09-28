@@ -11,3 +11,8 @@ export const getMyJobs = () => axiosClient.get('/api/v1/managers/jobs')
 export const acceptJob = (teamId, objective) => axiosClient.post('/api/v1/managers/jobs/accept', { teamId, objective })
 export const resignFromJob = () => axiosClient.post('/api/v1/managers/jobs/resign')
 export const getObjectives = () => axiosClient.get('/api/v1/career/objectives/all')
+
+export const getManagerEvents = () => axiosClient.get('/api/career/events')
+export const getPendingEvents = () => axiosClient.get('/api/career/events/pending')
+export const getEvent = (eventId) => axiosClient.get(`/api/career/events/${eventId}`)
+export const makeDecision = (eventId, decisionCode) => axiosClient.post(`/api/career/events/${eventId}/decide`, { decisionCode })

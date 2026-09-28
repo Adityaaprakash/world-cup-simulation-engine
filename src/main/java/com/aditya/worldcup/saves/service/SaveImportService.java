@@ -15,7 +15,9 @@ import com.aditya.worldcup.managers.entity.ManagerObjective;
 import com.aditya.worldcup.managers.entity.ResourceTransaction;
 import com.aditya.worldcup.managers.repository.ManagerEconomyRepository;
 import com.aditya.worldcup.managers.repository.ManagerObjectiveRepository;
+import com.aditya.worldcup.managers.repository.ManagerEventRepository;
 import com.aditya.worldcup.managers.repository.ResourceTransactionRepository;
+import com.aditya.worldcup.managers.entity.ManagerEvent;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.teams.repository.TeamRepository;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
@@ -45,6 +47,8 @@ public class SaveImportService {
     private final ManagerEconomyRepository managerEconomyRepository;
     private final ResourceTransactionRepository resourceTransactionRepository;
     private final ManagerObjectiveRepository managerObjectiveRepository;
+    private final ManagerEventRepository managerEventRepository;
+    private final com.aditya.worldcup.matches.repository.MatchRepository matchRepository;
 
     @Transactional
     public SaveImportResponse importSave(
@@ -120,6 +124,7 @@ public class SaveImportService {
         restoreManagerEconomy(exportData, manager);
         restoreResourceTransactions(exportData, manager);
         restoreManagerObjectives(exportData, manager);
+        restoreManagerEvents(exportData, manager);
 
         return new SaveImportResponse(
                 saved.getId(),
@@ -333,6 +338,45 @@ public class SaveImportService {
                     obj.setCompletedAt(snap.completedAt());
                     managerObjectiveRepository.save(obj);
                 });
+            }
+        }
+    }
+
+    private void restoreManagerEvents(SaveExportResponse exportData, Manager manager) {
+        List<ManagerEvent> existingEvents = managerEventRepository.findByManagerIdOrderByCreatedAtDesc(manager.getId());
+
+        for (SaveExportResponse.ManagerEventSnapshot snap : safeList(exportData.managerEvents())) {
+            boolean exists = existingEvents.stream().anyMatch(e -> e.getContextId().equals(snap.contextId()));
+
+            if (!exists) {
+                ManagerEvent event = ManagerEvent.builder()
+                        .manager(manager)
+                        .type(snap.type())
+                        .title(snap.title())
+                        .description(snap.description())
+                        .contextId(snap.contextId())
+                        .status(snap.status())
+                        .selectedDecision(snap.selectedDecision())
+                        .resolutionText(snap.resolutionText())
+                        .relatedPlayer(snap.relatedPlayerId() != null ? playerRepository.findById(snap.relatedPlayerId()).orElse(null) : null)
+                        .relatedMatch(snap.relatedMatchId() != null ? matchRepository.findById(snap.relatedMatchId()).orElse(null) : null)
+                        .relatedTournament(snap.relatedTournamentId() != null ? tournamentRepository.findById(snap.relatedTournamentId()).orElse(null) : null)
+                        .createdAt(snap.createdAt())
+                        .expiresAt(snap.expiresAt())
+                        .resolvedAt(snap.resolvedAt())
+                        .build();
+                managerEventRepository.save(event);
+            } else {
+                existingEvents.stream()
+                        .filter(e -> e.getContextId().equals(snap.contextId()))
+                        .findFirst()
+                        .ifPresent(event -> {
+                            event.setStatus(snap.status());
+                            event.setSelectedDecision(snap.selectedDecision());
+                            event.setResolutionText(snap.resolutionText());
+                            event.setResolvedAt(snap.resolvedAt());
+                            managerEventRepository.save(event);
+                        });
             }
         }
     }
