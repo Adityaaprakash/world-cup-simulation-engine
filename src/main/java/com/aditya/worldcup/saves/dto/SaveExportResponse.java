@@ -26,7 +26,10 @@ public record SaveExportResponse(
         List<PlayerStateSnapshot> playerStates,
         List<TacticalProfileSnapshot> tacticalSettings,
         List<PlayerContractSnapshot> playerContracts,
-        List<PlayerLifecycleSnapshot> playerLifecycles
+        List<PlayerLifecycleSnapshot> playerLifecycles,
+        ManagerEconomySnapshot managerEconomy,
+        List<ResourceTransactionSnapshot> resourceTransactions,
+        List<ManagerObjectiveSnapshot> managerObjectives
 ) {
 
     public record TournamentSnapshot(
@@ -131,5 +134,38 @@ public record SaveExportResponse(
             String playerName,
             Boolean active,
             Boolean retired
+    ) {}
+
+    public record ManagerEconomySnapshot(
+            Long economyId,
+            Long managerId,
+            Integer balance,
+            Integer trainingAllocation,
+            Integer medicalAllocation,
+            Integer scoutingAllocation,
+            LocalDateTime updatedAt
+    ) {}
+
+    public record ResourceTransactionSnapshot(
+            Long transactionId,
+            Long managerId,
+            Integer amount,
+            String reason,
+            LocalDateTime transactionDate,
+            String idempotencyKey
+    ) {}
+
+    public record ManagerObjectiveSnapshot(
+            Long objectiveId,
+            Long managerId,
+            com.aditya.worldcup.managers.entity.ObjectiveType type,
+            String description,
+            Integer targetValue,
+            Integer currentValue,
+            com.aditya.worldcup.managers.entity.ObjectiveStatus status,
+            Long tournamentId,
+            Integer rewardAmount,
+            LocalDateTime createdAt,
+            LocalDateTime completedAt
     ) {}
 }

@@ -82,7 +82,7 @@ class PlayerTrainingServiceTest {
         youngState.setInjuryStatus(InjuryStatus.MINOR);
         when(playerStateService.isAvailable(youngState)).thenReturn(false);
 
-        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null);
+        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null, null);
 
         assertThat(youngState.getProgressionTracker()).isZero();
         assertThat(youngState.getFatigue()).isEqualTo(10);
@@ -92,7 +92,7 @@ class PlayerTrainingServiceTest {
     void restReducesFatigueAndGivesNoProgression() {
         youngState.setFatigue(50);
         
-        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.REST, TrainingIntensity.LIGHT, null);
+        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.REST, TrainingIntensity.LIGHT, null, null);
 
         assertThat(youngState.getProgressionTracker()).isZero();
         assertThat(youngState.getFatigue()).isEqualTo(30);
@@ -104,7 +104,7 @@ class PlayerTrainingServiceTest {
         youngState.setProgressionTracker(95);
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
 
-        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE, null);
+        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE, null, null);
 
         // Young player roomToGrow = 15. intense = 6, physical = +1 means 7. 15 * 7 = 105 tracker points.
         // 95 + 105 = 200 => +2 development rating, 0 tracker!
@@ -117,7 +117,7 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(oldState)).thenReturn(true);
         oldState.setProgressionTracker(-95);
         
-        playerTrainingService.processPlayerTraining(oldState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null);
+        playerTrainingService.processPlayerTraining(oldState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null, null);
 
         // Old player intense = -5
         // -95 + -5 = -100 => -1 development rating, 0 tracker
@@ -134,8 +134,8 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(freshState)).thenReturn(true);
         when(playerStateService.isAvailable(tiredState)).thenReturn(true);
         
-        playerTrainingService.processPlayerTraining(freshState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null);
-        playerTrainingService.processPlayerTraining(tiredState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null);
+        playerTrainingService.processPlayerTraining(freshState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null, null);
+        playerTrainingService.processPlayerTraining(tiredState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null, null);
         
         assertThat(freshState.getProgressionTracker()).isGreaterThan(tiredState.getProgressionTracker());
         assertThat(tiredState.getProgressionTracker()).isZero(); // 100 fatigue = 1.0 penalty
@@ -147,7 +147,7 @@ class PlayerTrainingServiceTest {
         youngState.setProgressionTracker(99);
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
         
-        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null);
+        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null, null);
         
         assertThat(youngState.getDevelopmentRating()).isEqualTo(10);
         assertThat(youngState.getProgressionTracker()).isZero();
@@ -158,7 +158,7 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
         youngState.setWorkload(75);
         
-        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE, null);
+        playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE, null, null);
         
         // Intensity INTENSE = 25 workload. Baseline fatigue increase = 25.
         // Since workload > 70 previously -> multiplier is 1.5. 25 * 1.5 = 38 fatigue!

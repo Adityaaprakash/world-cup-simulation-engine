@@ -11,6 +11,9 @@ import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.training.entity.TrainingCategory;
 import com.aditya.worldcup.training.entity.TrainingIntensity;
+import com.aditya.worldcup.managers.entity.Manager;
+import com.aditya.worldcup.managers.service.ManagerObjectiveService;
+import com.aditya.worldcup.managers.service.ManagerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,8 @@ public class PlayerTrainingService {
     private final SquadPlayerRepository squadPlayerRepository;
     private final SquadRepository squadRepository;
     private final ManagerEconomyRepository managerEconomyRepository;
+    private final ManagerObjectiveService managerObjectiveService;
+    private final ManagerService managerService;
 
     @Transactional
     public void trainSquad(Long squadId, TrainingCategory category, TrainingIntensity intensity) {
@@ -40,17 +45,20 @@ public class PlayerTrainingService {
         List<Player> playerList = players.stream()
                 .map(SquadPlayer::getPlayer)
                 .collect(Collectors.toList());
-                
-        trainPlayersWithEconomy(playerList, category, intensity, economy);
+        Manager manager = null;
+        if (squad.getUser() != null && squad.getUser().getEmail() != null) {
+            manager = managerService.getOrCreateManager(squad.getUser().getEmail());
+        }
+        trainPlayersWithEconomy(playerList, category, intensity, economy, manager);
     }
-    
+
     @Transactional
     public void trainPlayers(List<Player> players, TrainingCategory category, TrainingIntensity intensity) {
-        trainPlayersWithEconomy(players, category, intensity, null);
+        trainPlayersWithEconomy(players, category, intensity, null, null);
     }
     
     @Transactional
-    public void trainPlayersWithEconomy(List<Player> players, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy) {
+    public void trainPlayersWithEconomy(List<Player> players, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy, Manager manager) {
         if (players == null || players.isEmpty()) {
             return;
         }
@@ -60,13 +68,13 @@ public class PlayerTrainingService {
                 .collect(Collectors.toList());
 
         for (PlayerState state : states) {
-            processPlayerTraining(state, category, intensity, economy);
+            processPlayerTraining(state, category, intensity, economy, manager);
         }
 
         playerStateService.saveAll(states);
     }
 
-    public void processPlayerTraining(PlayerState state, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy) {
+    public void processPlayerTraining(PlayerState state, TrainingCategory category, TrainingIntensity intensity, ManagerEconomy economy, Manager manager) {
         
         boolean isAvailable = playerStateService.isAvailable(state);
         
@@ -131,7 +139,7 @@ public class PlayerTrainingService {
         state.setFatigue(newFatigue);
 
         // Update development
-        applyProgression(state, actualProgression);
+        applyProgression(state, actualProgression, manager);
     }
 
     private int calculateBaseProgression(Player player, TrainingIntensity intensity, TrainingCategory category) {
@@ -188,13 +196,14 @@ public class PlayerTrainingService {
         }
     }
 
-    private void applyProgression(PlayerState state, int amount) {
+    private void applyProgression(PlayerState state, int amount, Manager manager) {
         if (amount == 0) {
             return;
         }
         
         int currentTracker = state.getProgressionTracker() + amount;
         int currentRating = state.getDevelopmentRating();
+        int initialRating = currentRating;
         
         while (currentTracker >= 100 && currentRating < MAX_DEVELOPMENT) {
             currentTracker -= 100;
@@ -215,6 +224,10 @@ public class PlayerTrainingService {
         
         state.setProgressionTracker(currentTracker);
         state.setDevelopmentRating(currentRating);
+
+        if (manager != null && currentRating > initialRating) {
+            managerObjectiveService.evaluatePlayerDevelopmentProgress(manager);
+        }
     }
     
     @Transactional(readOnly = true)

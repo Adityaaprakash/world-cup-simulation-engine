@@ -6,6 +6,7 @@ import com.aditya.worldcup.managers.entity.BoardObjective;
 import com.aditya.worldcup.managers.entity.JobStatus;
 import com.aditya.worldcup.managers.entity.Manager;
 import com.aditya.worldcup.managers.entity.ManagerJob;
+import com.aditya.worldcup.managers.entity.ObjectiveType;
 import com.aditya.worldcup.managers.entity.TimelineEventType;
 import com.aditya.worldcup.managers.repository.ManagerJobRepository;
 import com.aditya.worldcup.shared.exception.TeamNotFoundException;
@@ -30,6 +31,7 @@ public class ManagerJobService {
     private final ManagerService managerService;
     private final TeamRepository teamRepository;
     private final CareerTimelineService careerTimelineService;
+    private final ManagerObjectiveService managerObjectiveService;
 
     @Transactional
     public ManagerJobResponse acceptJob(Authentication authentication, ManagerJobRequest request) {
@@ -69,6 +71,11 @@ public class ManagerJobService {
         
         careerTimelineService.recordEvent(manager, TimelineEventType.HIRED, "Hired", "Hired as manager of " + team.getName(), null, team.getId());
 
+        // Phase 11H: Generate Initial Objectives
+        managerObjectiveService.createObjective(manager, ObjectiveType.WIN_MATCHES, "Win 3 Matches with " + team.getName(), 3, 50, null);
+        managerObjectiveService.createObjective(manager, ObjectiveType.SCORE_GOALS, "Score 10 Goals", 10, 30, null);
+        managerObjectiveService.createObjective(manager, ObjectiveType.DEVELOP_PLAYERS, "Develop Players 5 times", 5, 40, null);
+
         return mapToResponse(savedJob);
     }
 
@@ -84,6 +91,11 @@ public class ManagerJobService {
         ManagerJob savedJob = managerJobRepository.save(activeJob);
         
         careerTimelineService.recordEvent(manager, TimelineEventType.RESIGNED, "Resigned", "Resigned from " + activeJob.getTeam().getName(), null, activeJob.getTeam().getId());
+
+        // Cancel active objectives
+        managerObjectiveService.getActiveObjectives(manager.getId()).forEach(obj -> {
+            managerObjectiveService.failObjective(obj);
+        });
 
         return mapToResponse(savedJob);
     }
@@ -138,6 +150,10 @@ public class ManagerJobService {
             log.info("Manager {} has been sacked by {} due to low board confidence.", job.getManager().getUsername(), job.getTeam().getName());
             
             careerTimelineService.recordEvent(job.getManager(), TimelineEventType.SACKED, "Sacked", "Sacked by " + job.getTeam().getName() + " due to poor performance", null, job.getTeam().getId());
+
+            managerObjectiveService.getActiveObjectives(job.getManager().getId()).forEach(obj -> {
+                managerObjectiveService.failObjective(obj);
+            });
         }
 
         managerJobRepository.save(job);

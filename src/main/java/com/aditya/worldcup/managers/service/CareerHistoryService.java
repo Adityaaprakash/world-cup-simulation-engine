@@ -35,6 +35,7 @@ public class CareerHistoryService {
     private final CareerStatisticsService careerStatisticsService;
     private final SaveGameService saveGameService;
     private final ManagerEconomyService managerEconomyService;
+    private final ManagerObjectiveService managerObjectiveService;
 
     @Transactional
     public List<CareerHistoryResponse> getCurrentHistory(
@@ -171,6 +172,9 @@ public class CareerHistoryService {
 
         // Phase 11G: Issue Federation Rewards
         issueTournamentRewards(manager, tournament.getId(), tournamentVictory, reachedFinal, reachedSemiFinal, reachedKnockout, record.wins());
+
+        // Phase 11H: Evaluate Objectives
+        managerObjectiveService.evaluateTournamentProgress(manager, tournament);
     }
 
     private void issueTournamentRewards(Manager manager, Long tournamentId, boolean winner, boolean finalist, boolean semi, boolean knockout, int wins) {

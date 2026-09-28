@@ -10,9 +10,16 @@ import com.aditya.worldcup.saves.dto.SaveImportResponse;
 import com.aditya.worldcup.saves.entity.SaveSlot;
 import com.aditya.worldcup.saves.entity.SaveType;
 import com.aditya.worldcup.saves.repository.SaveSlotRepository;
+import com.aditya.worldcup.managers.entity.ManagerEconomy;
+import com.aditya.worldcup.managers.entity.ManagerObjective;
+import com.aditya.worldcup.managers.entity.ResourceTransaction;
+import com.aditya.worldcup.managers.repository.ManagerEconomyRepository;
+import com.aditya.worldcup.managers.repository.ManagerObjectiveRepository;
+import com.aditya.worldcup.managers.repository.ResourceTransactionRepository;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.teams.repository.TeamRepository;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
+import com.aditya.worldcup.tournaments.entity.Tournament;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -35,6 +42,9 @@ public class SaveImportService {
     private final TeamRepository teamRepository;
     private final SquadPlayerRepository squadPlayerRepository;
     private final SaveGameService saveGameService;
+    private final ManagerEconomyRepository managerEconomyRepository;
+    private final ResourceTransactionRepository resourceTransactionRepository;
+    private final ManagerObjectiveRepository managerObjectiveRepository;
 
     @Transactional
     public SaveImportResponse importSave(
@@ -106,6 +116,10 @@ public class SaveImportService {
             saved.setLastPlayedAt(now);
             saved = saveSlotRepository.save(saved);
         }
+
+        restoreManagerEconomy(exportData, manager);
+        restoreResourceTransactions(exportData, manager);
+        restoreManagerObjectives(exportData, manager);
 
         return new SaveImportResponse(
                 saved.getId(),
@@ -237,5 +251,89 @@ public class SaveImportService {
 
     private <T> List<T> safeList(List<T> values) {
         return values == null ? List.of() : values;
+    }
+
+    private void restoreManagerEconomy(SaveExportResponse exportData, Manager manager) {
+        if (exportData.managerEconomy() == null) {
+            return;
+        }
+        SaveExportResponse.ManagerEconomySnapshot snap = exportData.managerEconomy();
+        ManagerEconomy economy = managerEconomyRepository.findByManagerId(manager.getId())
+                .orElseGet(() -> ManagerEconomy.builder()
+                        .manager(manager)
+                        .balance(snap.balance())
+                        .trainingAllocation(snap.trainingAllocation())
+                        .medicalAllocation(snap.medicalAllocation())
+                        .scoutingAllocation(snap.scoutingAllocation())
+                        .updatedAt(snap.updatedAt())
+                        .build());
+
+        economy.setBalance(snap.balance());
+        economy.setTrainingAllocation(snap.trainingAllocation());
+        economy.setMedicalAllocation(snap.medicalAllocation());
+        economy.setScoutingAllocation(snap.scoutingAllocation());
+        economy.setUpdatedAt(snap.updatedAt());
+        managerEconomyRepository.save(economy);
+    }
+
+    private void restoreResourceTransactions(SaveExportResponse exportData, Manager manager) {
+        for (SaveExportResponse.ResourceTransactionSnapshot snap : safeList(exportData.resourceTransactions())) {
+            if (!resourceTransactionRepository.existsByManagerIdAndIdempotencyKey(manager.getId(), snap.idempotencyKey())) {
+                ResourceTransaction tx = ResourceTransaction.builder()
+                        .manager(manager)
+                        .amount(snap.amount())
+                        .reason(snap.reason())
+                        .transactionDate(snap.transactionDate())
+                        .idempotencyKey(snap.idempotencyKey())
+                        .build();
+                resourceTransactionRepository.save(tx);
+            }
+        }
+    }
+
+    private void restoreManagerObjectives(SaveExportResponse exportData, Manager manager) {
+        List<ManagerObjective> existingObjectives = managerObjectiveRepository.findAll()
+                .stream()
+                .filter(o -> o.getManager().getId().equals(manager.getId()))
+                .toList();
+
+        for (SaveExportResponse.ManagerObjectiveSnapshot snap : safeList(exportData.managerObjectives())) {
+            boolean exists = existingObjectives.stream().anyMatch(o ->
+                o.getType() == snap.type() &&
+                o.getDescription().equals(snap.description()) &&
+                o.getCreatedAt().equals(snap.createdAt())
+            );
+
+            if (!exists) {
+                Tournament tournament = null;
+                if (snap.tournamentId() != null) {
+                    tournament = tournamentRepository.findById(snap.tournamentId()).orElse(null);
+                }
+                ManagerObjective obj = ManagerObjective.builder()
+                        .manager(manager)
+                        .type(snap.type())
+                        .description(snap.description())
+                        .targetValue(snap.targetValue())
+                        .currentValue(snap.currentValue())
+                        .status(snap.status())
+                        .tournament(tournament)
+                        .rewardAmount(snap.rewardAmount())
+                        .createdAt(snap.createdAt())
+                        .completedAt(snap.completedAt())
+                        .build();
+                managerObjectiveRepository.save(obj);
+            } else {
+                existingObjectives.stream().filter(o ->
+                    o.getType() == snap.type() &&
+                    o.getDescription().equals(snap.description()) &&
+                    o.getCreatedAt().equals(snap.createdAt())
+                ).findFirst().ifPresent(obj -> {
+                    obj.setCurrentValue(snap.currentValue());
+                    obj.setStatus(snap.status());
+                    obj.setCompletedAt(snap.completedAt());
+                    managerObjectiveRepository.save(obj);
+                });
+            }
+        }
     }
 }

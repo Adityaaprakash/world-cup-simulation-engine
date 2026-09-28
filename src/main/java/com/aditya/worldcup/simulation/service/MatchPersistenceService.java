@@ -19,6 +19,7 @@ import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
+import com.aditya.worldcup.managers.service.ManagerObjectiveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,7 @@ public class MatchPersistenceService {
     private final SquadRepository squadRepository;
     private final SquadPlayerRepository squadPlayerRepository;
     private final PlayerRepository playerRepository;
+    private final ManagerObjectiveService managerObjectiveService;
 
     @Transactional
     public void persistSimulationData(Match match, MatchSimulationResponse simulation) {
@@ -179,5 +181,14 @@ public class MatchPersistenceService {
                 }
             }
         }
+
+        // Evaluate Manager Objectives
+        boolean homeWin = simulation.homeGoals() > simulation.awayGoals() ||
+                (simulation.wentToPenalties() && simulation.homePenaltiesScore() != null && simulation.awayPenaltiesScore() != null && simulation.homePenaltiesScore() > simulation.awayPenaltiesScore());
+        boolean awayWin = simulation.awayGoals() > simulation.homeGoals() ||
+                (simulation.wentToPenalties() && simulation.homePenaltiesScore() != null && simulation.awayPenaltiesScore() != null && simulation.awayPenaltiesScore() > simulation.homePenaltiesScore());
+
+        managerObjectiveService.evaluateMatch(homeSquad, homeWin, simulation.homeGoals());
+        managerObjectiveService.evaluateMatch(awaySquad, awayWin, simulation.awayGoals());
     }
 }

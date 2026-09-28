@@ -10,3 +10,4 @@ export const getManagerLeaderboards = () => axiosClient.get('/api/managers/leade
 export const getMyJobs = () => axiosClient.get('/api/v1/managers/jobs')
 export const acceptJob = (teamId, objective) => axiosClient.post('/api/v1/managers/jobs/accept', { teamId, objective })
 export const resignFromJob = () => axiosClient.post('/api/v1/managers/jobs/resign')
+export const getObjectives = () => axiosClient.get('/api/v1/career/objectives/all')

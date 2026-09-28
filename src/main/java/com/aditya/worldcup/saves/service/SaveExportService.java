@@ -23,6 +23,12 @@ import com.aditya.worldcup.contracts.entity.PlayerContract;
 import com.aditya.worldcup.contracts.entity.PlayerLifecycle;
 import com.aditya.worldcup.contracts.repository.PlayerContractRepository;
 import com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository;
+import com.aditya.worldcup.managers.repository.ManagerEconomyRepository;
+import com.aditya.worldcup.managers.repository.ResourceTransactionRepository;
+import com.aditya.worldcup.managers.repository.ManagerObjectiveRepository;
+import com.aditya.worldcup.managers.entity.ManagerEconomy;
+import com.aditya.worldcup.managers.entity.ResourceTransaction;
+import com.aditya.worldcup.managers.entity.ManagerObjective;
 import com.aditya.worldcup.tournaments.entity.Tournament;
 import com.aditya.worldcup.tournaments.repository.TournamentRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +56,9 @@ public class SaveExportService {
     private final TacticalProfileRepository tacticalProfileRepository;
     private final PlayerContractRepository playerContractRepository;
     private final PlayerLifecycleRepository playerLifecycleRepository;
+    private final ManagerEconomyRepository managerEconomyRepository;
+    private final ResourceTransactionRepository resourceTransactionRepository;
+    private final ManagerObjectiveRepository managerObjectiveRepository;
 
     @Transactional(readOnly = true)
     public SaveExportResponse exportSave(
@@ -71,7 +80,10 @@ public class SaveExportService {
                 playerStates(),
                 tacticalProfiles(),
                 playerContracts(manager),
-                playerLifecycles(manager)
+                playerLifecycles(manager),
+                managerEconomySnapshot(manager),
+                resourceTransactions(manager),
+                managerObjectives(manager)
         );
     }
 
@@ -302,6 +314,65 @@ public class SaveExportService {
                 lifecycle.getPlayer().getName(),
                 lifecycle.getActive(),
                 lifecycle.getRetired()
+        );
+    }
+
+    private SaveExportResponse.ManagerEconomySnapshot managerEconomySnapshot(Manager manager) {
+        return managerEconomyRepository.findByManagerId(manager.getId())
+                .map(this::mapManagerEconomy)
+                .orElse(null);
+    }
+
+    private SaveExportResponse.ManagerEconomySnapshot mapManagerEconomy(ManagerEconomy economy) {
+        return new SaveExportResponse.ManagerEconomySnapshot(
+                economy.getId(),
+                economy.getManager().getId(),
+                economy.getBalance(),
+                economy.getTrainingAllocation(),
+                economy.getMedicalAllocation(),
+                economy.getScoutingAllocation(),
+                economy.getUpdatedAt()
+        );
+    }
+
+    private List<SaveExportResponse.ResourceTransactionSnapshot> resourceTransactions(Manager manager) {
+        return resourceTransactionRepository.findByManagerIdOrderByTransactionDateDesc(manager.getId())
+                .stream()
+                .map(this::mapResourceTransaction)
+                .toList();
+    }
+
+    private SaveExportResponse.ResourceTransactionSnapshot mapResourceTransaction(ResourceTransaction transaction) {
+        return new SaveExportResponse.ResourceTransactionSnapshot(
+                transaction.getId(),
+                transaction.getManager().getId(),
+                transaction.getAmount(),
+                transaction.getReason(),
+                transaction.getTransactionDate(),
+                transaction.getIdempotencyKey()
+        );
+    }
+
+    private List<SaveExportResponse.ManagerObjectiveSnapshot> managerObjectives(Manager manager) {
+        return managerObjectiveRepository.findByManagerIdOrderByCreatedAtDesc(manager.getId())
+                .stream()
+                .map(this::mapManagerObjective)
+                .toList();
+    }
+
+    private SaveExportResponse.ManagerObjectiveSnapshot mapManagerObjective(ManagerObjective objective) {
+        return new SaveExportResponse.ManagerObjectiveSnapshot(
+                objective.getId(),
+                objective.getManager().getId(),
+                objective.getType(),
+                objective.getDescription(),
+                objective.getTargetValue(),
+                objective.getCurrentValue(),
+                objective.getStatus(),
+                objective.getTournament() != null ? objective.getTournament().getId() : null,
+                objective.getRewardAmount(),
+                objective.getCreatedAt(),
+                objective.getCompletedAt()
         );
     }
 
