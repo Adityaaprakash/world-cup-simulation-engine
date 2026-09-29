@@ -15,7 +15,7 @@ The application relies on environment variables defined in `.env` (copy `.env.ex
 - `DB_USERNAME`: Database username (default: `admin`)
 - `DB_PASSWORD`: Database password (default: `admin123`)
 - `DB_URL`: Postgres JDBC URL (default: `jdbc:postgresql://localhost:5555/worldcup`)
-- `JWT_SECRET`: Base64 encoded stateless signing key for security
+- `JWT_SECRET`: Base64 encoded stateless signing key for security (MUST be provided explicitly in production environments; development fallbacks are for local development ONLY).
 - `CORS_ALLOWED_ORIGINS`: Allowed web client origins (default: `http://localhost:5173`)
 
 *Note: PostgreSQL is actively mapped to port 5555 to avoid native Windows port 5432 allocation collisions, and Flyway database migrations run automatically on startup to validate and prepopulate the schema.*
@@ -32,11 +32,13 @@ Start the Spring Boot backend:
 .\mvnw spring-boot:run
 ```
 
-Ensure unit and integration tests run successfully using the explicit UTC timezone to bypass native JDBC locale constraints:
+Ensure backend compilation and DB-independent unit tests run successfully using the explicit UTC timezone to bypass native JDBC locale constraints:
 ```bash
 .\mvnw test "-Duser.timezone=UTC"
 ```
 *(The health endpoint will be active at `/api/health` returning a status payload).*
+
+**Note on Database-Dependent Integration Tests**: Full database-dependent backend integration testing relies dynamically on Testcontainers spinning up transient PostgreSQL states. Running these integration tests locally might fail or be blocked by a Windows/Testcontainers connectivity limitation `SQL State 08001 (Connection refused)`. This is a known environmental setup restriction and does not reflect an application-logic defect.
 
 ### Frontend Startup
 

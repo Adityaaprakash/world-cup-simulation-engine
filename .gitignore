@@ -38,6 +38,12 @@ frontend/dist/
 
 # Logs and Accidental Temporary Files
 *.log
-*.txt
--Uri
--Uri.txt
+*_output.txt
+*_out.txt
+test*.txt
+compile*.txt
+build*.txt
+mvn*.txt
+maven*.txt
+checkstyle*.txt
+errors*.txt
