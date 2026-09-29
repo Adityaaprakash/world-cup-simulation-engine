@@ -51,3 +51,7 @@
 ## Phase 11 (Complete)
 - [x] Phase 11A: Player Acquisition & Advanced Squad Building.
 - [x] Phase 11B: Contracts & Player Lifecycle. Manager tools for tracking and terminating contracts, capturing retirement timeline events safely integrated natively preventing selections globally.
+
+## Phase 12B
+- [x] Implemented LiveSimulationEngine pacing logic
+- [x] Decoupled LiveMatchBroadcasterService to LiveEventPublisher adapter

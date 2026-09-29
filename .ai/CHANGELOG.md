@@ -76,3 +76,7 @@ All notable changes to the World Cup Simulation Engine are documented here. The 
 - **Changed**: Port binding shifted gracefully to 5555 to mitigate host collision failures.
 - **Changed**: Removed tracked loose `_errors.txt` log artifacts for spotless hygiene.
 - **Added**: Release readiness documentation.
+
+## Phase 12B
+- Introduced explicit LiveSimulationEngine abstraction to handle async pacing of the pre-simulated timeline.
+- Refactored LiveMatchBroadcasterService to act purely as an event boundary publisher (LiveEventPublisher) emitting WebSocket messages securely.

@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import com.aditya.worldcup.live.service.LiveMatchBroadcasterService;
+import com.aditya.worldcup.live.engine.LiveSimulationEngine;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +40,7 @@ public class TournamentMatchSimulationService {
     private final SimulationMetricsService simulationMetricsService;
     private final CareerStatisticsService careerStatisticsService;
     private final ManagerJobService managerJobService;
-    private final LiveMatchBroadcasterService liveMatchBroadcasterService;
+    private final LiveSimulationEngine liveSimulationEngine;
     @Transactional
     public TournamentMatchSimulationResponse simulate(
             Long tournamentId,
@@ -139,7 +139,7 @@ public class TournamentMatchSimulationService {
                 @Override
                 public void afterCommit() {
                     try {
-                        liveMatchBroadcasterService.broadcastMatch(tournamentId, matchId, simulation);
+                        liveSimulationEngine.startLiveSimulation(tournamentId, matchId, simulation);
                     } catch (Exception e) {
                         log.error("Failed to trigger live broadcast for match {}", matchId, e);
                     }
@@ -147,7 +147,7 @@ public class TournamentMatchSimulationService {
             });
         } else {
             try {
-                liveMatchBroadcasterService.broadcastMatch(tournamentId, matchId, simulation);
+                liveSimulationEngine.startLiveSimulation(tournamentId, matchId, simulation);
             } catch (Exception e) {
                 log.error("Failed to trigger live broadcast for match {}", matchId, e);
             }

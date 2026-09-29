@@ -2,6 +2,7 @@ package com.aditya.worldcup.live.service;
 
 import com.aditya.worldcup.live.dto.LiveMatchEvent;
 import com.aditya.worldcup.live.dto.LiveMatchEventType;
+import com.aditya.worldcup.live.engine.LiveSimulationEngine;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.simulation.dto.CommentaryResponse;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
@@ -34,14 +35,15 @@ class LiveMatchBroadcasterServiceTest {
     @Mock
     private TaskScheduler taskScheduler;
 
-    @InjectMocks
-    private LiveMatchBroadcasterService broadcasterService;
+    private LiveSimulationEngine broadcasterService;
 
     @Captor
     private ArgumentCaptor<Runnable> runnableCaptor;
 
     @BeforeEach
     void setUp() {
+        LiveMatchBroadcasterService publisher = new LiveMatchBroadcasterService(messagingTemplate);
+        broadcasterService = new LiveSimulationEngine(taskScheduler, publisher);
         ReflectionTestUtils.setField(broadcasterService, "broadcastDelayMs", 100L);
     }
 
@@ -54,13 +56,13 @@ class LiveMatchBroadcasterServiceTest {
                 List.of(new CommentaryResponse(15, "What a strike!"))
         );
 
-        broadcasterService.broadcastMatch(1L, 100L, response);
+        broadcasterService.startLiveSimulation(1L, 100L, response);
 
         verify(taskScheduler, atLeastOnce()).schedule(runnableCaptor.capture(), any(Instant.class));
 
         List<Runnable> scheduledTasks = runnableCaptor.getAllValues();
         assertThat(scheduledTasks).isNotEmpty();
-        
+
         for (Runnable runnable : scheduledTasks) {
             runnable.run();
         }
@@ -81,11 +83,11 @@ class LiveMatchBroadcasterServiceTest {
                 List.of(), null, List.of(), null, List.of()
         );
 
-        broadcasterService.broadcastMatch(2L, 200L, response);
-        broadcasterService.broadcastMatch(2L, 200L, response);
+        broadcasterService.startLiveSimulation(2L, 200L, response);
+        broadcasterService.startLiveSimulation(2L, 200L, response);
 
-        verify(taskScheduler, times(93)).schedule(any(Runnable.class), any(Instant.class)); 
-        // 90 minutes + 1 start + 1 finish = 93 tasks per broadcast. If twice, it would be 186, so times(93) proves duplication prevention.
+        verify(taskScheduler, times(94)).schedule(any(Runnable.class), any(Instant.class));
+        // 91 minute ticks (0 to 90) + 1 MATCH STARTED + 1 KICK-OFF + 1 MATCHENDED = 94 tasks per broadcast. If twice, it would be 188, so times(94) proves duplication prevention.
     }
 
     @Test
@@ -95,7 +97,7 @@ class LiveMatchBroadcasterServiceTest {
                 null, null, null, null, null
         );
 
-        broadcasterService.broadcastMatch(3L, 300L, response);
+        broadcasterService.startLiveSimulation(3L, 300L, response);
 
         verify(taskScheduler, atLeastOnce()).schedule(runnableCaptor.capture(), any(Instant.class));
 

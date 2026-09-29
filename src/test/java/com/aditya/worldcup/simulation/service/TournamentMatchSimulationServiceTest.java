@@ -1,6 +1,6 @@
 package com.aditya.worldcup.simulation.service;
 
-import com.aditya.worldcup.live.service.LiveMatchBroadcasterService;
+import com.aditya.worldcup.live.engine.LiveSimulationEngine;
 import com.aditya.worldcup.managers.service.CareerStatisticsService;
 import com.aditya.worldcup.managers.service.ManagerJobService;
 import com.aditya.worldcup.matches.entity.Match;
@@ -47,7 +47,7 @@ class TournamentMatchSimulationServiceTest {
     @Mock private SimulationMetricsService simulationMetricsService;
     @Mock private CareerStatisticsService careerStatisticsService;
     @Mock private ManagerJobService managerJobService;
-    @Mock private LiveMatchBroadcasterService liveMatchBroadcasterService;
+    @Mock private LiveSimulationEngine liveSimulationEngine;
 
     @InjectMocks
     private TournamentMatchSimulationService tournamentMatchSimulationService;
@@ -109,21 +109,21 @@ class TournamentMatchSimulationServiceTest {
         mockSuccessfulSimulation();
 
         TournamentMatchSimulationResponse result = tournamentMatchSimulationService.simulate(1L, 100L);
-        
+
         // Execute the afterCommit block
         TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
 
         assertThat(result).isNotNull();
         assertThat(result.homeGoals()).isEqualTo(2);
-        
+
         verify(matchSimulationService, times(1)).simulate(any(), any());
-        verify(liveMatchBroadcasterService, times(1)).broadcastMatch(1L, 100L, simulationResponse);
+        verify(liveSimulationEngine, times(1)).startLiveSimulation(1L, 100L, simulationResponse);
     }
 
     @Test
     void simulate_broadcasterFailureShouldNotFailSimulation() {
         mockSuccessfulSimulation();
-        doThrow(new RuntimeException("Broadcast failed")).when(liveMatchBroadcasterService).broadcastMatch(anyLong(), anyLong(), any());
+        doThrow(new RuntimeException("Broadcast failed")).when(liveSimulationEngine).startLiveSimulation(anyLong(), anyLong(), any());
 
         TournamentMatchSimulationResponse result = tournamentMatchSimulationService.simulate(1L, 100L);
 
@@ -131,7 +131,7 @@ class TournamentMatchSimulationServiceTest {
         TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
 
         assertThat(result).isNotNull();
-        verify(liveMatchBroadcasterService, times(1)).broadcastMatch(1L, 100L, simulationResponse);
+        verify(liveSimulationEngine, times(1)).startLiveSimulation(1L, 100L, simulationResponse);
     }
 
     @Test
@@ -140,12 +140,12 @@ class TournamentMatchSimulationServiceTest {
         when(matchRepository.findById(100L)).thenReturn(Optional.of(match));
         when(squadRepository.findFirstByTeamId(10L)).thenReturn(Optional.of(homeSquad));
         when(squadRepository.findFirstByTeamId(20L)).thenReturn(Optional.of(awaySquad));
-        
+
         when(matchSimulationService.simulate(any(), any())).thenThrow(new RuntimeException("Sim error"));
 
         assertThrows(RuntimeException.class, () -> tournamentMatchSimulationService.simulate(1L, 100L));
 
-        verify(liveMatchBroadcasterService, never()).broadcastMatch(anyLong(), anyLong(), any());
+        verify(liveSimulationEngine, never()).startLiveSimulation(anyLong(), anyLong(), any());
     }
 
     @Test
@@ -157,6 +157,6 @@ class TournamentMatchSimulationServiceTest {
         assertThrows(IllegalStateException.class, () -> tournamentMatchSimulationService.simulate(1L, 100L));
 
         verify(matchSimulationService, never()).simulate(any(), any());
-        verify(liveMatchBroadcasterService, never()).broadcastMatch(anyLong(), anyLong(), any());
+        verify(liveSimulationEngine, never()).startLiveSimulation(anyLong(), anyLong(), any());
     }
 }
