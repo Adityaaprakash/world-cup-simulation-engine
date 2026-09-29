@@ -139,7 +139,7 @@ public class TournamentMatchSimulationService {
                 @Override
                 public void afterCommit() {
                     try {
-                        liveMatchBroadcasterService.broadcastMatch(matchId, simulation);
+                        liveMatchBroadcasterService.broadcastMatch(tournamentId, matchId, simulation);
                     } catch (Exception e) {
                         log.error("Failed to trigger live broadcast for match {}", matchId, e);
                     }
@@ -147,7 +147,7 @@ public class TournamentMatchSimulationService {
             });
         } else {
             try {
-                liveMatchBroadcasterService.broadcastMatch(matchId, simulation);
+                liveMatchBroadcasterService.broadcastMatch(tournamentId, matchId, simulation);
             } catch (Exception e) {
                 log.error("Failed to trigger live broadcast for match {}", matchId, e);
             }

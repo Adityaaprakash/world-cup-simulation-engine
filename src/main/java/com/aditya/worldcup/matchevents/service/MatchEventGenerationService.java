@@ -276,6 +276,8 @@ public class MatchEventGenerationService {
 
         Player assister =
                 chooseRandom(candidates).getPlayer();
+        String teamName = teammates.get(0).getSquad().getTeam().getName();
+        Long teamId = teammates.get(0).getSquad().getTeam().getId();
 
         String description = tactics.crossingModifier() > 0
                 && random.nextInt(100) < 55
@@ -285,6 +287,9 @@ public class MatchEventGenerationService {
         MatchEventResponse assist = new MatchEventResponse(
                 minute,
                 assister.getName(),
+                assister.getId(),
+                teamName,
+                teamId,
                 MatchEventType.ASSIST.name(),
                 description
         );
@@ -320,11 +325,16 @@ public class MatchEventGenerationService {
 
             SquadPlayer squadPlayer = chooseRandom(players);
             Player player = squadPlayer.getPlayer();
+        String teamName = squadPlayer.getSquad().getTeam().getName();
+        Long teamId = squadPlayer.getSquad().getTeam().getId();
 
             MatchEventResponse yellowCard = new MatchEventResponse(
                     dynamicMatchMinute(isHomePlayer(squadPlayer, homeSquadPlayers),
                             homeGoals, awayGoals, context, importance),
                     player.getName(),
+                    player.getId(),
+                    teamName,
+                    teamId,
                     MatchEventType.YELLOW_CARD.name(),
                     player.getName() + " receives a yellow card."
             );
@@ -362,11 +372,16 @@ public class MatchEventGenerationService {
 
         SquadPlayer squadPlayer = chooseRandom(players);
         Player player = squadPlayer.getPlayer();
+        String teamName = squadPlayer.getSquad().getTeam().getName();
+        Long teamId = squadPlayer.getSquad().getTeam().getId();
 
         MatchEventResponse redCard = new MatchEventResponse(
                 dynamicMatchMinute(isHomePlayer(squadPlayer, homeSquadPlayers),
                         homeGoals, awayGoals, context, importance),
                 player.getName(),
+                player.getId(),
+                teamName,
+                teamId,
                 MatchEventType.RED_CARD.name(),
                 player.getName() + " is sent off."
         );
@@ -398,6 +413,8 @@ public class MatchEventGenerationService {
 
         SquadPlayer squadPlayer = chooseRandom(players);
         Player player = squadPlayer.getPlayer();
+        String teamName = squadPlayer.getSquad().getTeam().getName();
+        Long teamId = squadPlayer.getSquad().getTeam().getId();
 
         String description =
                 random.nextBoolean()
@@ -408,6 +425,9 @@ public class MatchEventGenerationService {
         MatchEventResponse penalty = new MatchEventResponse(
                 dynamicMatchMinute(homeEvent, homeGoals, awayGoals, context, importance),
                 player.getName(),
+                player.getId(),
+                teamName,
+                teamId,
                 MatchEventType.PENALTY.name(),
                 description
         );
@@ -434,11 +454,16 @@ public class MatchEventGenerationService {
 
         SquadPlayer squadPlayer = chooseRandom(players);
         Player player = squadPlayer.getPlayer();
+        String teamName = squadPlayer.getSquad().getTeam().getName();
+        Long teamId = squadPlayer.getSquad().getTeam().getId();
 
         boolean homeEvent = isHomePlayer(squadPlayer, homePlayers);
         MatchEventResponse ownGoal = new MatchEventResponse(
                 dynamicMatchMinute(homeEvent, homeGoals, awayGoals, context, importance),
                 player.getName(),
+                player.getId(),
+                teamName,
+                teamId,
                 MatchEventType.OWN_GOAL.name(),
                 player.getName()
                         + " scores an unfortunate own goal."
@@ -465,6 +490,8 @@ public class MatchEventGenerationService {
         }
         SquadPlayer squadPlayer = chooseRandom(players);
         Player player = squadPlayer.getPlayer();
+        String teamName = squadPlayer.getSquad().getTeam().getName();
+        Long teamId = squadPlayer.getSquad().getTeam().getId();
         boolean homeEvent = isHomePlayer(squadPlayer, homePlayers);
         int minute = dynamicMatchMinute(homeEvent, homeGoals, awayGoals, context, importance);
 
@@ -474,6 +501,9 @@ public class MatchEventGenerationService {
         MatchEventResponse injury = new MatchEventResponse(
                 minute,
                 player.getName(),
+                player.getId(),
+                teamName,
+                teamId,
                 MatchEventType.INJURY.name(),
                 player.getName() + " sustains a " + severity + " injury and cannot continue."
         );
@@ -515,6 +545,8 @@ public class MatchEventGenerationService {
 
             SquadPlayer playerOn =
                     removeRandom(availableBench);
+            String teamName = playerOn.getSquad().getTeam().getName();
+            Long teamId = playerOn.getSquad().getTeam().getId();
 
             events.add(
                     new MatchEventResponse(

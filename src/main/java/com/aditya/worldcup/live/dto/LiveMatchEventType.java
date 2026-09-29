@@ -1,0 +1,24 @@
+package com.aditya.worldcup.live.dto;
+
+public enum LiveMatchEventType {
+    MATCH_STARTED,
+    KICK_OFF,
+    MINUTE_UPDATE,
+    GOAL,
+    OWN_GOAL,
+    ASSIST,
+    YELLOW_CARD,
+    RED_CARD,
+    SUBSTITUTION,
+    INJURY,
+    HALF_TIME,
+    SECOND_HALF_STARTED,
+    EXTRA_TIME_STARTED,
+    PENALTY_SHOOTOUT_STARTED,
+    PENALTY_SCORED,
+    PENALTY_MISSED,
+    PENALTY,
+    FULL_TIME,
+    COMMENTARY,
+    ERROR
+}

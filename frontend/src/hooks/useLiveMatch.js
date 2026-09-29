@@ -62,18 +62,29 @@ export default function useLiveMatch(matchId) {
             if (!isSubscribed) return;
             try {
               const payload = JSON.parse(message.body);
-              switch (payload.state) {
-                case 'STARTED':
+              switch (payload.eventType) {
+                case 'MATCH_STARTED':
                   setStarted(true);
                   break;
 
-                case 'EVENT': {
+                case 'MINUTE_UPDATE':
+                case 'GOAL':
+                case 'OWN_GOAL':
+                case 'ASSIST':
+                case 'YELLOW_CARD':
+                case 'RED_CARD':
+                case 'SUBSTITUTION':
+                case 'INJURY':
+                case 'PENALTY_SCORED':
+                case 'PENALTY_MISSED':
+                case 'PENALTY':
+                case 'COMMENTARY': {
                   setLastEvent(payload);
 
-                  if (payload.matchEvent) {
+                  if (payload.payload && payload.payload.matchEvent) {
                     setEvents(prev => {
                       const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}-${e.description}`));
-                      const newE = payload.matchEvent;
+                      const newE = payload.payload.matchEvent;
                       if (!existMap.has(`${newE.minute}-${newE.player}-${newE.eventType}-${newE.description}`)) {
                         return [...prev, newE].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
                       }
@@ -81,10 +92,10 @@ export default function useLiveMatch(matchId) {
                     });
                   }
 
-                  if (payload.commentary) {
+                  if (payload.payload && payload.payload.commentary) {
                     setCommentary(prev => {
                       const existMap = new Set(prev.map(c => `${c.minute}-${c.commentary}`));
-                      const newC = payload.commentary;
+                      const newC = payload.payload.commentary;
                       if (!existMap.has(`${newC.minute}-${newC.commentary}`)) {
                          return [...prev, newC].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
                       }
@@ -94,15 +105,15 @@ export default function useLiveMatch(matchId) {
                   break;
                 }
 
-                case 'FINISHED':
-                  if (payload.finalResult) {
-                    setFinalResult(payload.finalResult);
-                    setMatchState(prev => ({ ...prev, ...payload.finalResult }));
+                case 'FULL_TIME':
+                  if (payload.payload && payload.payload.finalResult) {
+                    setFinalResult(payload.payload.finalResult);
+                    setMatchState(prev => ({ ...prev, ...payload.payload.finalResult }));
                   }
                   break;
 
                 case 'ERROR':
-                  setError(payload.error || 'A problem occurred with the live match stream.');
+                  setError(payload.payload?.message || 'A problem occurred with the live match stream.');
                   setConnectionStatus('error');
                   break;
 

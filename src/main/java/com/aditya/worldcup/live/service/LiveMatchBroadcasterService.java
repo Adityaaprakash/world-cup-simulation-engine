@@ -1,6 +1,7 @@
 package com.aditya.worldcup.live.service;
 
-import com.aditya.worldcup.live.dto.LiveMatchEventPayload;
+import com.aditya.worldcup.live.dto.LiveMatchEvent;
+import com.aditya.worldcup.live.dto.LiveMatchEventType;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.simulation.dto.CommentaryResponse;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,22 +43,25 @@ public class LiveMatchBroadcasterService {
     private final Map<Long, Boolean> activeBroadcasts = new ConcurrentHashMap<>();
     private final Map<Long, List<ScheduledFuture<?>>> scheduledTasks = new ConcurrentHashMap<>();
 
-    public void broadcastMatch(Long matchId, MatchSimulationResponse simulationResult) {
+    public void broadcastMatch(Long tournamentId, Long matchId, MatchSimulationResponse simulationResult) {
         if (activeBroadcasts.putIfAbsent(matchId, true) != null) {
             log.info("Match {} is already being broadcasted.", matchId);
             return;
         }
 
         try {
-            scheduleBroadcasts(matchId, simulationResult);
+            scheduleBroadcasts(tournamentId, matchId, simulationResult);
         } catch (Exception e) {
             log.error("Failed to schedule live broadcast for match {}", matchId, e);
             cleanup(matchId);
-            sendPayload(LiveMatchEventPayload.error(matchId));
+            sendEvent(LiveMatchEvent.create(
+                    0, matchId, tournamentId, LiveMatchEventType.ERROR, null, null, null, null, null, null, null, 
+                    Map.of("message", "A problem occurred with the live match stream.")
+            ));
         }
     }
 
-    private void scheduleBroadcasts(Long matchId, MatchSimulationResponse response) {
+    private void scheduleBroadcasts(Long tournamentId, Long matchId, MatchSimulationResponse response) {
         log.info("Scheduling live broadcast for match {} starting shortly.", matchId);
         
         List<MatchEventResponse> events = response.events() == null ? new ArrayList<>() : new ArrayList<>(response.events());
@@ -82,22 +87,39 @@ public class LiveMatchBroadcasterService {
 
         Instant startTime = Instant.now().plusMillis(broadcastDelayMs); // small initial delay
 
+        AtomicInteger sequenceCounter = new AtomicInteger(1);
+        AtomicInteger homeScore = new AtomicInteger(0);
+        AtomicInteger awayScore = new AtomicInteger(0);
+
         // Start Event
         tasks.add(taskScheduler.schedule(() -> {
             try {
-                sendPayload(LiveMatchEventPayload.started(matchId));
+                sendEvent(LiveMatchEvent.create(
+                        sequenceCounter.getAndIncrement(), matchId, tournamentId, LiveMatchEventType.MATCH_STARTED, 0, null, null, null, null, 0, 0, null
+                ));
             } catch (Exception ex) {
-                log.error("Error broadcasting STARTED event for match {}", matchId, ex);
+                log.error("Error broadcasting MATCH_STARTED event for match {}", matchId, ex);
             }
         }, startTime));
 
+        // Kickoff Event
+        tasks.add(taskScheduler.schedule(() -> {
+            try {
+                sendEvent(LiveMatchEvent.create(
+                        sequenceCounter.getAndIncrement(), matchId, tournamentId, LiveMatchEventType.KICK_OFF, 0, null, null, null, null, 0, 0, null
+                ));
+            } catch (Exception ex) {
+                log.error("Error broadcasting KICK_OFF event for match {}", matchId, ex);
+            }
+        }, startTime.plusMillis(broadcastDelayMs)));
+
         for (int minute = 0; minute <= maxMinute; minute++) {
             final int currentMinute = minute;
-            Instant executionTime = startTime.plusMillis(broadcastDelayMs + (minute * broadcastDelayMs));
+            Instant executionTime = startTime.plusMillis((2L + minute) * broadcastDelayMs);
             
             tasks.add(taskScheduler.schedule(() -> {
                 try {
-                    sendTickEvents(matchId, currentMinute, eventsByMinute.get(currentMinute), commentaryByMinute.get(currentMinute));
+                    sendTickEvents(tournamentId, matchId, currentMinute, eventsByMinute.get(currentMinute), commentaryByMinute.get(currentMinute), sequenceCounter, response.homeTeam(), response.awayTeam(), homeScore, awayScore);
                 } catch (Exception ex) {
                     log.error("Error broadcasting events for match {}, minute {}", matchId, currentMinute, ex);
                 }
@@ -106,12 +128,15 @@ public class LiveMatchBroadcasterService {
 
         // Finish Event
         final int finalMaxMinute = maxMinute;
-        Instant finishTime = startTime.plusMillis(broadcastDelayMs + ((maxMinute + 1) * broadcastDelayMs));
+        Instant finishTime = startTime.plusMillis((3L + maxMinute) * broadcastDelayMs);
         tasks.add(taskScheduler.schedule(() -> {
             try {
-                sendPayload(LiveMatchEventPayload.finished(matchId, response, finalMaxMinute));
+                sendEvent(LiveMatchEvent.create(
+                        sequenceCounter.getAndIncrement(), matchId, tournamentId, LiveMatchEventType.FULL_TIME, finalMaxMinute, null, null, null, null, homeScore.get(), awayScore.get(), 
+                        Map.of("finalResult", response)
+                ));
             } catch (Exception ex) {
-                log.error("Error broadcasting FINISHED event for match {}", matchId, ex);
+                log.error("Error broadcasting FULL_TIME event for match {}", matchId, ex);
             } finally {
                 cleanup(matchId);
                 log.info("Completed broadcast for match {}", matchId);
@@ -121,16 +146,54 @@ public class LiveMatchBroadcasterService {
         scheduledTasks.put(matchId, tasks);
     }
 
-    private void sendTickEvents(Long matchId, int minute, List<MatchEventResponse> evts, List<CommentaryResponse> comms) {
+    private void sendTickEvents(Long tournamentId, Long matchId, int minute, List<MatchEventResponse> evts, List<CommentaryResponse> comms, AtomicInteger seq, String homeTeam, String awayTeam, AtomicInteger homeScore, AtomicInteger awayScore) {
+        boolean sentMinuteUpdate = false;
         if (evts != null) {
-            evts.forEach(e -> sendPayload(LiveMatchEventPayload.event(matchId, minute, e, null)));
+            for (MatchEventResponse e : evts) {
+                LiveMatchEventType type;
+                try {
+                    type = LiveMatchEventType.valueOf(e.eventType());
+                } catch (Exception ex) {
+                    type = LiveMatchEventType.MINUTE_UPDATE;
+                }
+                
+                if (type == LiveMatchEventType.GOAL || type == LiveMatchEventType.PENALTY) {
+                    if (homeTeam.equals(e.teamName())) {
+                        homeScore.incrementAndGet();
+                    } else if (awayTeam.equals(e.teamName())) {
+                        awayScore.incrementAndGet();
+                    }
+                } else if (type == LiveMatchEventType.OWN_GOAL) {
+                    if (homeTeam.equals(e.teamName())) {
+                        awayScore.incrementAndGet(); // other team gets the point
+                    } else if (awayTeam.equals(e.teamName())) {
+                        homeScore.incrementAndGet();
+                    }
+                }
+                
+                sendEvent(LiveMatchEvent.create(
+                        seq.getAndIncrement(), matchId, tournamentId, type, minute, null, e.teamId(), e.playerId(), null, homeScore.get(), awayScore.get(), Map.of("matchEvent", e)
+                ));
+                sentMinuteUpdate = true;
+            }
         }
         if (comms != null) {
-            comms.forEach(c -> sendPayload(LiveMatchEventPayload.event(matchId, minute, null, c)));
+            for (CommentaryResponse c : comms) {
+                sendEvent(LiveMatchEvent.create(
+                        seq.getAndIncrement(), matchId, tournamentId, LiveMatchEventType.COMMENTARY, minute, null, null, null, null, homeScore.get(), awayScore.get(), Map.of("commentary", c)
+                ));
+                sentMinuteUpdate = true;
+            }
+        }
+        
+        if (!sentMinuteUpdate) {
+            sendEvent(LiveMatchEvent.create(
+                    seq.getAndIncrement(), matchId, tournamentId, LiveMatchEventType.MINUTE_UPDATE, minute, null, null, null, null, homeScore.get(), awayScore.get(), null
+            ));
         }
     }
 
-    private void sendPayload(LiveMatchEventPayload payload) {
+    private void sendEvent(LiveMatchEvent payload) {
         messagingTemplate.convertAndSend("/topic/matches/" + payload.matchId(), payload);
     }
     
