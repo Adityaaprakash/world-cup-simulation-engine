@@ -89,3 +89,9 @@ All notable changes to the World Cup Simulation Engine are documented here. The 
 - Added LiveMatchController exposing GET /api/matches/{id}/live returning live snapshot or static snapshot derived from DB state for pre-match / finished matches.
 - Added LiveMatchStateServiceTest (15 scenarios: creation, goal, sequence, dedup, out-of-order, full lifecycle, extra time, penalty shootout, concurrency, thread-safety, expire, team names).
 - Added LiveMatchControllerTest (live, pre-match, finished, 404 cases).
+
+
+### Phase 12D: Live Match Centre UI
+- Built the frontend Match Centre consuming Phase 12C authoritative REST snapshot before hydration alongside real-time STOMP integration.
+- Configured frontend deduplication relying on sequenceNumber metrics dropping old events properly out-of-order securely.
+- Upgraded MatchHeader reflecting dynamic live durations safely.

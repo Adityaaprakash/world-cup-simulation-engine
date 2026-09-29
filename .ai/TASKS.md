@@ -64,3 +64,10 @@
 - [x] GET /api/matches/{id}/live endpoint implemented
 - [x] Unit tests: LiveMatchStateServiceTest (15 scenarios)
 - [x] Unit tests: LiveMatchControllerTest (4 scenarios)
+
+
+## Phase 12D
+- [x] LiveMatchSnapshot consumer endpoint hydrated
+- [x] WebSockets connected using Hook mapping sequence logic
+- [x] Match Centre responsive UI completed
+- [x] Frontend STOMP sequence sorting validated with tests

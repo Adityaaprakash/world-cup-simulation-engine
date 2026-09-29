@@ -6,7 +6,8 @@ import { getMatchDetail } from '../api/matchApi';
 import useLiveMatch from '../hooks/useLiveMatch';
 
 vi.mock('../api/matchApi', () => ({
-  getMatchDetail: vi.fn()
+  getMatchDetail: vi.fn(),
+  getLiveSnapshot: vi.fn()
 }));
 
 vi.mock('../hooks/useLiveMatch', () => ({
@@ -18,6 +19,8 @@ describe('MatchCentre', () => {
     id: 100,
     homeTeam: 'Brazil',
     awayTeam: 'Germany',
+    homeScore: 0,
+    awayScore: 0,
     events: [],
     commentary: [],
     status: 'IN_PROGRESS'
@@ -66,9 +69,12 @@ describe('MatchCentre', () => {
     });
   });
 
-  it('renders live connection indicator and merges events', async () => {
+  it('renders live connection indicator and merges events from live state', async () => {
     useLiveMatch.mockReturnValue({ 
       connectionStatus: 'connected', 
+      liveScore: { home: 1, away: 0 },
+      liveMinute: 15,
+      livePhase: 'FIRST_HALF',
       events: [{ minute: 15, player: 'Pele', eventType: 'GOAL' }], 
       commentary: [{ minute: 15, commentary: 'What a strike!' }] 
     });
@@ -76,8 +82,11 @@ describe('MatchCentre', () => {
     
     renderComponent();
     await waitFor(() => {
-      expect(screen.getByText('LIVE updates connected')).toBeInTheDocument();
+      expect(screen.getByText('LIVE')).toBeInTheDocument();
       expect(screen.getByText(/What a strike!/)).toBeInTheDocument();
+      // Test if displayScore/match state was updated
+      expect(screen.getAllByText("15'").length).toBeGreaterThan(0);
+      expect(screen.getByText("First Half")).toBeInTheDocument();
     });
   });
 

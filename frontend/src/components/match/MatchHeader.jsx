@@ -22,6 +22,12 @@ export default function MatchHeader({ match }) {
         </div>
         <div className="mt-3 flex flex-col gap-1 items-center">
           <StatusBadge status={match.status} />
+          {match.minute != null && match.status !== 'FINISHED' && (
+             <span className="text-sm font-bold text-emerald-400 mt-1">{match.minute}'</span>
+          )}
+          {match.phase && match.status !== 'FINISHED' && (
+             <span className="text-xs uppercase tracking-widest text-slate-400">{formatLabel(match.phase)}</span>
+          )}
           {(match.wentToExtraTime || match.wentToPenalties) && (
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">
               {match.wentToPenalties ? 'After Penalties' : 'After Extra Time'}
