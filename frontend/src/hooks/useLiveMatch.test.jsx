@@ -70,13 +70,14 @@ describe('useLiveMatch hook', () => {
   it('handles MATCH_STARTED event safely', async () => {
     const { result } = renderHook(() => useLiveMatch(100));
     await waitFor(() => expect(mockClientInstance.activate).toHaveBeenCalled());
-
     act(() => mockClientInstance.onConnect());
     const subscribeCallback = mockClientInstance.subscribe.mock.calls[0][1];
 
+    await waitFor(() => expect(result.current.livePhase).toBe('FIRST_HALF'));
+
     act(() => {
       subscribeCallback({
-        body: JSON.stringify({ sequenceNumber: 10, eventType: 'MATCH_STARTED' })
+        body: JSON.stringify({ sequenceNumber: 6, eventType: 'MATCH_STARTED' })
       });
     });
 
@@ -90,6 +91,9 @@ describe('useLiveMatch hook', () => {
     await waitFor(() => expect(mockClientInstance.activate).toHaveBeenCalled());
     act(() => mockClientInstance.onConnect());
     const subscribeCallback = mockClientInstance.subscribe.mock.calls[0][1];
+    
+    // Wait for initial hydration to complete
+    await waitFor(() => expect(result.current.livePhase).toBe('FIRST_HALF'));
 
     // Out of order/duplicate sequence (snapshot had latestSequence = 5)
     act(() => {
@@ -147,10 +151,12 @@ describe('useLiveMatch hook', () => {
     act(() => mockClientInstance.onConnect());
     const subscribeCallback = mockClientInstance.subscribe.mock.calls[0][1];
 
+    await waitFor(() => expect(result.current.livePhase).toBe('FIRST_HALF'));
+
     act(() => {
       subscribeCallback({
         body: JSON.stringify({ 
-          sequenceNumber: 100,
+          sequenceNumber: 6,
           eventType: 'FULL_TIME',
           payload: { finalResult: { status: 'FINISHED', homeScore: 2 } } 
         })
@@ -168,9 +174,11 @@ describe('useLiveMatch hook', () => {
     act(() => mockClientInstance.onConnect());
     const subscribeCallback = mockClientInstance.subscribe.mock.calls[0][1];
 
+    await waitFor(() => expect(result.current.livePhase).toBe('FIRST_HALF'));
+
     act(() => {
       subscribeCallback({
-        body: JSON.stringify({ sequenceNumber: 100, eventType: 'ERROR', payload: { message: 'Stream interrupted' } })
+        body: JSON.stringify({ sequenceNumber: 6, eventType: 'ERROR', payload: { message: 'Stream interrupted' } })
       });
     });
 

@@ -95,3 +95,10 @@ All notable changes to the World Cup Simulation Engine are documented here. The 
 - Built the frontend Match Centre consuming Phase 12C authoritative REST snapshot before hydration alongside real-time STOMP integration.
 - Configured frontend deduplication relying on sequenceNumber metrics dropping old events properly out-of-order securely.
 - Upgraded MatchHeader reflecting dynamic live durations safely.
+
+
+### Phase 12D Hardening: Synchronous Synchronization and Resiliency
+- Refactored useLiveMatch to employ a strictly ordered connect -> subscribe -> snapshot sequential lifecycle preventing the 'Snapshot -> STOMP missing sequence gap' race condition.
+- Defined robust reconciliation mechanisms recognizing Sequence Gaps (sequence > latestSequence + 1) actively issuing etchSnapshotAndHydrate() dynamically discarding corrupt timelines.
+- Hardened telemetry event dedup checks dropping all trailing sequences permanently.
+- Rewrote STOMP Vitest suite to mirror the new lifecycle properly capturing synchronous React ct state progression.
