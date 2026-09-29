@@ -3,6 +3,7 @@ package com.aditya.worldcup.live.service;
 import com.aditya.worldcup.live.dto.LiveMatchEvent;
 import com.aditya.worldcup.live.dto.LiveMatchEventType;
 import com.aditya.worldcup.live.engine.LiveSimulationEngine;
+import com.aditya.worldcup.live.service.LiveMatchStateService;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.simulation.dto.CommentaryResponse;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
@@ -42,7 +43,8 @@ class LiveMatchBroadcasterServiceTest {
 
     @BeforeEach
     void setUp() {
-        LiveMatchBroadcasterService publisher = new LiveMatchBroadcasterService(messagingTemplate);
+        LiveMatchStateService stateService = new LiveMatchStateService();
+        LiveMatchBroadcasterService publisher = new LiveMatchBroadcasterService(messagingTemplate, stateService);
         broadcasterService = new LiveSimulationEngine(taskScheduler, publisher);
         ReflectionTestUtils.setField(broadcasterService, "broadcastDelayMs", 100L);
     }

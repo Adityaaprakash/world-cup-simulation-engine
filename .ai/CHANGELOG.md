@@ -80,3 +80,12 @@ All notable changes to the World Cup Simulation Engine are documented here. The 
 ## Phase 12B
 - Introduced explicit LiveSimulationEngine abstraction to handle async pacing of the pre-simulated timeline.
 - Refactored LiveMatchBroadcasterService to act purely as an event boundary publisher (LiveEventPublisher) emitting WebSocket messages securely.
+
+## Phase 12C
+- Added LiveMatchPhase enum mapping exact match lifecycle phases (PRE_MATCH → FIRST_HALF → HALF_TIME → SECOND_HALF → EXTRA_TIME → PENALTY_SHOOTOUT → FULL_TIME).
+- Added LiveMatchSnapshot record: backend-authoritative DTO for late-join and reconnect scenarios, carrying matchId, scores, currentMinute, phase, latestSequence, and latestEventType.
+- Added LiveMatchStateService: thread-safe in-memory state store with per-match ReentrantLock, sequence-monotonic dedup, and out-of-order event protection.
+- Wired LiveMatchBroadcasterService to push every emitted canonical LiveMatchEvent into LiveMatchStateService immediately after STOMP publish (no additional event stream generated).
+- Added LiveMatchController exposing GET /api/matches/{id}/live returning live snapshot or static snapshot derived from DB state for pre-match / finished matches.
+- Added LiveMatchStateServiceTest (15 scenarios: creation, goal, sequence, dedup, out-of-order, full lifecycle, extra time, penalty shootout, concurrency, thread-safety, expire, team names).
+- Added LiveMatchControllerTest (live, pre-match, finished, 404 cases).

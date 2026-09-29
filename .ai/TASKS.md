@@ -55,3 +55,12 @@
 ## Phase 12B
 - [x] Implemented LiveSimulationEngine pacing logic
 - [x] Decoupled LiveMatchBroadcasterService to LiveEventPublisher adapter
+
+## Phase 12C
+- [x] LiveMatchSnapshot DTO created
+- [x] LiveMatchPhase enum created
+- [x] LiveMatchStateService implemented (thread-safe, sequence-monotonic)
+- [x] LiveMatchBroadcasterService wired to state store
+- [x] GET /api/matches/{id}/live endpoint implemented
+- [x] Unit tests: LiveMatchStateServiceTest (15 scenarios)
+- [x] Unit tests: LiveMatchControllerTest (4 scenarios)

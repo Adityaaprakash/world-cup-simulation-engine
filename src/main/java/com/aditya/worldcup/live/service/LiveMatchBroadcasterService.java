@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LiveMatchBroadcasterService implements LiveEventPublisher {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final LiveMatchStateService stateService;
 
     // Track active match live state
     private final Map<Long, AtomicInteger> sequenceCounters = new ConcurrentHashMap<>();
@@ -34,16 +35,20 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
         homeScores.put(matchId, new AtomicInteger(0));
         awayScores.put(matchId, new AtomicInteger(0));
 
-        sendEvent(LiveMatchEvent.create(
+        LiveMatchEvent event = LiveMatchEvent.create(
                 getSequence(matchId), matchId, tournamentId, LiveMatchEventType.MATCH_STARTED, 0, null, null, null, null, 0, 0, null
-        ));
+        );
+        sendEvent(event);
+        stateService.applyEvent(event);
     }
 
     @Override
     public void publishKickOff(Long tournamentId, Long matchId) {
-        sendEvent(LiveMatchEvent.create(
+        LiveMatchEvent event = LiveMatchEvent.create(
                 getSequence(matchId), matchId, tournamentId, LiveMatchEventType.KICK_OFF, 0, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId), null
-        ));
+        );
+        sendEvent(event);
+        stateService.applyEvent(event);
     }
 
     @Override
@@ -76,48 +81,61 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
                     }
                 }
 
-                sendEvent(LiveMatchEvent.create(
+                LiveMatchEvent liveEvt = LiveMatchEvent.create(
                         getSequence(matchId),
                         matchId, tournamentId, type,
                         minute, null,
                         e.teamId(), e.playerId(), null,
                         getHomeScore(matchId), getAwayScore(matchId),
                         Map.of("matchEvent", e)
-                ));
+                );
+                sendEvent(liveEvt);
+                stateService.applyEvent(liveEvt);
                 sentMinuteUpdate = true;
             }
         }
         if (comms != null) {
             for (CommentaryResponse c : comms) {
-                sendEvent(LiveMatchEvent.create(
+                LiveMatchEvent commEvt = LiveMatchEvent.create(
                         getSequence(matchId), matchId, tournamentId, LiveMatchEventType.COMMENTARY, minute, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId), Map.of("commentary", c)
-                ));
+                );
+                sendEvent(commEvt);
+                // Commentary doesn't update score/phase; state update still advances sequence
+                stateService.applyEvent(commEvt);
                 sentMinuteUpdate = true;
             }
         }
 
         if (!sentMinuteUpdate) {
-            sendEvent(LiveMatchEvent.create(
+            LiveMatchEvent evt = LiveMatchEvent.create(
                     getSequence(matchId), matchId, tournamentId, LiveMatchEventType.MINUTE_UPDATE, minute, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId), null
-            ));
+            );
+            sendEvent(evt);
+            stateService.applyEvent(evt);
         }
     }
 
     @Override
     public void publishMatchEnded(Long tournamentId, Long matchId, int finalMinute, MatchSimulationResponse finalResult) {
-        sendEvent(LiveMatchEvent.create(
+        LiveMatchEvent event = LiveMatchEvent.create(
                 getSequence(matchId), matchId, tournamentId, LiveMatchEventType.FULL_TIME, finalMinute, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
                 Map.of("finalResult", finalResult)
-        ));
+        );
+        // Seed team names into state before applying FULL_TIME
+        stateService.seedTeamNames(matchId, finalResult.homeTeam(), finalResult.awayTeam());
+        sendEvent(event);
+        stateService.applyEvent(event);
         cleanup(matchId);
     }
 
     @Override
     public void publishError(Long tournamentId, Long matchId, String message) {
-        sendEvent(LiveMatchEvent.create(
+        LiveMatchEvent event = LiveMatchEvent.create(
                 getSequence(matchId), matchId, tournamentId, LiveMatchEventType.ERROR, null, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
                 Map.of("message", message)
-        ));
+        );
+        sendEvent(event);
+        stateService.applyEvent(event);
         cleanup(matchId);
     }
 
