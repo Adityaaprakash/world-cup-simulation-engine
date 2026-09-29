@@ -85,7 +85,7 @@ describe('MatchCentre', () => {
       expect(screen.getByText('LIVE')).toBeInTheDocument();
       expect(screen.getByText(/What a strike!/)).toBeInTheDocument();
       // Test if displayScore/match state was updated
-      expect(screen.getAllByText("15'").length).toBeGreaterThan(0);
+      expect(screen.getByTestId('match-clock')).toHaveTextContent("15'");
       expect(screen.getByText("First Half")).toBeInTheDocument();
     });
   });
