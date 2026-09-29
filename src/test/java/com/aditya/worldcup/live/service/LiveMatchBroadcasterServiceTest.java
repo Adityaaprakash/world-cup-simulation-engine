@@ -1,6 +1,7 @@
 package com.aditya.worldcup.live.service;
 
-import com.aditya.worldcup.live.dto.LiveMatchEventPayload;
+import com.aditya.worldcup.live.dto.LiveMatchEvent;
+import com.aditya.worldcup.live.dto.LiveMatchEventType;
 import com.aditya.worldcup.matchevents.dto.MatchEventResponse;
 import com.aditya.worldcup.simulation.dto.CommentaryResponse;
 import com.aditya.worldcup.simulation.dto.MatchSimulationResponse;
@@ -53,7 +54,7 @@ class LiveMatchBroadcasterServiceTest {
                 List.of(new CommentaryResponse(15, "What a strike!"))
         );
 
-        broadcasterService.broadcastMatch(100L, response);
+        broadcasterService.broadcastMatch(1L, 100L, response);
 
         verify(taskScheduler, atLeastOnce()).schedule(runnableCaptor.capture(), any(Instant.class));
 
@@ -64,13 +65,13 @@ class LiveMatchBroadcasterServiceTest {
             runnable.run();
         }
 
-        ArgumentCaptor<LiveMatchEventPayload> payloadCaptor = ArgumentCaptor.forClass(LiveMatchEventPayload.class);
+        ArgumentCaptor<LiveMatchEvent> payloadCaptor = ArgumentCaptor.forClass(LiveMatchEvent.class);
         verify(messagingTemplate, atLeastOnce()).convertAndSend(eq("/topic/matches/100"), payloadCaptor.capture());
 
-        List<LiveMatchEventPayload> payloads = payloadCaptor.getAllValues();
-        assertThat(payloads.stream().filter(p -> "STARTED".equals(p.state()))).hasSize(1);
-        assertThat(payloads.stream().filter(p -> "EVENT".equals(p.state()))).hasSize(2);
-        assertThat(payloads.stream().filter(p -> "FINISHED".equals(p.state()))).hasSize(1);
+        List<LiveMatchEvent> payloads = payloadCaptor.getAllValues();
+        assertThat(payloads.stream().filter(p -> p.eventType() == com.aditya.worldcup.live.dto.LiveMatchEventType.MATCH_STARTED)).hasSize(1);
+        assertThat(payloads.stream().filter(p -> p.payload() != null && p.payload().containsKey("matchEvent"))).hasSize(1);
+        assertThat(payloads.stream().filter(p -> p.eventType() == com.aditya.worldcup.live.dto.LiveMatchEventType.FULL_TIME)).hasSize(1);
     }
 
     @Test
@@ -80,8 +81,8 @@ class LiveMatchBroadcasterServiceTest {
                 List.of(), null, List.of(), null, List.of()
         );
 
-        broadcasterService.broadcastMatch(200L, response);
-        broadcasterService.broadcastMatch(200L, response);
+        broadcasterService.broadcastMatch(2L, 200L, response);
+        broadcasterService.broadcastMatch(2L, 200L, response);
 
         verify(taskScheduler, times(93)).schedule(any(Runnable.class), any(Instant.class)); 
         // 90 minutes + 1 start + 1 finish = 93 tasks per broadcast. If twice, it would be 186, so times(93) proves duplication prevention.
@@ -94,7 +95,7 @@ class LiveMatchBroadcasterServiceTest {
                 null, null, null, null, null
         );
 
-        broadcasterService.broadcastMatch(300L, response);
+        broadcasterService.broadcastMatch(3L, 300L, response);
 
         verify(taskScheduler, atLeastOnce()).schedule(runnableCaptor.capture(), any(Instant.class));
 
@@ -103,12 +104,12 @@ class LiveMatchBroadcasterServiceTest {
             runnable.run();
         }
 
-        ArgumentCaptor<LiveMatchEventPayload> payloadCaptor = ArgumentCaptor.forClass(LiveMatchEventPayload.class);
+        ArgumentCaptor<LiveMatchEvent> payloadCaptor = ArgumentCaptor.forClass(LiveMatchEvent.class);
         verify(messagingTemplate, atLeastOnce()).convertAndSend(eq("/topic/matches/300"), payloadCaptor.capture());
 
-        List<LiveMatchEventPayload> payloads = payloadCaptor.getAllValues();
-        assertThat(payloads.stream().filter(p -> "STARTED".equals(p.state()))).hasSize(1);
-        assertThat(payloads.stream().filter(p -> "FINISHED".equals(p.state()))).hasSize(1);
-        assertThat(payloads.stream().filter(p -> "EVENT".equals(p.state()))).isEmpty();
+        List<LiveMatchEvent> payloads = payloadCaptor.getAllValues();
+        assertThat(payloads.stream().filter(p -> p.eventType() == com.aditya.worldcup.live.dto.LiveMatchEventType.MATCH_STARTED)).hasSize(1);
+        assertThat(payloads.stream().filter(p -> p.eventType() == com.aditya.worldcup.live.dto.LiveMatchEventType.FULL_TIME)).hasSize(1);
+        assertThat(payloads.stream().filter(p -> p.payload() != null && p.payload().containsKey("matchEvent"))).isEmpty();
     }
 }

@@ -117,13 +117,13 @@ class TournamentMatchSimulationServiceTest {
         assertThat(result.homeGoals()).isEqualTo(2);
         
         verify(matchSimulationService, times(1)).simulate(any(), any());
-        verify(liveMatchBroadcasterService, times(1)).broadcastMatch(100L, simulationResponse);
+        verify(liveMatchBroadcasterService, times(1)).broadcastMatch(1L, 100L, simulationResponse);
     }
 
     @Test
     void simulate_broadcasterFailureShouldNotFailSimulation() {
         mockSuccessfulSimulation();
-        doThrow(new RuntimeException("Broadcast failed")).when(liveMatchBroadcasterService).broadcastMatch(anyLong(), any());
+        doThrow(new RuntimeException("Broadcast failed")).when(liveMatchBroadcasterService).broadcastMatch(anyLong(), anyLong(), any());
 
         TournamentMatchSimulationResponse result = tournamentMatchSimulationService.simulate(1L, 100L);
 
@@ -131,7 +131,7 @@ class TournamentMatchSimulationServiceTest {
         TransactionSynchronizationManager.getSynchronizations().forEach(sync -> sync.afterCommit());
 
         assertThat(result).isNotNull();
-        verify(liveMatchBroadcasterService, times(1)).broadcastMatch(100L, simulationResponse);
+        verify(liveMatchBroadcasterService, times(1)).broadcastMatch(1L, 100L, simulationResponse);
     }
 
     @Test
@@ -145,7 +145,7 @@ class TournamentMatchSimulationServiceTest {
 
         assertThrows(RuntimeException.class, () -> tournamentMatchSimulationService.simulate(1L, 100L));
 
-        verify(liveMatchBroadcasterService, never()).broadcastMatch(anyLong(), any());
+        verify(liveMatchBroadcasterService, never()).broadcastMatch(anyLong(), anyLong(), any());
     }
 
     @Test
@@ -157,6 +157,6 @@ class TournamentMatchSimulationServiceTest {
         assertThrows(IllegalStateException.class, () -> tournamentMatchSimulationService.simulate(1L, 100L));
 
         verify(matchSimulationService, never()).simulate(any(), any());
-        verify(liveMatchBroadcasterService, never()).broadcastMatch(anyLong(), any());
+        verify(liveMatchBroadcasterService, never()).broadcastMatch(anyLong(), anyLong(), any());
     }
 }
