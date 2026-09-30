@@ -15,7 +15,7 @@ export default function useLiveMatch(matchId) {
   const [finalResult, setFinalResult] = useState(null);
   const [lastEvent, setLastEvent] = useState(null);
   const [error, setError] = useState(null);
-  
+
   // New state from snapshot/live events
   const [liveScore, setLiveScore] = useState(null);
   const [liveMinute, setLiveMinute] = useState(null);
@@ -23,7 +23,7 @@ export default function useLiveMatch(matchId) {
 
   const isConnected = connectionStatus === 'connected';
   const hasConnectionError = connectionStatus === 'error';
-  
+
   // Ref-based state machine and reconciliation
   const stRef = useRef({
     currentSequence: 0,
@@ -61,7 +61,7 @@ export default function useLiveMatch(matchId) {
 
     const handleStompPayload = (payload) => {
       if (!isSubscribed) return;
-      
+
       // Update core sequence tracking
       if (payload.sequenceNumber != null) {
         stRef.current.currentSequence = payload.sequenceNumber;
@@ -85,23 +85,23 @@ export default function useLiveMatch(matchId) {
           setStarted(true);
           setLivePhase('PRE_MATCH');
           break;
-          
+
         case 'KICK_OFF':
           setLivePhase('FIRST_HALF');
           break;
-          
+
         case 'HALF_TIME':
           setLivePhase('HALF_TIME');
           break;
-          
+
         case 'SECOND_HALF_STARTED':
           setLivePhase('SECOND_HALF');
           break;
-          
+
         case 'EXTRA_TIME_STARTED':
           setLivePhase('EXTRA_TIME');
           break;
-          
+
         case 'PENALTY_SHOOTOUT_STARTED':
           setLivePhase('PENALTY_SHOOTOUT');
           break;
@@ -126,9 +126,9 @@ export default function useLiveMatch(matchId) {
 
             if (payload.payload.matchEvent) {
               setEvents(prev => {
-                const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}-${e.description}`));
+                const existMap = new Set(prev.map(e => String(e.sequenceNumber)));
                 const newE = { ...payload.payload.matchEvent, addedTime: payload.addedTime, sequenceNumber: payload.sequenceNumber };
-                if (!existMap.has(`${newE.minute}-${newE.player}-${newE.eventType}-${newE.description}`)) {
+                if (!existMap.has(String(newE.sequenceNumber))) {
                   return [...prev, newE].sort((a, b) => minuteSortKey(a) - minuteSortKey(b) || seqSortKey(a) - seqSortKey(b));
                 }
                 return prev;
@@ -153,20 +153,20 @@ export default function useLiveMatch(matchId) {
         default:
           break;
       }
-      
+
       // Extract commentary for ALL event types, including lifecycle events
       if (payload.payload && payload.payload.commentary) {
          setCommentary(prev => {
             const rawCommentary = payload.payload.commentary;
             const text = typeof rawCommentary === 'string' ? rawCommentary : rawCommentary.commentary;
-            const existMap = new Set(prev.map(c => `${c.minute}-${c.commentary}`));
-            const newC = { 
-               minute: payload.minute, 
-               addedTime: payload.addedTime, 
-               commentary: text, 
-               sequenceNumber: payload.sequenceNumber 
+            const existMap = new Set(prev.map(c => String(c.sequenceNumber)));
+            const newC = {
+               minute: payload.minute,
+               addedTime: payload.addedTime,
+               commentary: text,
+               sequenceNumber: payload.sequenceNumber
             };
-            if (!existMap.has(`${newC.minute}-${newC.commentary}`)) {
+            if (!existMap.has(String(newC.sequenceNumber))) {
                let minuteSortKey = (e) => (e.minute ?? 0) + (e.addedTime ? e.addedTime / 100 : 0);
                let seqSortKey = (e) => (e.sequenceNumber ?? 0);
                return [...prev, newC].sort((a, b) => minuteSortKey(a) - minuteSortKey(b) || seqSortKey(a) - seqSortKey(b));
@@ -214,11 +214,11 @@ export default function useLiveMatch(matchId) {
                       });
                    }
                 });
-                
+
                 // Merge with prev
-                const existMap = new Set(prev.map(c => `${c.minute}-${c.commentary}`));
-                const toAdd = newComms.filter(c => !existMap.has(`${c.minute}-${c.commentary}`));
-                
+                const existMap = new Set(prev.map(c => String(c.sequenceNumber)));
+                const toAdd = newComms.filter(c => !existMap.has(String(c.sequenceNumber)));
+
                 if (toAdd.length > 0) {
                    let minuteSortKey = (e) => (e.minute ?? 0) + (e.addedTime ? e.addedTime / 100 : 0);
                    let seqSortKey = (e) => (e.sequenceNumber ?? 0);
@@ -235,7 +235,7 @@ export default function useLiveMatch(matchId) {
         const validPending = stRef.current.pendingEvents
             .filter(p => p.sequenceNumber > stRef.current.currentSequence)
             .sort((a, b) => a.sequenceNumber - b.sequenceNumber);
-        
+
         stRef.current.pendingEvents = [];
         validPending.forEach(p => {
            if (p.sequenceNumber === stRef.current.currentSequence + 1) {
@@ -269,7 +269,7 @@ export default function useLiveMatch(matchId) {
            if (!isSubscribed) return;
            setConnectionStatus('connected');
            setError(null);
-           
+
            // Fetch snapshot *after* connection re-establishes to guarantee no race loss
            fetchSnapshotAndHydrate();
 
