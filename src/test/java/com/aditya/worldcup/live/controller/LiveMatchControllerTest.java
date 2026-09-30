@@ -58,7 +58,8 @@ class LiveMatchControllerTest {
         LiveMatchSnapshot snapshot = new LiveMatchSnapshot(
                 100L, 1L, "Home FC", "Away United", 1, 0,
                 35, LiveMatchPhase.FIRST_HALF, 45, LiveMatchEventType.GOAL, Instant.now(),
-                java.util.Collections.emptyList()
+                java.util.Collections.emptyList(),
+                null
         );
         when(stateService.getSnapshot(100L)).thenReturn(Optional.of(snapshot));
 

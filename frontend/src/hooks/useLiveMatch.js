@@ -197,6 +197,7 @@ export default function useLiveMatch(matchId) {
            if (snapshot.currentMinute != null) setLiveMinute(snapshot.currentMinute);
            if (snapshot.phase) setLivePhase(snapshot.phase);
            if (snapshot.phase && snapshot.phase !== 'PRE_MATCH') setStarted(true);
+           if (snapshot.finalResult) setFinalResult(snapshot.finalResult);
 
            // Hydrate commentary history directly from snapshot
            if (snapshot.commentaryHistory && snapshot.commentaryHistory.length > 0) {
@@ -270,9 +271,6 @@ export default function useLiveMatch(matchId) {
            setConnectionStatus('connected');
            setError(null);
 
-           // Fetch snapshot *after* connection re-establishes to guarantee no race loss
-           fetchSnapshotAndHydrate();
-
            client.subscribe(`/topic/matches/${matchId}`, (message) => {
              if (!isSubscribed) return;
              try {
@@ -299,6 +297,9 @@ export default function useLiveMatch(matchId) {
                console.error('Failed to parse match event payload:', err);
              }
            });
+
+           // Fetch snapshot *after* connection and subscription re-establishes to guarantee no race loss
+           fetchSnapshotAndHydrate();
         },
         onStompError: (frame) => {
           console.error('STOMP Error:', frame);

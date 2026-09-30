@@ -27,6 +27,7 @@ public record LiveMatchSnapshot(
 
         LiveMatchEventType latestEventType,
         Instant lastUpdated,
-        java.util.List<LiveMatchEvent> commentaryHistory
+        java.util.List<LiveMatchEvent> commentaryHistory,
+        com.aditya.worldcup.simulation.dto.MatchSimulationResponse finalResult
 ) {
 }

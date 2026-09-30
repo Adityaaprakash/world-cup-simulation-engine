@@ -84,7 +84,8 @@ public class LiveMatchController {
                             0,           // latestSequence — no events yet
                             null,        // no latestEventType known
                             Instant.now(),
-                            java.util.Collections.emptyList()
+                            java.util.Collections.emptyList(),
+                            null
                     );
 
                     return ResponseEntity.ok(staticSnapshot);

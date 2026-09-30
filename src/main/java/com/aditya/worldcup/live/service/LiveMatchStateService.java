@@ -46,6 +46,7 @@ public class LiveMatchStateService {
         volatile LiveMatchEventType latestEventType = null;
         volatile Instant lastUpdated = Instant.now();
         final java.util.Deque<LiveMatchEvent> commentaryHistory = new java.util.concurrent.ConcurrentLinkedDeque<>();
+        volatile com.aditya.worldcup.simulation.dto.MatchSimulationResponse finalResult = null;
     }
 
     // Match ID → live state
@@ -140,6 +141,7 @@ public class LiveMatchStateService {
                 if (finalResult instanceof com.aditya.worldcup.simulation.dto.MatchSimulationResponse msr) {
                     if (state.homeTeamName == null) state.homeTeamName = msr.homeTeam();
                     if (state.awayTeamName == null) state.awayTeamName = msr.awayTeam();
+                    state.finalResult = msr;
                 }
             }
 
@@ -157,6 +159,14 @@ public class LiveMatchStateService {
 
         } finally {
             state.lock.unlock();
+        }
+
+        // Bounded memory sweep to prevent unbounded growth of live match states
+        // If more than 500 active matches, evict strictly older than 12 hours
+        if (activeStates.size() > 500) {
+            activeStates.entrySet().removeIf(e -> 
+                java.time.Duration.between(e.getValue().lastUpdated, Instant.now()).toHours() > 12
+            );
         }
     }
 
@@ -215,7 +225,8 @@ public class LiveMatchStateService {
                 state.latestSequence,
                 state.latestEventType,
                 state.lastUpdated,
-                new java.util.ArrayList<>(state.commentaryHistory)
+                new java.util.ArrayList<>(state.commentaryHistory),
+                state.finalResult
         );
     }
 }

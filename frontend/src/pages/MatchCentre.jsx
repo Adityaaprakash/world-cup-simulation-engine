@@ -61,7 +61,10 @@ export default function MatchCentre() {
   // Merge live events/commentary, deduplicating based on minute+description etc.
   const displayEvents = match.events ? [...match.events] : [];
   liveEvents.forEach(le => {
-    if (!displayEvents.some(e => e.minute === le.minute && e.player === le.player && e.eventType === le.eventType && e.description === le.description)) {
+    if (!displayEvents.some(e => 
+      (e.sequenceNumber != null && le.sequenceNumber != null && e.sequenceNumber === le.sequenceNumber) || 
+      (!e.sequenceNumber && e.minute === le.minute && e.player === le.player && e.eventType === le.eventType && e.description === le.description)
+    )) {
       displayEvents.push(le);
     }
   });
@@ -69,7 +72,10 @@ export default function MatchCentre() {
 
   const displayCommentary = match.commentary ? [...match.commentary] : [];
   liveCommentary.forEach(lc => {
-    if (!displayCommentary.some(c => c.minute === lc.minute && c.commentary === lc.commentary)) {
+    if (!displayCommentary.some(c => 
+      (c.sequenceNumber != null && lc.sequenceNumber != null && c.sequenceNumber === lc.sequenceNumber) ||
+      (!c.sequenceNumber && c.minute === lc.minute && c.commentary === lc.commentary)
+    )) {
       displayCommentary.push(lc);
     }
   });
