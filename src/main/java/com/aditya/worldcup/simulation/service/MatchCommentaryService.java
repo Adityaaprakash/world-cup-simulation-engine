@@ -26,10 +26,14 @@ public class MatchCommentaryService {
                 .toList();
     }
 
-    private String createCommentary(MatchEventResponse event) {
+    public String createCommentary(MatchEventResponse event) {
 
-        MatchEventType eventType =
-                MatchEventType.valueOf(event.eventType());
+        MatchEventType eventType;
+        try {
+            eventType = MatchEventType.valueOf(event.eventType());
+        } catch (Exception ex) {
+            return null;
+        }
 
         return switch (eventType) {
             case GOAL -> selectTemplate(
@@ -143,5 +147,19 @@ public class MatchCommentaryService {
                 : event.eventType().hashCode());
 
         return result;
+    }
+
+    public String generateLifecycleCommentary(com.aditya.worldcup.live.dto.LiveMatchEventType type, String homeTeam, String awayTeam, Integer homeScore, Integer awayScore) {
+        if (type == null) return null;
+        return switch (type) {
+            case MATCH_STARTED -> "The teams are on the pitch. We are about to begin.";
+            case KICK_OFF -> "KICK-OFF! We are underway in the first half.";
+            case HALF_TIME -> "HALF-TIME: " + homeTeam + " " + homeScore + " - " + awayScore + " " + awayTeam + ".";
+            case SECOND_HALF_STARTED -> "SECOND HALF: We are underway again.";
+            case EXTRA_TIME_STARTED -> "EXTRA TIME: The match remains tied. We head into extra time.";
+            case PENALTY_SHOOTOUT_STARTED -> "PENALTY SHOOTOUT: The outcome will be decided from the spot.";
+            case FULL_TIME -> "FULL-TIME: The referee blows the final whistle! " + homeTeam + " " + homeScore + " - " + awayScore + " " + awayTeam + ".";
+            default -> null;
+        };
     }
 }

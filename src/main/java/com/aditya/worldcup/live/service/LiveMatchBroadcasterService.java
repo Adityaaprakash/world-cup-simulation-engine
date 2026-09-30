@@ -23,6 +23,7 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final LiveMatchStateService stateService;
+    private final com.aditya.worldcup.simulation.service.MatchCommentaryService matchCommentaryService;
 
     // Track active match live state
     private final Map<Long, AtomicInteger> sequenceCounters = new ConcurrentHashMap<>();
@@ -35,8 +36,13 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
         homeScores.put(matchId, new AtomicInteger(0));
         awayScores.put(matchId, new AtomicInteger(0));
 
+        Map<String, Object> payload = new java.util.HashMap<>();
+        String comm = matchCommentaryService.generateLifecycleCommentary(LiveMatchEventType.MATCH_STARTED, "", "", 0, 0);
+        if (comm != null) payload.put("commentary", comm);
+
         LiveMatchEvent event = LiveMatchEvent.create(
-                getSequence(matchId), matchId, tournamentId, LiveMatchEventType.MATCH_STARTED, 0, null, null, null, null, 0, 0, null
+                getSequence(matchId), matchId, tournamentId, LiveMatchEventType.MATCH_STARTED, 0, null, null, null, null, 0, 0,
+                payload.isEmpty() ? null : payload
         );
         sendEvent(event);
         stateService.applyEvent(event);
@@ -44,8 +50,13 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
 
     @Override
     public void publishKickOff(Long tournamentId, Long matchId) {
+        Map<String, Object> payload = new java.util.HashMap<>();
+        String comm = matchCommentaryService.generateLifecycleCommentary(LiveMatchEventType.KICK_OFF, "", "", 0, 0);
+        if (comm != null) payload.put("commentary", comm);
+
         LiveMatchEvent event = LiveMatchEvent.create(
-                getSequence(matchId), matchId, tournamentId, LiveMatchEventType.KICK_OFF, 0, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId), null
+                getSequence(matchId), matchId, tournamentId, LiveMatchEventType.KICK_OFF, 0, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
+                payload.isEmpty() ? null : payload
         );
         sendEvent(event);
         stateService.applyEvent(event);
@@ -58,6 +69,60 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
                                   String homeTeam, String awayTeam) {
 
         boolean sentMinuteUpdate = false;
+
+        // Determine base minute and added time
+        int baseMinute = minute;
+        Integer addedTime = null;
+        if (minute > 45 && minute < 50) {
+            // First half stoppage time is not tracked well, mostly it just jumps to second half or ends.
+            // But we don't have enough context.
+        }
+        if (minute > 90 && minute < 105) {
+            baseMinute = 90;
+            addedTime = minute - 90;
+        } else if (minute > 105 && minute < 120) {
+            // extra time first half
+            baseMinute = 105;
+            addedTime = minute - 105;
+        } else if (minute > 120) {
+            baseMinute = 120;
+            addedTime = minute - 120;
+        }
+
+        if (minute == 45) {
+            Map<String, Object> payload = new java.util.HashMap<>();
+            String comm = matchCommentaryService.generateLifecycleCommentary(LiveMatchEventType.HALF_TIME, homeTeam, awayTeam, getHomeScore(matchId), getAwayScore(matchId));
+            if (comm != null) payload.put("commentary", comm);
+            LiveMatchEvent htEvent = LiveMatchEvent.create(
+                    getSequence(matchId), matchId, tournamentId, LiveMatchEventType.HALF_TIME, 45, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
+                    payload.isEmpty() ? null : payload
+            );
+            sendEvent(htEvent);
+            stateService.applyEvent(htEvent);
+        } else if (minute == 46) {
+            Map<String, Object> payload = new java.util.HashMap<>();
+            String comm = matchCommentaryService.generateLifecycleCommentary(LiveMatchEventType.SECOND_HALF_STARTED, homeTeam, awayTeam, getHomeScore(matchId), getAwayScore(matchId));
+            if (comm != null) payload.put("commentary", comm);
+            LiveMatchEvent htEvent = LiveMatchEvent.create(
+                    getSequence(matchId), matchId, tournamentId, LiveMatchEventType.SECOND_HALF_STARTED, 45, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
+                    payload.isEmpty() ? null : payload
+            );
+            sendEvent(htEvent);
+            stateService.applyEvent(htEvent);
+        } else if (minute == 91) {
+            Map<String, Object> payload = new java.util.HashMap<>();
+            String comm = matchCommentaryService.generateLifecycleCommentary(LiveMatchEventType.EXTRA_TIME_STARTED, homeTeam, awayTeam, getHomeScore(matchId), getAwayScore(matchId));
+            if (comm != null) payload.put("commentary", comm);
+            LiveMatchEvent htEvent = LiveMatchEvent.create(
+                    getSequence(matchId), matchId, tournamentId, LiveMatchEventType.EXTRA_TIME_STARTED, 90, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
+                    payload.isEmpty() ? null : payload
+            );
+            sendEvent(htEvent);
+            stateService.applyEvent(htEvent);
+        } else if (minute == 120) {
+            // maybe shootout started
+        }
+
         if (evts != null) {
             for (MatchEventResponse e : evts) {
                 LiveMatchEventType type;
@@ -81,34 +146,30 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
                     }
                 }
 
+                String commentary = matchCommentaryService.createCommentary(e);
+                Map<String, Object> payloadMap = new java.util.HashMap<>();
+                payloadMap.put("matchEvent", e);
+                if (commentary != null) {
+                    payloadMap.put("commentary", commentary);
+                }
+
                 LiveMatchEvent liveEvt = LiveMatchEvent.create(
                         getSequence(matchId),
                         matchId, tournamentId, type,
-                        minute, null,
+                        baseMinute, addedTime,
                         e.teamId(), e.playerId(), null,
                         getHomeScore(matchId), getAwayScore(matchId),
-                        Map.of("matchEvent", e)
+                        payloadMap
                 );
                 sendEvent(liveEvt);
                 stateService.applyEvent(liveEvt);
                 sentMinuteUpdate = true;
             }
         }
-        if (comms != null) {
-            for (CommentaryResponse c : comms) {
-                LiveMatchEvent commEvt = LiveMatchEvent.create(
-                        getSequence(matchId), matchId, tournamentId, LiveMatchEventType.COMMENTARY, minute, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId), Map.of("commentary", c)
-                );
-                sendEvent(commEvt);
-                // Commentary doesn't update score/phase; state update still advances sequence
-                stateService.applyEvent(commEvt);
-                sentMinuteUpdate = true;
-            }
-        }
 
         if (!sentMinuteUpdate) {
             LiveMatchEvent evt = LiveMatchEvent.create(
-                    getSequence(matchId), matchId, tournamentId, LiveMatchEventType.MINUTE_UPDATE, minute, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId), null
+                    getSequence(matchId), matchId, tournamentId, LiveMatchEventType.MINUTE_UPDATE, baseMinute, addedTime, null, null, null, getHomeScore(matchId), getAwayScore(matchId), null
             );
             sendEvent(evt);
             stateService.applyEvent(evt);
@@ -117,9 +178,14 @@ public class LiveMatchBroadcasterService implements LiveEventPublisher {
 
     @Override
     public void publishMatchEnded(Long tournamentId, Long matchId, int finalMinute, MatchSimulationResponse finalResult) {
+        Map<String, Object> payloadMap = new java.util.HashMap<>();
+        payloadMap.put("finalResult", finalResult);
+        String comm = matchCommentaryService.generateLifecycleCommentary(LiveMatchEventType.FULL_TIME, finalResult.homeTeam(), finalResult.awayTeam(), getHomeScore(matchId), getAwayScore(matchId));
+        if (comm != null) payloadMap.put("commentary", comm);
+
         LiveMatchEvent event = LiveMatchEvent.create(
                 getSequence(matchId), matchId, tournamentId, LiveMatchEventType.FULL_TIME, finalMinute, null, null, null, null, getHomeScore(matchId), getAwayScore(matchId),
-                Map.of("finalResult", finalResult)
+                payloadMap
         );
         // Seed team names into state before applying FULL_TIME
         stateService.seedTeamNames(matchId, finalResult.homeTeam(), finalResult.awayTeam());

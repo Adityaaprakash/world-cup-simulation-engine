@@ -41,10 +41,13 @@ class LiveMatchBroadcasterServiceTest {
     @Captor
     private ArgumentCaptor<Runnable> runnableCaptor;
 
+    @Mock
+    private com.aditya.worldcup.simulation.service.MatchCommentaryService matchCommentaryService;
+
     @BeforeEach
     void setUp() {
         LiveMatchStateService stateService = new LiveMatchStateService();
-        LiveMatchBroadcasterService publisher = new LiveMatchBroadcasterService(messagingTemplate, stateService);
+        LiveMatchBroadcasterService publisher = new LiveMatchBroadcasterService(messagingTemplate, stateService, matchCommentaryService);
         broadcasterService = new LiveSimulationEngine(taskScheduler, publisher);
         ReflectionTestUtils.setField(broadcasterService, "broadcastDelayMs", 100L);
     }

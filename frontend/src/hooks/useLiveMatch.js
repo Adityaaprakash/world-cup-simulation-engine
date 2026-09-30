@@ -120,26 +120,20 @@ export default function useLiveMatch(matchId) {
         case 'COMMENTARY': {
           setLastEvent(payload);
 
-          if (payload.payload && payload.payload.matchEvent) {
-            setEvents(prev => {
-              const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}-${e.description}`));
-              const newE = payload.payload.matchEvent;
-              if (!existMap.has(`${newE.minute}-${newE.player}-${newE.eventType}-${newE.description}`)) {
-                return [...prev, newE].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
-              }
-              return prev;
-            });
-          }
+          if (payload.payload && (payload.payload.matchEvent || payload.payload.commentary)) {
+            let minuteSortKey = (e) => (e.minute ?? 0) + (e.addedTime ? e.addedTime / 100 : 0);
+            let seqSortKey = (e) => (e.sequenceNumber ?? 0);
 
-          if (payload.payload && payload.payload.commentary) {
-            setCommentary(prev => {
-              const existMap = new Set(prev.map(c => `${c.minute}-${c.commentary}`));
-              const newC = payload.payload.commentary;
-              if (!existMap.has(`${newC.minute}-${newC.commentary}`)) {
-                 return [...prev, newC].sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
-              }
-              return prev;
-            });
+            if (payload.payload.matchEvent) {
+              setEvents(prev => {
+                const existMap = new Set(prev.map(e => `${e.minute}-${e.player}-${e.eventType}-${e.description}`));
+                const newE = { ...payload.payload.matchEvent, addedTime: payload.addedTime, sequenceNumber: payload.sequenceNumber };
+                if (!existMap.has(`${newE.minute}-${newE.player}-${newE.eventType}-${newE.description}`)) {
+                  return [...prev, newE].sort((a, b) => minuteSortKey(a) - minuteSortKey(b) || seqSortKey(a) - seqSortKey(b));
+                }
+                return prev;
+              });
+            }
           }
           break;
         }
@@ -158,6 +152,27 @@ export default function useLiveMatch(matchId) {
 
         default:
           break;
+      }
+      
+      // Extract commentary for ALL event types, including lifecycle events
+      if (payload.payload && payload.payload.commentary) {
+         setCommentary(prev => {
+            const rawCommentary = payload.payload.commentary;
+            const text = typeof rawCommentary === 'string' ? rawCommentary : rawCommentary.commentary;
+            const existMap = new Set(prev.map(c => `${c.minute}-${c.commentary}`));
+            const newC = { 
+               minute: payload.minute, 
+               addedTime: payload.addedTime, 
+               commentary: text, 
+               sequenceNumber: payload.sequenceNumber 
+            };
+            if (!existMap.has(`${newC.minute}-${newC.commentary}`)) {
+               let minuteSortKey = (e) => (e.minute ?? 0) + (e.addedTime ? e.addedTime / 100 : 0);
+               let seqSortKey = (e) => (e.sequenceNumber ?? 0);
+               return [...prev, newC].sort((a, b) => minuteSortKey(a) - minuteSortKey(b) || seqSortKey(a) - seqSortKey(b));
+            }
+            return prev;
+         });
       }
     };
 
@@ -182,6 +197,36 @@ export default function useLiveMatch(matchId) {
            if (snapshot.currentMinute != null) setLiveMinute(snapshot.currentMinute);
            if (snapshot.phase) setLivePhase(snapshot.phase);
            if (snapshot.phase && snapshot.phase !== 'PRE_MATCH') setStarted(true);
+
+           // Hydrate commentary history directly from snapshot
+           if (snapshot.commentaryHistory && snapshot.commentaryHistory.length > 0) {
+             setCommentary(prev => {
+                const newComms = [];
+                snapshot.commentaryHistory.forEach(histEvt => {
+                   if (histEvt.payload && histEvt.payload.commentary) {
+                      const rawCommentary = histEvt.payload.commentary;
+                      const text = typeof rawCommentary === 'string' ? rawCommentary : rawCommentary.commentary;
+                      newComms.push({
+                         minute: histEvt.minute,
+                         addedTime: histEvt.addedTime,
+                         commentary: text,
+                         sequenceNumber: histEvt.sequenceNumber
+                      });
+                   }
+                });
+                
+                // Merge with prev
+                const existMap = new Set(prev.map(c => `${c.minute}-${c.commentary}`));
+                const toAdd = newComms.filter(c => !existMap.has(`${c.minute}-${c.commentary}`));
+                
+                if (toAdd.length > 0) {
+                   let minuteSortKey = (e) => (e.minute ?? 0) + (e.addedTime ? e.addedTime / 100 : 0);
+                   let seqSortKey = (e) => (e.sequenceNumber ?? 0);
+                   return [...prev, ...toAdd].sort((a, b) => minuteSortKey(a) - minuteSortKey(b) || seqSortKey(a) - seqSortKey(b));
+                }
+                return prev;
+             });
+           }
         }
 
         stRef.current.isResyncing = false;

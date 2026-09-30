@@ -45,6 +45,7 @@ public class LiveMatchStateService {
         volatile int latestSequence = 0;
         volatile LiveMatchEventType latestEventType = null;
         volatile Instant lastUpdated = Instant.now();
+        final java.util.Deque<LiveMatchEvent> commentaryHistory = new java.util.concurrent.ConcurrentLinkedDeque<>();
     }
 
     // Match ID → live state
@@ -142,6 +143,13 @@ public class LiveMatchStateService {
                 }
             }
 
+            if (event.payload() != null && event.payload().containsKey("commentary")) {
+                state.commentaryHistory.addLast(event);
+                if (state.commentaryHistory.size() > 50) {
+                    state.commentaryHistory.removeFirst();
+                }
+            }
+
             log.trace("Applied event seq={} type={} to match {}", event.sequenceNumber(), event.eventType(), matchId);
 
             // Do NOT remove state on FULL_TIME immediately — keep it available for late readers.
@@ -206,7 +214,8 @@ public class LiveMatchStateService {
                 state.phase,
                 state.latestSequence,
                 state.latestEventType,
-                state.lastUpdated
+                state.lastUpdated,
+                new java.util.ArrayList<>(state.commentaryHistory)
         );
     }
 }

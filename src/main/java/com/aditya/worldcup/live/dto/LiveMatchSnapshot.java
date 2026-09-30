@@ -26,6 +26,7 @@ public record LiveMatchSnapshot(
         int latestSequence,
 
         LiveMatchEventType latestEventType,
-        Instant lastUpdated
+        Instant lastUpdated,
+        java.util.List<LiveMatchEvent> commentaryHistory
 ) {
 }
