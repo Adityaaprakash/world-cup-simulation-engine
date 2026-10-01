@@ -1,5 +1,7 @@
 package com.aditya.worldcup.tournaments.controller;
 
+import com.aditya.worldcup.live.dto.TournamentLiveState;
+import com.aditya.worldcup.live.service.TournamentLiveAggregator;
 import com.aditya.worldcup.tournaments.dto.CreateTournamentRequest;
 import com.aditya.worldcup.tournaments.dto.TournamentResponse;
 import com.aditya.worldcup.tournaments.service.TournamentService;
@@ -30,6 +32,7 @@ import java.util.List;
 public class TournamentController {
 
     private final TournamentService tournamentService;
+    private final TournamentLiveAggregator tournamentLiveAggregator;
 
     @PostMapping
     @Operation(summary = "Create tournament", description = "Creates a new upcoming tournament.")
@@ -95,5 +98,27 @@ public class TournamentController {
             @PathVariable @Positive Long id) {
 
         tournamentService.deleteTournament(id);
+    }
+
+    @GetMapping("/{id}/live")
+    @Operation(
+            summary = "Get tournament live state",
+            description = "Aggregates per-match live snapshots into a tournament-level live view. "
+                    + "Each match entry is sourced from the existing match-level live architecture. "
+                    + "No global tournament sequence number is introduced — sequences remain match-scoped. "
+                    + "Suitable for polling (e.g. every 5s) from the tournament dashboard."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Tournament live state returned"),
+            @ApiResponse(responseCode = "404", description = "Tournament not found")
+    })
+    public ResponseEntity<TournamentLiveState> getTournamentLiveState(
+            @Parameter(description = "Tournament id")
+            @PathVariable @Positive Long id) {
+
+        // Ensure the tournament exists — 404 if not found
+        tournamentService.getTournament(id);
+
+        return ResponseEntity.ok(tournamentLiveAggregator.aggregate(id));
     }
 }

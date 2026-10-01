@@ -10,3 +10,4 @@ export const getTournamentSummary = (tournamentId) => axiosClient.get(`/api/tour
 export const getTournamentAwards = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/awards`)
 export const getTournamentTeamAwards = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/team-awards`)
 export const getTournamentKnockoutBracket = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/knockout/bracket`)
+export const getTournamentLiveState = (tournamentId) => axiosClient.get(`/api/tournaments/${tournamentId}/live`)
