@@ -21,22 +21,22 @@ public class TacticalProfile {
     @JoinColumn(name = "team_id", nullable = false, unique = true)
     private Team team;
 
-    @Builder.Default private Integer attackWidth = 50;
-    @Builder.Default private Integer defensiveWidth = 50;
-    @Builder.Default private Integer defensiveLine = 50;
-    @Builder.Default private Integer pressingIntensity = 50;
+    @Builder.Default @Enumerated(EnumType.STRING)
+    private PressingIntensity pressingIntensity = PressingIntensity.BALANCED;
+    @Builder.Default @Enumerated(EnumType.STRING)
+    private DefensiveLine defensiveLine = DefensiveLine.BALANCED;
+    @Builder.Default @Enumerated(EnumType.STRING)
+    private Tempo tempo = Tempo.BALANCED;
+    @Builder.Default @Enumerated(EnumType.STRING)
+    private Width width = Width.BALANCED;
+    @Builder.Default @Enumerated(EnumType.STRING)
+    private PassingStyle passingStyle = PassingStyle.MIXED;
+    @Builder.Default @Enumerated(EnumType.STRING)
+    private AttackingApproach attackingApproach = AttackingApproach.BALANCED;
     @Builder.Default @Enumerated(EnumType.STRING)
     private BuildUpStyle buildUpStyle = BuildUpStyle.BALANCED;
     @Builder.Default @Enumerated(EnumType.STRING)
-    private ChanceCreation chanceCreation = ChanceCreation.BALANCED;
-    @Builder.Default private Integer attackingWidth = 50;
-    @Builder.Default private Integer crossFrequency = 50;
-    @Builder.Default private Integer longBallFrequency = 50;
-    @Builder.Default private Integer passingRisk = 50;
-    @Builder.Default private Boolean counterAttack = false;
-    @Builder.Default private Boolean highPress = false;
-    @Builder.Default private Boolean offsideTrap = false;
-    @Builder.Default private Boolean timeWasting = false;
+    private DefensiveBlock defensiveBlock = DefensiveBlock.MID_BLOCK;
 
     public static TacticalProfile balanced(Team team) {
         return TacticalProfile.builder().team(team).build();

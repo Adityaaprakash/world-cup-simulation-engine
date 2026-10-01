@@ -4,16 +4,18 @@ import com.aditya.worldcup.players.entity.PlayerPosition;
 import com.aditya.worldcup.players.entity.PlayerState;
 import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
+import com.aditya.worldcup.tactics.entity.AttackingApproach;
 import com.aditya.worldcup.tactics.entity.BuildUpStyle;
-import com.aditya.worldcup.tactics.entity.ChanceCreation;
+import com.aditya.worldcup.tactics.entity.DefensiveBlock;
+import com.aditya.worldcup.tactics.entity.DefensiveLine;
+import com.aditya.worldcup.tactics.entity.PassingStyle;
+import com.aditya.worldcup.tactics.entity.PressingIntensity;
+import com.aditya.worldcup.tactics.entity.Tempo;
+import com.aditya.worldcup.tactics.entity.Width;
 import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import com.aditya.worldcup.tactics.dto.MatchPlanDto;
 import com.aditya.worldcup.tactics.entity.TacticalApproach;
-import com.aditya.worldcup.tactics.entity.BuildUpStyle;
-import com.aditya.worldcup.tactics.entity.ChanceCreation;
-import com.aditya.worldcup.tactics.entity.TacticalProfile;
-import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.squads.entity.Squad;
 import lombok.RequiredArgsConstructor;
@@ -40,47 +42,32 @@ public class TacticalSelectionService {
         TacticalProfile profile = tacticalProfileService.getOrCreateProfile(team);
         int difference = squadQuality - opponentQuality;
         if (difference >= 5) {
-            profile.setBuildUpStyle(BuildUpStyle.SLOW_POSSESSION);
-            profile.setChanceCreation(ChanceCreation.POSSESSION);
-            profile.setAttackWidth(70);
-            profile.setAttackingWidth(70);
-            profile.setPressingIntensity(72);
-            profile.setDefensiveLine(65);
-            profile.setPassingRisk(62);
-            profile.setCrossFrequency(62);
-            profile.setCounterAttack(false);
-            profile.setHighPress(true);
-            profile.setOffsideTrap(true);
-            profile.setTimeWasting(false);
+            profile.setBuildUpStyle(BuildUpStyle.POSSESSION);
+            profile.setAttackingApproach(AttackingApproach.ATTACKING);
+            profile.setWidth(Width.WIDE);
+            profile.setPressingIntensity(PressingIntensity.HIGH);
+            profile.setDefensiveLine(DefensiveLine.HIGH);
+            profile.setPassingStyle(PassingStyle.SHORT);
+            profile.setTempo(Tempo.SLOW);
+            profile.setDefensiveBlock(DefensiveBlock.HIGH_BLOCK);
         } else if (difference <= -5) {
             profile.setBuildUpStyle(BuildUpStyle.DIRECT);
-            profile.setChanceCreation(ChanceCreation.FAST_ATTACK);
-            profile.setAttackWidth(42);
-            profile.setAttackingWidth(42);
-            profile.setDefensiveWidth(38);
-            profile.setDefensiveLine(35);
-            profile.setPressingIntensity(38);
-            profile.setPassingRisk(58);
-            profile.setLongBallFrequency(68);
-            profile.setCounterAttack(true);
-            profile.setHighPress(false);
-            profile.setOffsideTrap(false);
-            profile.setTimeWasting(false);
+            profile.setAttackingApproach(AttackingApproach.CONSERVATIVE);
+            profile.setWidth(Width.NARROW);
+            profile.setDefensiveLine(DefensiveLine.DEEP);
+            profile.setPressingIntensity(PressingIntensity.LOW);
+            profile.setPassingStyle(PassingStyle.DIRECT);
+            profile.setTempo(Tempo.FAST);
+            profile.setDefensiveBlock(DefensiveBlock.LOW_BLOCK);
         } else {
             profile.setBuildUpStyle(BuildUpStyle.BALANCED);
-            profile.setChanceCreation(ChanceCreation.BALANCED);
-            profile.setAttackWidth(50);
-            profile.setAttackingWidth(50);
-            profile.setDefensiveWidth(50);
-            profile.setDefensiveLine(50);
-            profile.setPressingIntensity(50);
-            profile.setCrossFrequency(50);
-            profile.setLongBallFrequency(50);
-            profile.setPassingRisk(50);
-            profile.setCounterAttack(false);
-            profile.setHighPress(false);
-            profile.setOffsideTrap(false);
-            profile.setTimeWasting(false);
+            profile.setAttackingApproach(AttackingApproach.BALANCED);
+            profile.setWidth(Width.BALANCED);
+            profile.setDefensiveLine(DefensiveLine.BALANCED);
+            profile.setPressingIntensity(PressingIntensity.BALANCED);
+            profile.setPassingStyle(PassingStyle.MIXED);
+            profile.setTempo(Tempo.BALANCED);
+            profile.setDefensiveBlock(DefensiveBlock.MID_BLOCK);
         }
         applySquadStrengths(profile, availablePlayers);
         return tacticalProfileService.saveProfile(profile);
@@ -98,39 +85,30 @@ public class TacticalSelectionService {
                                                List<SquadPlayer> activePlayers) {
         TacticalProfile profile = tacticalProfileService.getOrCreateProfile(team);
         if (goalDifference < 0) {
-            profile.setHighPress(true);
-            profile.setPressingIntensity(Math.min(100, profile.getPressingIntensity() + 12));
-            profile.setPassingRisk(Math.min(100, profile.getPassingRisk() + 10));
-            profile.setChanceCreation(ChanceCreation.FAST_ATTACK);
+            profile.setPressingIntensity(PressingIntensity.HIGH);
+            profile.setPassingStyle(PassingStyle.DIRECT);
+            profile.setAttackingApproach(AttackingApproach.ATTACKING);
         } else if (goalDifference > 0) {
-            profile.setHighPress(false);
-            profile.setPressingIntensity(Math.max(1, profile.getPressingIntensity() - 10));
-            profile.setTimeWasting(true);
-            profile.setPassingRisk(Math.max(1, profile.getPassingRisk() - 6));
-            profile.setAttackWidth(Math.max(1, profile.getAttackWidth() - 5));
-            profile.setAttackingWidth(Math.max(1, profile.getAttackingWidth() - 5));
-        } else {
-            profile.setTimeWasting(false);
+            profile.setPressingIntensity(PressingIntensity.LOW);
+            profile.setTempo(Tempo.SLOW);
+            profile.setPassingStyle(PassingStyle.SHORT);
+            profile.setWidth(Width.NARROW);
         }
 
         if (ownRedCard) {
-            profile.setHighPress(false);
-            profile.setPressingIntensity(Math.max(1, profile.getPressingIntensity() - 18));
-            profile.setDefensiveLine(Math.max(1, profile.getDefensiveLine() - 14));
-            profile.setAttackWidth(Math.max(1, profile.getAttackWidth() - 8));
-            profile.setAttackingWidth(Math.max(1, profile.getAttackingWidth() - 8));
-            profile.setOffsideTrap(false);
+            profile.setPressingIntensity(PressingIntensity.LOW);
+            profile.setDefensiveLine(DefensiveLine.DEEP);
+            profile.setWidth(Width.NARROW);
+            profile.setDefensiveBlock(DefensiveBlock.LOW_BLOCK);
         }
         if (opponentRedCard) {
-            profile.setPressingIntensity(Math.min(100, profile.getPressingIntensity() + 8));
-            profile.setAttackWidth(Math.min(100, profile.getAttackWidth() + 8));
-            profile.setAttackingWidth(Math.min(100, profile.getAttackingWidth() + 8));
-            profile.setPassingRisk(Math.min(100, profile.getPassingRisk() + 6));
+            profile.setPressingIntensity(PressingIntensity.HIGH);
+            profile.setWidth(Width.WIDE);
+            profile.setPassingStyle(PassingStyle.DIRECT);
         }
         if (extraTime && averageFitness(activePlayers) < 70) {
-            profile.setHighPress(false);
-            profile.setPressingIntensity(Math.max(1, profile.getPressingIntensity() - 12));
-            profile.setPassingRisk(Math.max(1, profile.getPassingRisk() - 4));
+            profile.setPressingIntensity(PressingIntensity.LOW);
+            profile.setTempo(Tempo.SLOW);
         }
         return tacticalProfileService.saveProfile(profile);
     }
@@ -138,18 +116,17 @@ public class TacticalSelectionService {
     public MatchPlanDto generateMatchPlan(Squad squad, Squad opponent, TacticalProfile profile, Long matchId) {
         TacticalApproach approach = TacticalApproach.BALANCED;
         
-        // Derive pseudomanager personality / tactical approach
         int diff = squad.getTeam().getOverallRating() - opponent.getTeam().getOverallRating();
         if (diff > 5) {
             approach = TacticalApproach.ATTACKING;
         } else if (diff < -5) {
             approach = TacticalApproach.DEFENSIVE;
         } else {
-            if (profile.getHighPress()) {
+            if (profile.getPressingIntensity() == PressingIntensity.HIGH) {
                 approach = TacticalApproach.HIGH_PRESS;
-            } else if (profile.getBuildUpStyle() == BuildUpStyle.SLOW_POSSESSION) {
+            } else if (profile.getBuildUpStyle() == BuildUpStyle.POSSESSION) {
                 approach = TacticalApproach.POSSESSION;
-            } else if (profile.getCounterAttack()) {
+            } else if (profile.getTempo() == Tempo.FAST && profile.getDefensiveBlock() == DefensiveBlock.LOW_BLOCK) {
                 approach = TacticalApproach.COUNTER_ATTACK;
             }
         }
@@ -158,12 +135,12 @@ public class TacticalSelectionService {
                 .matchId(matchId)
                 .squadId(squad.getId())
                 .tacticalApproach(approach)
-                .pressingIntensity(profile.getPressingIntensity())
-                .tempo(profile.getPassingRisk() > 60 ? 70 : 50)
-                .defensiveLine(profile.getDefensiveLine())
-                .attackingWidth(profile.getAttackingWidth())
-                .counterAttack(profile.getCounterAttack())
-                .offsideTrap(profile.getOffsideTrap())
+                .pressingIntensity(profile.getPressingIntensity() == PressingIntensity.HIGH ? 80 : profile.getPressingIntensity() == PressingIntensity.BALANCED ? 50 : 20)
+                .tempo(profile.getTempo() == Tempo.FAST ? 80 : profile.getTempo() == Tempo.BALANCED ? 50 : 20)
+                .defensiveLine(profile.getDefensiveLine() == DefensiveLine.HIGH ? 80 : profile.getDefensiveLine() == DefensiveLine.BALANCED ? 50 : 20)
+                .attackingWidth(profile.getWidth() == Width.WIDE ? 80 : profile.getWidth() == Width.BALANCED ? 50 : 20)
+                .counterAttack(profile.getDefensiveBlock() == DefensiveBlock.LOW_BLOCK && profile.getTempo() == Tempo.FAST)
+                .offsideTrap(profile.getDefensiveLine() == DefensiveLine.HIGH)
                 .build();
     }
 
@@ -186,28 +163,23 @@ public class TacticalSelectionService {
 
         if (attackerPace >= 84 && attackerPace > midfieldCreativity) {
             profile.setBuildUpStyle(BuildUpStyle.DIRECT);
-            profile.setChanceCreation(ChanceCreation.FAST_ATTACK);
-            profile.setCounterAttack(true);
-            profile.setLongBallFrequency(Math.max(profile.getLongBallFrequency(), 60));
+            profile.setPassingStyle(PassingStyle.DIRECT);
+            profile.setTempo(Tempo.FAST);
         }
         if (midfieldCreativity >= 82 && midfieldCreativity >= attackerPace) {
-            profile.setBuildUpStyle(BuildUpStyle.SLOW_POSSESSION);
-            profile.setChanceCreation(ChanceCreation.POSSESSION);
-            profile.setPassingRisk(Math.max(45, Math.min(profile.getPassingRisk(), 62)));
+            profile.setBuildUpStyle(BuildUpStyle.POSSESSION);
+            profile.setPassingStyle(PassingStyle.SHORT);
+            profile.setTempo(Tempo.SLOW);
         }
         if (defensiveStrength >= 82) {
-            profile.setDefensiveLine(Math.max(profile.getDefensiveLine(), 58));
-            profile.setOffsideTrap(true);
+            profile.setDefensiveLine(DefensiveLine.HIGH);
         } else if (defensiveStrength > 0 && defensiveStrength < 74) {
-            profile.setDefensiveLine(Math.min(profile.getDefensiveLine(), 38));
-            profile.setOffsideTrap(false);
+            profile.setDefensiveLine(DefensiveLine.DEEP);
         }
         if (stamina >= 78) {
-            profile.setHighPress(true);
-            profile.setPressingIntensity(Math.max(profile.getPressingIntensity(), 65));
+            profile.setPressingIntensity(PressingIntensity.HIGH);
         } else if (stamina > 0 && stamina < 68) {
-            profile.setHighPress(false);
-            profile.setPressingIntensity(Math.min(profile.getPressingIntensity(), 48));
+            profile.setPressingIntensity(PressingIntensity.LOW);
         }
     }
 

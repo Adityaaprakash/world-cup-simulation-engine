@@ -266,20 +266,14 @@ public class SaveExportService {
                 tacticalProfile.getId(),
                 tacticalProfile.getTeam().getId(),
                 tacticalProfile.getTeam().getName(),
-                tacticalProfile.getAttackWidth(),
-                tacticalProfile.getDefensiveWidth(),
-                tacticalProfile.getDefensiveLine(),
-                tacticalProfile.getPressingIntensity(),
-                tacticalProfile.getBuildUpStyle(),
-                tacticalProfile.getChanceCreation(),
-                tacticalProfile.getAttackingWidth(),
-                tacticalProfile.getCrossFrequency(),
-                tacticalProfile.getLongBallFrequency(),
-                tacticalProfile.getPassingRisk(),
-                tacticalProfile.getCounterAttack(),
-                tacticalProfile.getHighPress(),
-                tacticalProfile.getOffsideTrap(),
-                tacticalProfile.getTimeWasting()
+                tacticalProfile.getPressingIntensity().name(),
+                tacticalProfile.getDefensiveLine().name(),
+                tacticalProfile.getTempo().name(),
+                tacticalProfile.getWidth().name(),
+                tacticalProfile.getPassingStyle().name(),
+                tacticalProfile.getAttackingApproach().name(),
+                tacticalProfile.getBuildUpStyle().name(),
+                tacticalProfile.getDefensiveBlock().name()
         );
     }
 

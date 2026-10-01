@@ -178,44 +178,28 @@ public class CareerAnalyticsService {
             return CoachingStyle.BALANCED;
         }
 
-        double pressing = profiles.stream()
-                .mapToInt(TacticalProfile::getPressingIntensity)
-                .average()
-                .orElse(50);
-        double line = profiles.stream()
-                .mapToInt(TacticalProfile::getDefensiveLine)
-                .average()
-                .orElse(50);
-        double risk = profiles.stream()
-                .mapToInt(TacticalProfile::getPassingRisk)
-                .average()
-                .orElse(50);
-        double width = profiles.stream()
-                .mapToInt(TacticalProfile::getAttackingWidth)
-                .average()
-                .orElse(50);
-        long counters = profiles.stream()
-                .filter(TacticalProfile::getCounterAttack)
-                .count();
         long highPress = profiles.stream()
-                .filter(TacticalProfile::getHighPress)
+                .filter(p -> p.getPressingIntensity() == com.aditya.worldcup.tactics.entity.PressingIntensity.HIGH)
+                .count();
+        long counters = profiles.stream()
+                .filter(p -> p.getDefensiveBlock() == com.aditya.worldcup.tactics.entity.DefensiveBlock.LOW_BLOCK && p.getTempo() == com.aditya.worldcup.tactics.entity.Tempo.FAST)
+                .count();
+        long attack = profiles.stream()
+                .filter(p -> p.getAttackingApproach() == com.aditya.worldcup.tactics.entity.AttackingApproach.ATTACKING)
+                .count();
+        long defensive = profiles.stream()
+                .filter(p -> p.getDefensiveLine() == com.aditya.worldcup.tactics.entity.DefensiveLine.DEEP)
+                .count();
+        long possession = profiles.stream()
+                .filter(p -> p.getBuildUpStyle() == com.aditya.worldcup.tactics.entity.BuildUpStyle.POSSESSION)
                 .count();
 
-        if (highPress > profiles.size() / 2 || pressing >= 65) {
-            return CoachingStyle.HIGH_PRESS;
-        }
-        if (counters > profiles.size() / 2) {
-            return CoachingStyle.COUNTER_ATTACKING;
-        }
-        if (risk >= 60 || width >= 60) {
-            return CoachingStyle.ATTACKING;
-        }
-        if (line <= 40 || pressing <= 40) {
-            return CoachingStyle.DEFENSIVE;
-        }
-        if (risk <= 45 && pressing <= 55) {
-            return CoachingStyle.POSSESSION;
-        }
+        if (highPress > profiles.size() / 2) return CoachingStyle.HIGH_PRESS;
+        if (counters > profiles.size() / 2) return CoachingStyle.COUNTER_ATTACKING;
+        if (attack > profiles.size() / 2) return CoachingStyle.ATTACKING;
+        if (defensive > profiles.size() / 2) return CoachingStyle.DEFENSIVE;
+        if (possession > profiles.size() / 2) return CoachingStyle.POSSESSION;
+        
         return CoachingStyle.BALANCED;
     }
 
@@ -311,22 +295,19 @@ public class CareerAnalyticsService {
     private CoachingStyle determineTacticalProfileForProfile(
             TacticalProfile profile) {
 
-        if (Boolean.TRUE.equals(profile.getHighPress())
-                || profile.getPressingIntensity() >= 65) {
+        if (profile.getPressingIntensity() == com.aditya.worldcup.tactics.entity.PressingIntensity.HIGH) {
             return CoachingStyle.HIGH_PRESS;
         }
-        if (Boolean.TRUE.equals(profile.getCounterAttack())) {
+        if (profile.getDefensiveBlock() == com.aditya.worldcup.tactics.entity.DefensiveBlock.LOW_BLOCK && profile.getTempo() == com.aditya.worldcup.tactics.entity.Tempo.FAST) {
             return CoachingStyle.COUNTER_ATTACKING;
         }
-        if (profile.getPassingRisk() >= 60
-                || profile.getAttackingWidth() >= 60) {
+        if (profile.getAttackingApproach() == com.aditya.worldcup.tactics.entity.AttackingApproach.ATTACKING) {
             return CoachingStyle.ATTACKING;
         }
-        if (profile.getDefensiveLine() <= 40
-                || profile.getPressingIntensity() <= 40) {
+        if (profile.getDefensiveLine() == com.aditya.worldcup.tactics.entity.DefensiveLine.DEEP) {
             return CoachingStyle.DEFENSIVE;
         }
-        if (profile.getPassingRisk() <= 45) {
+        if (profile.getBuildUpStyle() == com.aditya.worldcup.tactics.entity.BuildUpStyle.POSSESSION) {
             return CoachingStyle.POSSESSION;
         }
         return CoachingStyle.BALANCED;

@@ -1,7 +1,7 @@
 package com.aditya.worldcup.tactics.entity;
 
-public enum BuildUpStyle {
-    POSSESSION,
+public enum PressingIntensity {
+    LOW,
     BALANCED,
-    DIRECT
+    HIGH
 }

@@ -34,6 +34,7 @@ class ManagerJobServiceTest {
     @Mock private ManagerService managerService;
     @Mock private TeamRepository teamRepository;
     @Mock private CareerTimelineService careerTimelineService;
+    @Mock private ManagerObjectiveService managerObjectiveService;
     @Mock private Authentication authentication;
 
     @InjectMocks

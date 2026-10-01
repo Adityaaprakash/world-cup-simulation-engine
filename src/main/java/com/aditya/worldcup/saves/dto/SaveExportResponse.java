@@ -8,7 +8,7 @@ import com.aditya.worldcup.matches.entity.MatchStatus;
 import com.aditya.worldcup.players.entity.InjuryStatus;
 import com.aditya.worldcup.players.entity.PlayerPosition;
 import com.aditya.worldcup.tactics.entity.BuildUpStyle;
-import com.aditya.worldcup.tactics.entity.ChanceCreation;
+
 import com.aditya.worldcup.tournaments.entity.TournamentStatus;
 
 import java.time.LocalDateTime;
@@ -101,20 +101,14 @@ public record SaveExportResponse(
             Long tacticalProfileId,
             Long teamId,
             String teamName,
-            Integer attackWidth,
-            Integer defensiveWidth,
-            Integer defensiveLine,
-            Integer pressingIntensity,
-            BuildUpStyle buildUpStyle,
-            ChanceCreation chanceCreation,
-            Integer attackingWidth,
-            Integer crossFrequency,
-            Integer longBallFrequency,
-            Integer passingRisk,
-            Boolean counterAttack,
-            Boolean highPress,
-            Boolean offsideTrap,
-            Boolean timeWasting
+            String pressingIntensity,
+            String defensiveLine,
+            String tempo,
+            String width,
+            String passingStyle,
+            String attackingApproach,
+            String buildUpStyle,
+            String defensiveBlock
     ) {
     }
 

@@ -1,7 +1,7 @@
 package com.aditya.worldcup.tactics.entity;
 
-public enum BuildUpStyle {
-    POSSESSION,
-    BALANCED,
+public enum PassingStyle {
+    SHORT,
+    MIXED,
     DIRECT
 }

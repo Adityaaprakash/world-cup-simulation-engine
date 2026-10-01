@@ -1,7 +1,7 @@
 package com.aditya.worldcup.tactics.entity;
 
-public enum BuildUpStyle {
-    POSSESSION,
+public enum DefensiveLine {
+    DEEP,
     BALANCED,
-    DIRECT
+    HIGH
 }

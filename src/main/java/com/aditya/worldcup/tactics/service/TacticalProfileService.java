@@ -29,20 +29,14 @@ public class TacticalProfileService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("Team not found: " + teamId));
         TacticalProfile profile = getOrCreateProfile(team);
-        profile.setAttackWidth(request.attackWidth());
-        profile.setDefensiveWidth(request.defensiveWidth());
-        profile.setDefensiveLine(request.defensiveLine());
         profile.setPressingIntensity(request.pressingIntensity());
+        profile.setDefensiveLine(request.defensiveLine());
+        profile.setTempo(request.tempo());
+        profile.setWidth(request.width());
+        profile.setPassingStyle(request.passingStyle());
+        profile.setAttackingApproach(request.attackingApproach());
         profile.setBuildUpStyle(request.buildUpStyle());
-        profile.setChanceCreation(request.chanceCreation());
-        profile.setAttackingWidth(request.attackingWidth());
-        profile.setCrossFrequency(request.crossFrequency());
-        profile.setLongBallFrequency(request.longBallFrequency());
-        profile.setPassingRisk(request.passingRisk());
-        profile.setCounterAttack(request.counterAttack());
-        profile.setHighPress(request.highPress());
-        profile.setOffsideTrap(request.offsideTrap());
-        profile.setTimeWasting(request.timeWasting());
+        profile.setDefensiveBlock(request.defensiveBlock());
         return tacticalProfileRepository.save(profile);
     }
 

@@ -4,6 +4,7 @@ import { addSquadPlayer, removeSquadPlayer, getMySquads, getSquadPlayers, getSqu
 import { getTeam, getTeamPlayers } from '../api/teamApi'
 import { comparePlayers, getPlayerDetails } from '../api/playerApi'
 import { retirePlayer, reactivatePlayer } from '../api/contractApi'
+import { getTeamTactics, updateTeamTactics } from '../api/tacticsApi'
 import Card from '../components/common/Card'
 import EmptyState from '../components/common/EmptyState'
 import ErrorMessage from '../components/common/ErrorMessage'
@@ -22,6 +23,8 @@ export default function Squad() {
   const [error, setError] = useState('')
   const [actionError, setActionError] = useState('')
   const [pendingPlayerId, setPendingPlayerId] = useState(null)
+  const [tactics, setTactics] = useState(null)
+  const [isSavingTactics, setIsSavingTactics] = useState(false)
 
   // Filters state
   const [filters, setFilters] = useState({ name: '', position: '', minRating: 0, maxAge: 100 })
@@ -39,10 +42,11 @@ export default function Squad() {
   const load = useCallback(async () => {
     setIsLoading(true); setError('')
     try {
-      const [teamResponse, playersResponse, squadsResponse] = await Promise.all([
-        getTeam(teamId), getTeamPlayers(teamId), getMySquads()
+      const [teamResponse, playersResponse, squadsResponse, tacticsResponse] = await Promise.all([
+        getTeam(teamId), getTeamPlayers(teamId), getMySquads(), getTeamTactics(teamId).catch(() => ({ data: null }))
       ])
       setTeam(teamResponse.data)
+      setTactics(tacticsResponse.data)
       setPlayers(playersResponse.data)
       
       const matchingSquad = squadsResponse.data.find((item) => item.teamName === teamResponse.data.name) || null
@@ -127,6 +131,19 @@ export default function Squad() {
       setActionError(requestError.response?.data?.message || 'Failed to train squad.');
     } finally {
       setIsTraining(false);
+    }
+  }
+
+  const handleUpdateTactics = async () => {
+    setActionError('');
+    setIsSavingTactics(true);
+    try {
+      const res = await updateTeamTactics(teamId, tactics);
+      setTactics(res.data);
+    } catch (e) {
+      setActionError(e.response?.data?.message || 'Failed to update tactical profile');
+    } finally {
+      setIsSavingTactics(false);
     }
   }
 
@@ -251,6 +268,84 @@ export default function Squad() {
         </Card>
       ) : (
         <EmptyState title="No active squad configuration" description="An existing career save is required to manage this squad." />
+      )}
+
+      {/* TACTICAL PROFILE SECTION */}
+      {squad && tactics && (
+        <Card className="border-emerald-500/30">
+          <h2 className="text-lg font-semibold mb-3 text-emerald-400">Overarching Tactical Profile</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Attacking Approach</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.attackingApproach} onChange={e => setTactics({...tactics, attackingApproach: e.target.value})}>
+                 <option value="ATTACKING">Attacking</option>
+                 <option value="BALANCED">Balanced</option>
+                 <option value="CONSERVATIVE">Conservative</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Build Up Style</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.buildUpStyle} onChange={e => setTactics({...tactics, buildUpStyle: e.target.value})}>
+                 <option value="POSSESSION">Possession</option>
+                 <option value="BALANCED">Balanced</option>
+                 <option value="DIRECT">Direct</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Passing Style</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.passingStyle} onChange={e => setTactics({...tactics, passingStyle: e.target.value})}>
+                 <option value="SHORT">Short</option>
+                 <option value="MIXED">Mixed</option>
+                 <option value="DIRECT">Direct</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Tempo</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.tempo} onChange={e => setTactics({...tactics, tempo: e.target.value})}>
+                 <option value="FAST">Fast</option>
+                 <option value="BALANCED">Balanced</option>
+                 <option value="SLOW">Slow</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Attacking Width</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.width} onChange={e => setTactics({...tactics, width: e.target.value})}>
+                 <option value="WIDE">Wide</option>
+                 <option value="BALANCED">Balanced</option>
+                 <option value="NARROW">Narrow</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Pressing Intensity</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.pressingIntensity} onChange={e => setTactics({...tactics, pressingIntensity: e.target.value})}>
+                 <option value="HIGH">High</option>
+                 <option value="BALANCED">Balanced</option>
+                 <option value="LOW">Low</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Defensive Line</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.defensiveLine} onChange={e => setTactics({...tactics, defensiveLine: e.target.value})}>
+                 <option value="HIGH">High</option>
+                 <option value="BALANCED">Balanced</option>
+                 <option value="DEEP">Deep</option>
+               </select>
+             </div>
+             <div>
+               <label className="block text-slate-300 font-medium mb-1">Defensive Block</label>
+               <select className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white" value={tactics.defensiveBlock} onChange={e => setTactics({...tactics, defensiveBlock: e.target.value})}>
+                 <option value="HIGH_BLOCK">High Block</option>
+                 <option value="MID_BLOCK">Mid Block</option>
+                 <option value="LOW_BLOCK">Low Block</option>
+               </select>
+             </div>
+          </div>
+          <div className="flex justify-end mt-4">
+             <Button variant="primary" onClick={handleUpdateTactics} disabled={isSavingTactics}>
+               {isSavingTactics ? 'Saving...' : 'Save Tactical Profile'}
+             </Button>
+          </div>
+        </Card>
       )}
 
       {/* Comparisons & Inspectors */}

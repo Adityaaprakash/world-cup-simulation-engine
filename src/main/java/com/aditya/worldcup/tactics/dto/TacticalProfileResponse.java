@@ -8,16 +8,17 @@ import com.aditya.worldcup.tactics.entity.PassingStyle;
 import com.aditya.worldcup.tactics.entity.PressingIntensity;
 import com.aditya.worldcup.tactics.entity.Tempo;
 import com.aditya.worldcup.tactics.entity.Width;
-import jakarta.validation.constraints.NotNull;
 
-public record TacticalProfileUpdateRequest(
-        @NotNull PressingIntensity pressingIntensity,
-        @NotNull DefensiveLine defensiveLine,
-        @NotNull Tempo tempo,
-        @NotNull Width width,
-        @NotNull PassingStyle passingStyle,
-        @NotNull AttackingApproach attackingApproach,
-        @NotNull BuildUpStyle buildUpStyle,
-        @NotNull DefensiveBlock defensiveBlock
+public record TacticalProfileResponse(
+        Long id,
+        Long teamId,
+        PressingIntensity pressingIntensity,
+        DefensiveLine defensiveLine,
+        Tempo tempo,
+        Width width,
+        PassingStyle passingStyle,
+        AttackingApproach attackingApproach,
+        BuildUpStyle buildUpStyle,
+        DefensiveBlock defensiveBlock
 ) {
 }

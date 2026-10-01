@@ -1,7 +1,7 @@
 package com.aditya.worldcup.tactics.service;
 
 import com.aditya.worldcup.tactics.entity.BuildUpStyle;
-import com.aditya.worldcup.tactics.entity.ChanceCreation;
+
 import com.aditya.worldcup.tactics.entity.MatchPlan;
 import com.aditya.worldcup.tactics.entity.TacticalProfile;
 import com.aditya.worldcup.tactics.repository.MatchPlanRepository;
@@ -74,72 +74,45 @@ public class MatchPlanService {
         modified.setTeam(baseProfile.getTeam());
         
         // Copy base stats
-        modified.setAttackWidth(baseProfile.getAttackWidth());
-        modified.setDefensiveWidth(baseProfile.getDefensiveWidth());
-        modified.setDefensiveLine(baseProfile.getDefensiveLine());
         modified.setPressingIntensity(baseProfile.getPressingIntensity());
+        modified.setDefensiveLine(baseProfile.getDefensiveLine());
+        modified.setTempo(baseProfile.getTempo());
+        modified.setWidth(baseProfile.getWidth());
+        modified.setPassingStyle(baseProfile.getPassingStyle());
+        modified.setAttackingApproach(baseProfile.getAttackingApproach());
         modified.setBuildUpStyle(baseProfile.getBuildUpStyle());
-        modified.setChanceCreation(baseProfile.getChanceCreation());
-        modified.setAttackingWidth(baseProfile.getAttackingWidth());
-        modified.setCrossFrequency(baseProfile.getCrossFrequency());
-        modified.setLongBallFrequency(baseProfile.getLongBallFrequency());
-        modified.setPassingRisk(baseProfile.getPassingRisk());
-        modified.setCounterAttack(baseProfile.getCounterAttack());
-        modified.setHighPress(baseProfile.getHighPress());
-        modified.setOffsideTrap(baseProfile.getOffsideTrap());
-        modified.setTimeWasting(baseProfile.getTimeWasting());
+        modified.setDefensiveBlock(baseProfile.getDefensiveBlock());
         
-        // Apply direct overrides
-        modified.setPressingIntensity(plan.getPressingIntensity());
-        modified.setDefensiveLine(plan.getDefensiveLine());
-        modified.setAttackingWidth(plan.getAttackingWidth());
-        modified.setCounterAttack(plan.getCounterAttack());
-        modified.setOffsideTrap(plan.getOffsideTrap());
-        
-        // Map Tactical Approach Modifiers (These adjust derived behaviour!)
+        // Map Tactical Approach Modifiers
         switch (plan.getTacticalApproach()) {
             case ATTACKING -> {
                 modified.setBuildUpStyle(BuildUpStyle.DIRECT);
-                modified.setPassingRisk(Math.min(100, modified.getPassingRisk() + 20));
-                modified.setAttackWidth(Math.min(100, modified.getAttackWidth() + 15));
+                modified.setPassingStyle(com.aditya.worldcup.tactics.entity.PassingStyle.DIRECT);
+                modified.setWidth(com.aditya.worldcup.tactics.entity.Width.WIDE);
             }
             case DEFENSIVE -> {
-                modified.setBuildUpStyle(BuildUpStyle.SLOW_POSSESSION);
-                modified.setPassingRisk(Math.max(1, modified.getPassingRisk() - 25));
-                modified.setChanceCreation(ChanceCreation.POSSESSION);
-                modified.setDefensiveWidth(Math.max(1, modified.getDefensiveWidth() - 20));
+                modified.setBuildUpStyle(BuildUpStyle.POSSESSION);
+                modified.setPassingStyle(com.aditya.worldcup.tactics.entity.PassingStyle.SHORT);
+                modified.setWidth(com.aditya.worldcup.tactics.entity.Width.NARROW);
             }
             case POSSESSION -> {
-                modified.setBuildUpStyle(BuildUpStyle.SLOW_POSSESSION);
-                modified.setChanceCreation(ChanceCreation.POSSESSION);
-                modified.setPassingRisk(Math.max(1, modified.getPassingRisk() - 15));
+                modified.setBuildUpStyle(BuildUpStyle.POSSESSION);
+                modified.setPassingStyle(com.aditya.worldcup.tactics.entity.PassingStyle.SHORT);
             }
             case COUNTER_ATTACK -> {
                 modified.setBuildUpStyle(BuildUpStyle.DIRECT);
-                modified.setChanceCreation(ChanceCreation.FAST_ATTACK);
-                modified.setCounterAttack(true);
-                modified.setDefensiveLine(Math.max(1, modified.getDefensiveLine() - 20));
+                modified.setDefensiveBlock(com.aditya.worldcup.tactics.entity.DefensiveBlock.LOW_BLOCK);
+                modified.setTempo(com.aditya.worldcup.tactics.entity.Tempo.FAST);
             }
             case HIGH_PRESS -> {
-                modified.setHighPress(true);
-                modified.setPressingIntensity(Math.max(75, modified.getPressingIntensity() + 25));
-                modified.setDefensiveLine(Math.min(100, modified.getDefensiveLine() + 20));
+                modified.setPressingIntensity(com.aditya.worldcup.tactics.entity.PressingIntensity.HIGH);
+                modified.setDefensiveLine(com.aditya.worldcup.tactics.entity.DefensiveLine.HIGH);
             }
             case LOW_BLOCK -> {
-                modified.setHighPress(false);
-                modified.setPressingIntensity(Math.max(1, modified.getPressingIntensity() - 30));
-                modified.setDefensiveLine(Math.max(1, modified.getDefensiveLine() - 30));
-                modified.setDefensiveWidth(Math.max(1, modified.getDefensiveWidth() - 25));
+                modified.setPressingIntensity(com.aditya.worldcup.tactics.entity.PressingIntensity.LOW);
+                modified.setDefensiveLine(com.aditya.worldcup.tactics.entity.DefensiveLine.DEEP);
             }
             case BALANCED -> {}
-        }
-        
-        // Tempo modifier mapping
-        if (plan.getTempo() > 60) {
-            modified.setChanceCreation(ChanceCreation.FAST_ATTACK);
-            modified.setPassingRisk(Math.min(100, modified.getPassingRisk() + (plan.getTempo() - 50) / 2));
-        } else if (plan.getTempo() < 40) {
-            modified.setBuildUpStyle(BuildUpStyle.SLOW_POSSESSION);
         }
         
         return modified;

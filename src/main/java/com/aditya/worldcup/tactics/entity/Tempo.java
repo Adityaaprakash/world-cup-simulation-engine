@@ -1,7 +1,7 @@
 package com.aditya.worldcup.tactics.entity;
 
-public enum BuildUpStyle {
-    POSSESSION,
+public enum Tempo {
+    SLOW,
     BALANCED,
-    DIRECT
+    FAST
 }

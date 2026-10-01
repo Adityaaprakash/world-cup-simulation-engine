@@ -37,6 +37,9 @@ class PlayerTrainingServiceTest {
     @Mock
     private com.aditya.worldcup.managers.repository.ManagerEconomyRepository managerEconomyRepository;
 
+    @Mock
+    private com.aditya.worldcup.managers.service.ManagerEventGeneratorService eventGeneratorService;
+
     @InjectMocks
     private PlayerTrainingService playerTrainingService;
 

@@ -4,6 +4,7 @@ import com.aditya.worldcup.security.jwt.JwtAuthenticationFilter;
 import com.aditya.worldcup.transfers.dto.TransferRequest;
 import com.aditya.worldcup.transfers.dto.TransferResponse;
 import com.aditya.worldcup.transfers.service.PlayerTransferService;
+import com.aditya.worldcup.managers.entity.Manager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,11 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @WebMvcTest(
         controllers = PlayerTransferController.class,
@@ -40,17 +43,24 @@ class PlayerTransferControllerTest {
     @MockBean
     private PlayerTransferService playerTransferService;
 
+    @MockBean
+    private com.aditya.worldcup.managers.service.ManagerService managerService;
+
     @Test
     @WithMockUser
     void validTransferRequestReturnsOk() throws Exception {
         TransferRequest request = new TransferRequest(1L, 2L, 3L);
         TransferResponse response = new TransferResponse(1L, "Test Player", 2L, 3L, "Success");
 
+        Manager mockManager = new Manager();
+        mockManager.setId(10L);
+        when(managerService.getOrCreateManager(anyString())).thenReturn(mockManager);
         when(playerTransferService.transferPlayer(any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/transfers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.playerId").value(1L))
                 .andExpect(jsonPath("$.playerName").value("Test Player"))
@@ -62,6 +72,10 @@ class PlayerTransferControllerTest {
     void invalidTransferRequestReturnsBadRequest() throws Exception {
         // Missing destinationSquadId
         TransferRequest request = new TransferRequest(1L, 2L, null);
+
+        Manager mockManager = new Manager();
+        mockManager.setId(10L);
+        when(managerService.getOrCreateManager(anyString())).thenReturn(mockManager);
 
         mockMvc.perform(post("/api/v1/transfers")
                         .contentType(MediaType.APPLICATION_JSON)

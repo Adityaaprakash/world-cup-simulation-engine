@@ -1,7 +1,7 @@
 package com.aditya.worldcup.tactics.entity;
 
-public enum ChanceCreation {
-    POSSESSION,
+public enum Width {
+    NARROW,
     BALANCED,
-    FAST_ATTACK
+    WIDE
 }

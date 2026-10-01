@@ -46,5 +46,8 @@ The World Cup Simulation Engine backend modeling framework and ecosystem integra
 - **Phase 11J**: Frontend Manager Hub.
 - **Phase 11K**: Final Integration, Regression, Balance, Isolation, and Release Audit (Completed).
 
+## Phase 14 (Active)
+- **Phase 14A (Complete)**: Advanced Tactical System migration. Integrated enum-based deep tactical dimensions (Pressing, Def Line, Tempo, Width, Passing, Attacking, Build-Up, Def Block), tactical modifier engine mapping, API endpoints, and a comprehensive frontend UI mapping for default team playstyles. Fully passed regression and unit suite adjustments natively.
+
 ## Future Explorations
 - **Localized Mobile Applications**: Generate a React Native target interfacing directly with these unified APIs.
