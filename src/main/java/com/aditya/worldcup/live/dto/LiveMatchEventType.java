@@ -20,5 +20,6 @@ public enum LiveMatchEventType {
     PENALTY,
     FULL_TIME,
     COMMENTARY,
+    TACTICAL_CHANGE,
     ERROR
 }

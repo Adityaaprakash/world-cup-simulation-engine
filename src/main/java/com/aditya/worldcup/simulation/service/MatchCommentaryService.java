@@ -66,6 +66,7 @@ public class MatchCommentaryService {
             );
             case INJURY -> injuryCommentary(event);
             case SUBSTITUTION -> substitutionCommentary(event);
+            case TACTICAL_CHANGE -> event.description() != null ? event.description() : "A tactical adjustment is made on the touchline.";
         };
     }
 

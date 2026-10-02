@@ -33,6 +33,10 @@ public class MatchContext {
         this.awayDefensiveConfidence = 1.0;
     }
 
+    public MatchContext() {
+        this(WeatherCondition.CLEAR);
+    }
+
     public double getHomeMomentum() {
         return homeMomentum;
     }

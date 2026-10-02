@@ -8,5 +8,6 @@ public enum MatchEventType {
     SUBSTITUTION,
     OWN_GOAL,
     PENALTY,
-    INJURY
+    INJURY,
+    TACTICAL_CHANGE
 }

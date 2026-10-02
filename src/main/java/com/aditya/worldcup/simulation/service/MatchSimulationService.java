@@ -27,6 +27,7 @@ import com.aditya.worldcup.tactics.service.TacticalMatchModifiers;
 import com.aditya.worldcup.tactics.service.TacticalModifierService;
 import com.aditya.worldcup.tactics.service.TacticalProfileService;
 import com.aditya.worldcup.tactics.service.MatchPlanService;
+import com.aditya.worldcup.tactics.service.InMatchDecisionEngineService;
 import com.aditya.worldcup.ai.service.AiManagerService;
 import com.aditya.worldcup.managers.service.ManagerEventGeneratorService;
 import com.aditya.worldcup.managers.entity.Manager;
@@ -66,6 +67,7 @@ public class MatchSimulationService {
     private final AiManagerService aiManagerService;
     private final MatchPlanService matchPlanService;
     private final MatchModifierService matchModifierService;
+    private final InMatchDecisionEngineService inMatchDecisionEngineService;
     private final TournamentIntelligenceService tournamentIntelligenceService;
     private final com.aditya.worldcup.optimization.service.SimulationMetricsService simulationMetricsService;
     private final ManagerEventGeneratorService managerEventGeneratorService;
@@ -173,15 +175,6 @@ public class MatchSimulationService {
         int homeGoals = scoreline.homeGoals();
         int awayGoals = scoreline.awayGoals();
 
-        homeProfile = aiManagerService.adjustTacticsForMatchState(
-                homeSquad, Integer.compare(homeGoals, awayGoals));
-        awayProfile = aiManagerService.adjustTacticsForMatchState(
-                awaySquad, Integer.compare(awayGoals, homeGoals));
-        homeTactics = tacticalModifierService.calculateModifiers(homeProfile, awayProfile);
-        awayTactics = tacticalModifierService.calculateModifiers(awayProfile, homeProfile);
-        homeTactics = matchModifierService.applyContext(homeTactics, matchContext, true);
-        awayTactics = matchModifierService.applyContext(awayTactics, matchContext, false);
-
         boolean extraTime = matchImportance.extraTimePossible() && homeGoals == awayGoals;
         matchContext.setExtraTime(extraTime);
         boolean shootout = match != null && extraTime;
@@ -228,25 +221,22 @@ public class MatchSimulationService {
                         matchImportance
                 );
 
-        boolean homeRedCard = hasRedCard(generatedEvents, homeSquad);
-        boolean awayRedCard = hasRedCard(generatedEvents, awaySquad);
-        homeProfile = aiManagerService.adjustTacticsForMatchState(
+        InMatchDecisionEngineService.OngoingSimulationState simulationState = inMatchDecisionEngineService.processOngoingMatch(
+                generatedEvents,
                 homeSquad,
-                Integer.compare(homeGoals, awayGoals),
-                homeRedCard,
-                awayRedCard,
-                extraTime);
-        awayProfile = aiManagerService.adjustTacticsForMatchState(
                 awaySquad,
-                Integer.compare(awayGoals, homeGoals),
-                awayRedCard,
-                homeRedCard,
-                extraTime);
-        homeTactics = tacticalModifierService.calculateModifiers(homeProfile, awayProfile);
-        awayTactics = tacticalModifierService.calculateModifiers(awayProfile, homeProfile);
-        homeTactics = matchModifierService.applyContext(homeTactics, matchContext, true);
-        awayTactics = matchModifierService.applyContext(awayTactics, matchContext, false);
-        List<MatchEventResponse> events = new ArrayList<>(generatedEvents.stream()
+                homeProfile,
+                awayProfile,
+                matchContext,
+                extraTime
+        );
+
+        homeProfile = simulationState.getHomeProfile();
+        awayProfile = simulationState.getAwayProfile();
+        homeTactics = simulationState.getHomeModifiers();
+        awayTactics = simulationState.getAwayModifiers();
+        
+        List<MatchEventResponse> events = new ArrayList<>(simulationState.getNewTimeline().stream()
                 .filter(event -> !"SUBSTITUTION".equals(event.eventType()))
                 .toList());
         events.addAll(aiManagerService.makeSubstitutions(
