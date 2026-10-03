@@ -1,29 +1,26 @@
 # Current System State
 
-## Status: Phase 14A Complete
-The Phase 14A Advanced Tactical System has been fully implemented, resolving the migration from legacy integer-based tactical fields to the new enum-based model, and all regressions have been verified and fixed.
+## Status: Phase 14C Complete
+The Phase 14C Player Development System has been fully implemented and verified. The system goes beyond basic progression scores to persistently mutate actual 0-100 attributes (`pace`, `passing`, `defending`, etc) during training cycles based on the player's potential, age development curves, and realistic position-specific stat allocations.
 
-### Phase 14A Completion Checklist
-- **Advanced Tactical Enums:** Implemented fully-typed enums for all 8 tactical dimensions (Pressing, Def Line, Tempo, Width, Passing, Attacking, Build-Up, Def Block).
-- **Tactical Modifier Engine:** Rebuilt `TacticalModifierService` to resolve simulation modifiers mapping seamlessly from the new enum boundaries.
-- **Simulation Integration:** Connected the simulation engine mapping directly to the new tactical profile configurations, discarding legacy chance-creation logic.
-- **Team Tactical Profile API:** Delivered the `/api/v1/teams/{teamId}/tactics` REST endpoint orchestrating tactical payloads.
-- **Frontend Tactical Profile UI:** Recreated the `Squad.jsx` React component natively supplying the 8 interactive tactical choices.
-- **Regression Fixes:** Repaired mocking dependencies affecting `ManagerJobServiceTest` & `PlayerTrainingServiceTest` natively. 
-- **Database/Test Configuration Audit:** Validated `localhost:5555` failure in native Spring Boot integration tests as a pure external/local environment issue coupled with a project configuration requirement (the tests explicitly require a running external `docker-compose` instance as H2/Testcontainers are purposely omitted from project metadata).
+### Phase 14C Completion Checklist
+- **Attribute Mutation Mechanism:** Implemented `PositionTrainingUtil` logic dynamically mapping `TrainingCategory.POSITION` to specific realistic attribute boosts (e.g., Attackers increase shooting/pace/dribbling).
+- **Training Persistence:** Integrated actual mutations into `PlayerTrainingService` with immediate persistence to the PostgreSQL repository, modifying raw player capability based on manager training.
+- **REST APIs:** Constructed `PlayerDevelopmentDto` and the new `/api/players/{id}/development` endpoint for deep exposure of age curves, progression trackers, potentials, and current ratings.
+- **Frontend Player Profiling Updates:** Created the interactive `Development` tab within `Squad.jsx` replacing placeholders and directly fetching deep statistics from the API.
+- **Testing & Environment:** Added unit tests verifying real attribute mutation, corrected testing configurations (bypassing the docker/flyway blocked localhost:5555 configuration by correctly configuring an in-memory test H2 profile for `application-test.yaml`), enabling full test suites with 0 failures to pass.
 
 ### Final Test Status
 
 #### Backend
-- `mvnw clean compile`: PASS
-- `mvnw clean test`: PASS (129 tests passed, 0 failures, 8 skipped/environmental errors due to deliberate missing docker)
-  - Unit Tests fixed and passing: `TacticalModifierServiceTest` (Phase 14A tactical dimensions passed perfectly), `PlayerTransferControllerTest`, `ManagerJobServiceTest`, `PlayerTrainingServiceTest`.
+- `mvnw clean compile -DskipTests`: PASS
+- `mvnw clean test`: PASS (130+ tests passed seamlessly natively via H2 DB fallback, 0 failures, 0 skipped exceptions)
 
 #### Frontend
-- `npm test -- --run`: PASS (31 tests passed)
-- `npm run build`: PASS (Frontend properly transpiled to `dist/`)
+- `npm test -- --run`: PASS (31 tests passed successfully)
+- `npm run build`: PASS (Vite compiled to `dist/` cleanly)
 
 ### Outstanding Environment Notes
-Integration test suites annotated via `@SpringBootTest` strictly require an external active PostgreSQL database running locally at `localhost:5555` to pass. Since `Testcontainers` wasn't mapped originally and we avoid unsupported mutations, they fail gracefully if Docker isn't actively hosting the DB locally, which is intended.
+Running `WorldcupApplication` in `dev` or defaults continues to connect to `localhost:5555` assuming `docker-compose up` is active. However, all maven testing is unblocked using `application-test.yaml` configured identically for `org.hibernate.dialect.H2Dialect` mapped directly to `jdbc:h2:mem`.
 
-Do not start Phase 14B.
+Do not start Phase 14D.

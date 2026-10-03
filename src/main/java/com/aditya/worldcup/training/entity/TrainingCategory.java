@@ -5,5 +5,6 @@ public enum TrainingCategory {
     PHYSICAL,
     TACTICAL,
     MENTAL,
-    REST
+    REST,
+    POSITION
 }

@@ -120,4 +120,29 @@ public class PlayerService {
                 available
         );
     }
+
+    public com.aditya.worldcup.players.dto.PlayerDevelopmentDto getPlayerDevelopment(Long id) {
+        com.aditya.worldcup.players.entity.Player player = playerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Player not found"));
+        com.aditya.worldcup.players.entity.PlayerState state = playerStateService.getOrCreateState(player);
+
+        return com.aditya.worldcup.players.dto.PlayerDevelopmentDto.builder()
+                .developmentRating(state.getDevelopmentRating())
+                .progressionTracker(state.getProgressionTracker())
+                .potential(player.getPotential())
+                .age(player.getAge())
+                .developmentStage(resolveDevelopmentStage(player.getAge()))
+                .overallRating(player.getOverallRating())
+                .fatigue(state.getFatigue())
+                .build();
+    }
+
+    private String resolveDevelopmentStage(int age) {
+        if (age < 20) return "EARLY_DEVELOPMENT";
+        if (age <= 22) return "FAST_DEVELOPMENT";
+        if (age <= 27) return "PRIME_DEVELOPMENT";
+        if (age <= 30) return "PLATEAU";
+        if (age <= 34) return "EARLY_DECLINE";
+        return "DECLINE";
+    }
 }

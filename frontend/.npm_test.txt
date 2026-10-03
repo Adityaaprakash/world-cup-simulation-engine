@@ -1,0 +1,20 @@
+﻿
+> world-cup-simulation-frontend@0.1.0 test
+> vitest run --run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.1 [39m[90mC:/Projects/world-cup-simulation-engine/worldcup/frontend[39m
+
+ [32mΓ£ô[39m src/components/career/ManagerEvents.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 356[2mms[22m[39m
+ [32mΓ£ô[39m src/hooks/useLiveMatch.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 506[2mms[22m[39m
+ [32mΓ£ô[39m src/hooks/useTournamentLive.test.jsx [2m([22m[2m10 tests[22m[2m)[22m[32m 294[2mms[22m[39m
+ [32mΓ£ô[39m src/pages/MatchCentre.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 301[2mms[22m[39m
+ [32mΓ£ô[39m src/pages/Dashboard.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 524[2mms[22m[39m
+   [32mΓ£ô[39m Dashboard Component - Manager Hub [2m(3)[22m
+     [33m[2mΓ£ô[22m[39m renders Manager Hub with all sections successfully[33m 412[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m31 passed[39m[22m[90m (31)[39m
+[2m   Start at [22m 23:08:54
+[2m   Duration [22m 47.86s[2m (environment 81%, setup 15%, import 2%, transform 1%, tests 1%)[22m
+

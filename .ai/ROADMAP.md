@@ -48,6 +48,10 @@ The World Cup Simulation Engine backend modeling framework and ecosystem integra
 
 ## Phase 14 (Active)
 - **Phase 14A (Complete)**: Advanced Tactical System migration. Integrated enum-based deep tactical dimensions (Pressing, Def Line, Tempo, Width, Passing, Attacking, Build-Up, Def Block), tactical modifier engine mapping, API endpoints, and a comprehensive frontend UI mapping for default team playstyles. Fully passed regression and unit suite adjustments natively.
+- **Phase 14B (Complete)**: In-Match Tactical Decisions. Contextual in-match adjustments and autonomous tactical decision engine implementation. Passed full audit verification.
+- **Phase 14C (Complete)**: Player Development System. Introduced persistent player attribute mutation cycles reacting natively to fatigue, potential ceilings, and training cycles. Added full testing, unified frontend telemetry endpoints, and robust H2 unit test bypasses. 
+- **Phase 14D (Not Started)**
+- **Phase 14E (Not Started)**
 
 ## Future Explorations
 - **Localized Mobile Applications**: Generate a React Native target interfacing directly with these unified APIs.

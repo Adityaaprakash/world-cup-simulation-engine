@@ -4,6 +4,7 @@ import com.aditya.worldcup.managers.entity.ManagerEconomy;
 import com.aditya.worldcup.managers.repository.ManagerEconomyRepository;
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.entity.PlayerState;
+import com.aditya.worldcup.players.repository.PlayerRepository;
 import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squads.entity.Squad;
 import com.aditya.worldcup.squads.repository.SquadRepository;
@@ -30,6 +31,7 @@ public class PlayerTrainingService {
     private static final int MIN_DEVELOPMENT = -5;
 
     private final PlayerStateService playerStateService;
+    private final PlayerRepository playerRepository;
     private final SquadPlayerRepository squadPlayerRepository;
     private final SquadRepository squadRepository;
     private final ManagerEconomyRepository managerEconomyRepository;
@@ -128,7 +130,7 @@ public class PlayerTrainingService {
 
         int currentFatigue = state.getFatigue();
         // High fatigue penalties starting from 50
-        double fatiguePenalty = Math.max(0.0, (currentFatigue - 50) / 50.0);
+        double fatiguePenalty = Math.min(1.0, currentFatigue * FATIGUE_PENALTY_PER_POINT);
         
         // Progression
         int baseProgression = calculateBaseProgression(state.getPlayer(), intensity, category);
@@ -142,9 +144,20 @@ public class PlayerTrainingService {
         int newFatigue = Math.min(100, state.getFatigue() + fatigueIncrease);
         state.setFatigue(newFatigue);
 
+        // --- Phase 14C: POSITION training — mutate real Player attributes ---
+        if (category == TrainingCategory.POSITION) {
+            Player player = state.getPlayer();
+            boolean attributeChanged = PositionTrainingUtil.applyPositionAttributeBoost(player, intensity);
+            if (attributeChanged) {
+                playerRepository.save(player);
+            }
+        }
+
         // Update development
         applyProgression(state, actualProgression, manager);
     }
+
+    private static final double FATIGUE_PENALTY_PER_POINT = 0.02;
 
     private int calculateBaseProgression(Player player, TrainingIntensity intensity, TrainingCategory category) {
         int age = player.getAge();
@@ -166,25 +179,47 @@ public class PlayerTrainingService {
             intensityMultiplier += 1;
         }
         
-        // Age curve
-        if (age < 23) {
-            // Young players grow fast
-            return Math.max(1, (roomToGrow > 0 ? roomToGrow : 1) * intensityMultiplier);
-        } else if (age < 30) {
-            // Peak age, slower growth
-            return Math.max(1, (roomToGrow > 0 ? roomToGrow / 2 : 0) * intensityMultiplier);
+        // Age curve refinement
+        if (age < 20) {
+            // Very young, extra growth boost
+            intensityMultiplier += 2;
+        } else if (age <= 22) {
+            // Fast development still
+            intensityMultiplier += 1;
+        } else if (age <= 27) {
+            // Development slows
+            intensityMultiplier -= 1;
+        } else if (age <= 30) {
+            // Plateau / prime – no change
+        } else if (age <= 34) {
+            // Early decline, harder to improve
+            intensityMultiplier -= 2;
         } else {
-            // Older players decline depending on intensity, or very slow growth if below potential
+            // Over 34, natural decline
             if (intensity == TrainingIntensity.INTENSE) {
-                // Intense training speeds up decline for old players
-                return -5;
+                return -5; // strong decline
             } else if (intensity == TrainingIntensity.NORMAL) {
-                return -2;
+                return -2; // moderate decline
             } else {
-                // Light training might maintain
+                // Light training may maintain or give tiny growth if below potential
                 return roomToGrow > 0 ? 1 : 0;
             }
         }
+
+        // Position specific training bonus
+        if (category == TrainingCategory.POSITION) {
+            int positionBonus = PositionTrainingUtil.positionBonus(player.getPosition(), intensity);
+            intensityMultiplier += positionBonus;
+        }
+
+        // No positive growth if at or above potential
+        if (roomToGrow <= 0) {
+            return 0;
+        }
+
+        // Base progression respecting potential gap
+        int base = Math.max(1, roomToGrow * intensityMultiplier);
+        return base;
     }
 
     private void applySecondaryEffects(PlayerState state, TrainingIntensity intensity) {

@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+
+server:
+  port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:bG9jYWwtZGV2ZWxvcG1lbnQtand0LXNpZ25pbmcta2V5LWNoYW5nZS1tZS1wbGVhc2U=}
+  expiration: 86400000
+
+manager:
+  progression:
+    win-experience: 30
+    draw-experience: 10
+    knockout-experience: 40
+    final-experience: 100
+    tournament-victory-experience: 250
+    award-experience: 25
+    experience-per-level: 100
+
+cors:
+  allowed-origins: http://localhost:5173

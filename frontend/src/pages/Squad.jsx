@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { addSquadPlayer, removeSquadPlayer, getMySquads, getSquadPlayers, getSquadAnalysis, trainSquad } from '../api/squadApi'
 import { getTeam, getTeamPlayers } from '../api/teamApi'
-import { comparePlayers, getPlayerDetails } from '../api/playerApi'
+import { comparePlayers, getPlayerDetails, getPlayerDevelopment } from '../api/playerApi'
 import { retirePlayer, reactivatePlayer } from '../api/contractApi'
 import { getTeamTactics, updateTeamTactics } from '../api/tacticsApi'
 import Card from '../components/common/Card'
@@ -33,6 +33,8 @@ export default function Squad() {
   const [compareIds, setCompareIds] = useState([])
   const [comparisonResults, setComparisonResults] = useState(null)
   const [inspectPlayer, setInspectPlayer] = useState(null)
+  const [inspectDev, setInspectDev] = useState(null)
+  const [inspectTab, setInspectTab] = useState('PROFILE')
 
   // Training state
   const [trainingCategory, setTrainingCategory] = useState("TECHNICAL")
@@ -168,8 +170,13 @@ export default function Squad() {
 
   const showDetails = async (id) => {
     try {
-      const res = await getPlayerDetails(id)
+      setInspectTab('PROFILE')
+      const [res, devRes] = await Promise.all([
+        getPlayerDetails(id),
+        getPlayerDevelopment(id)
+      ])
       setInspectPlayer(res.data)
+      setInspectDev(devRes.data)
     } catch (e) {}
   }
 
@@ -375,31 +382,49 @@ export default function Squad() {
            {inspectPlayer.retired && (
              <div className="absolute -top-3 left-4 bg-red-600 font-bold tracking-widest text-white px-2 py-1 rounded text-xs">RETIRED</div>
            )}
-           <div className="flex justify-between items-center">
-             <h3 className="text-xl font-bold text-white">{inspectPlayer.name} Profile</h3>
-             <div className="flex gap-2 items-center">
+           <div className="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
+             <div>
+               <h3 className="text-xl font-bold text-white">{inspectPlayer.name}</h3>
+               <div className="flex gap-4 mt-2">
+                 <button onClick={() => setInspectTab('PROFILE')} className={`text-sm font-semibold pb-1 ${inspectTab === 'PROFILE' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-300'}`}>Match Profile</button>
+                 <button onClick={() => setInspectTab('DEVELOPMENT')} className={`text-sm font-semibold pb-1 ${inspectTab === 'DEVELOPMENT' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-slate-300'}`}>Development</button>
+               </div>
+             </div>
+             <div className="flex gap-2 items-center w-full sm:w-auto">
                <Button variant="secondary" onClick={() => handleToggleRetirement(inspectPlayer.id, inspectPlayer.retired)}>
                  {inspectPlayer.retired ? 'Reactivate' : 'Retire Player'}
                </Button>
                <Button variant="primary" onClick={() => setInspectPlayer(null)}>Close</Button>
              </div>
            </div>
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-             <div><p className="text-emerald-300 font-semibold text-sm">Age</p><p className="text-white font-bold">{inspectPlayer.age}</p></div>
-             <div><p className="text-emerald-300 font-semibold text-sm">POT</p><p className="text-white font-bold">{inspectPlayer.potential}</p></div>
-             <div><p className="text-emerald-300 font-semibold text-sm">Form</p><p className="text-white font-bold">{inspectPlayer.currentForm}%</p></div>
-             <div><p className="text-emerald-300 font-semibold text-sm">Fitness</p><p className="text-white font-bold">{inspectPlayer.fitness}%</p></div>
-             <div><p className="text-emerald-300 font-semibold text-sm">Fatigue</p><p className="text-white font-bold">{inspectPlayer.fatigue}%</p></div>
-             <div>
-                <p className="text-emerald-300 font-semibold text-sm">Workload</p>
-                <p className={`font-bold ${inspectPlayer.workload > 75 ? 'text-red-500' : 'text-white'}`}>
-                   {inspectPlayer.workload}% {inspectPlayer.workload > 75 && '(High Risk)'}
-                </p>
+           
+           {inspectTab === 'PROFILE' ? (
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-800">
+               <div><p className="text-emerald-300 font-semibold text-sm">Age</p><p className="text-white font-bold">{inspectPlayer.age}</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">OVR</p><p className="text-white font-bold">{inspectPlayer.overallRating}</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Form</p><p className="text-white font-bold">{inspectPlayer.currentForm}%</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Fitness</p><p className="text-white font-bold">{inspectPlayer.fitness}%</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Fatigue</p><p className="text-white font-bold">{inspectPlayer.fatigue}%</p></div>
+               <div>
+                  <p className="text-emerald-300 font-semibold text-sm">Workload</p>
+                  <p className={`font-bold ${inspectPlayer.workload > 75 ? 'text-red-500' : 'text-white'}`}>
+                     {inspectPlayer.workload}% {inspectPlayer.workload > 75 && '(High Risk)'}
+                  </p>
+               </div>
+               {inspectPlayer.injuryStatus !== 'HEALTHY' && (
+                 <div><p className="text-red-400 font-semibold text-sm">Injury</p><p className="text-red-500 font-bold">{inspectPlayer.injuryStatus}</p></div>
+               )}
              </div>
-             {inspectPlayer.injuryStatus !== 'HEALTHY' && (
-               <div><p className="text-red-400 font-semibold text-sm">Injury</p><p className="text-red-500 font-bold">{inspectPlayer.injuryStatus}</p></div>
-             )}
-           </div>
+           ) : (
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-800">
+               <div><p className="text-emerald-300 font-semibold text-sm">Current OVR</p><p className="text-white font-bold">{inspectDev?.overallRating}</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Potential</p><p className="text-white font-bold">{inspectDev?.potential}</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Dev Stage</p><p className="text-white font-bold">{inspectDev?.developmentStage?.replaceAll('_', ' ')}</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Dev Rating</p><p className={`font-bold ${inspectDev?.developmentRating > 0 ? 'text-emerald-400' : inspectDev?.developmentRating < 0 ? 'text-red-400' : 'text-white'}`}>{inspectDev?.developmentRating > 0 ? `+${inspectDev?.developmentRating}` : inspectDev?.developmentRating}</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Progression</p><p className="text-white font-bold">{inspectDev?.progressionTracker} pts</p></div>
+               <div><p className="text-emerald-300 font-semibold text-sm">Training Fatigue</p><p className="text-white font-bold">{inspectDev?.fatigue}%</p></div>
+             </div>
+           )}
         </Card>
       )}
 

@@ -78,4 +78,18 @@ public class PlayerController {
     ) {
         return playerService.comparePlayers(request.playerIds());
     }
+
+    @GetMapping("/{id}/development")
+    @Operation(summary = "Get player development data",
+               description = "Read-only view of development rating, progression, potential, age, and training fatigue.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Development data returned"),
+            @ApiResponse(responseCode = "404", description = "Player not found")
+    })
+    public com.aditya.worldcup.players.dto.PlayerDevelopmentDto getPlayerDevelopment(
+            @Parameter(description = "Player id")
+            @PathVariable @Positive Long id
+    ) {
+        return playerService.getPlayerDevelopment(id);
+    }
 }

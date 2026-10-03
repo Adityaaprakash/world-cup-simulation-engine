@@ -2,13 +2,14 @@ package com.aditya.worldcup.training.service;
 
 import com.aditya.worldcup.players.entity.InjuryStatus;
 import com.aditya.worldcup.players.entity.Player;
+import com.aditya.worldcup.players.entity.PlayerPosition;
 import com.aditya.worldcup.players.entity.PlayerState;
+import com.aditya.worldcup.players.repository.PlayerRepository;
 import com.aditya.worldcup.players.service.PlayerStateService;
 import com.aditya.worldcup.squadplayers.entity.SquadPlayer;
 import com.aditya.worldcup.squadplayers.repository.SquadPlayerRepository;
 import com.aditya.worldcup.training.entity.TrainingCategory;
 import com.aditya.worldcup.training.entity.TrainingIntensity;
-import com.aditya.worldcup.managers.entity.ManagerEconomy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,9 @@ class PlayerTrainingServiceTest {
 
     @Mock
     private PlayerStateService playerStateService;
+
+    @Mock
+    private PlayerRepository playerRepository;
 
     @Mock
     private SquadPlayerRepository squadPlayerRepository;
@@ -50,11 +54,18 @@ class PlayerTrainingServiceTest {
 
     @BeforeEach
     void setUp() {
-        youngPlayer = Player.builder().id(1L).age(20).overallRating(70).potential(85).build();
-        youngState = PlayerState.builder().player(youngPlayer).fatigue(10).fitness(100).morale(50).developmentRating(0).progressionTracker(0).injuryStatus(InjuryStatus.HEALTHY).build();
-
-        oldPlayer = Player.builder().id(2L).age(32).overallRating(80).potential(80).build();
-        oldState = PlayerState.builder().player(oldPlayer).fatigue(10).fitness(100).morale(50).developmentRating(0).progressionTracker(0).injuryStatus(InjuryStatus.HEALTHY).build();
+        youngPlayer = Player.builder().id(1L).age(20).overallRating(70).potential(85)
+                .position(PlayerPosition.CB)
+                .pace(65).shooting(40).passing(55).dribbling(50).defending(72).physical(68)
+                .build();
+        youngState = PlayerState.builder().player(youngPlayer).fatigue(10).fitness(100).morale(50)
+                .developmentRating(0).progressionTracker(0).injuryStatus(InjuryStatus.HEALTHY).build();
+        oldPlayer = Player.builder().id(2L).age(35).overallRating(80).potential(80)
+                .position(PlayerPosition.ST)
+                .pace(78).shooting(82).passing(70).dribbling(75).defending(40).physical(74)
+                .build();
+        oldState = PlayerState.builder().player(oldPlayer).fatigue(10).fitness(100).morale(50)
+                .developmentRating(0).progressionTracker(0).injuryStatus(InjuryStatus.HEALTHY).build();
     }
 
     @Test
@@ -118,6 +129,7 @@ class PlayerTrainingServiceTest {
     @Test
     void oldPlayerDeclinesWithIntenseTraining() {
         when(playerStateService.isAvailable(oldState)).thenReturn(true);
+        oldState.setFatigue(0);
         oldState.setProgressionTracker(-95);
         
         playerTrainingService.processPlayerTraining(oldState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null, null);
@@ -167,5 +179,28 @@ class PlayerTrainingServiceTest {
         // Since workload > 70 previously -> multiplier is 1.5. 25 * 1.5 = 38 fatigue!
         assertThat(youngState.getWorkload()).isEqualTo(100);
         assertThat(youngState.getFatigue()).isEqualTo(48); // 10 original + 38
+    }
+
+    /**
+     * Phase 14C — Critical position training attribute test.
+     * Verifies that POSITION training for a CB (defender) actually improves
+     * the defending attribute (real Player field), NOT just the progression tracker.
+     */
+    @Test
+    void positionTraining_defenderImprovesDefendingAttribute() {
+        // youngPlayer is a CB with defending=72, shooting=40
+        int initialDefending = youngPlayer.getDefending();
+        int initialShooting  = youngPlayer.getShooting();
+
+        when(playerStateService.isAvailable(youngState)).thenReturn(true);
+        when(playerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        playerTrainingService.processPlayerTraining(
+                youngState, TrainingCategory.POSITION, TrainingIntensity.NORMAL, null, null);
+
+        // Defending must have increased
+        assertThat(youngPlayer.getDefending()).isGreaterThan(initialDefending);
+        // Shooting must NOT have increased (not a defender attribute)
+        assertThat(youngPlayer.getShooting()).isEqualTo(initialShooting);
     }
 }
