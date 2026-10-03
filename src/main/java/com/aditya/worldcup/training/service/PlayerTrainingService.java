@@ -144,13 +144,11 @@ public class PlayerTrainingService {
         int newFatigue = Math.min(100, state.getFatigue() + fatigueIncrease);
         state.setFatigue(newFatigue);
 
-        // --- Phase 14C: POSITION training — mutate real Player attributes ---
-        if (category == TrainingCategory.POSITION) {
+        // --- Phase 14C: POSITION training — mutate isolated PlayerState deltas ONLY if they are progressing natively ---
+        if (category == TrainingCategory.POSITION && actualProgression > 0) {
             Player player = state.getPlayer();
-            boolean attributeChanged = PositionTrainingUtil.applyPositionAttributeBoost(player, intensity);
-            if (attributeChanged) {
-                playerRepository.save(player);
-            }
+            PositionTrainingUtil.applyPositionAttributeBoost(player, state, intensity);
+            // No need to save player manually, as state holds the progression and is saved upstream
         }
 
         // Update development

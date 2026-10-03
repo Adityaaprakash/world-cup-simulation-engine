@@ -2,6 +2,7 @@ package com.aditya.worldcup.training.service;
 
 import com.aditya.worldcup.players.entity.Player;
 import com.aditya.worldcup.players.entity.PlayerPosition;
+import com.aditya.worldcup.players.entity.PlayerState;
 import com.aditya.worldcup.training.entity.TrainingIntensity;
 
 /**
@@ -38,23 +39,14 @@ public final class PositionTrainingUtil {
 
     /**
      * Applies a small, bounded, position-specific attribute boost directly to the
-     * {@link Player} entity.
+     * {@link PlayerState} delta fields to guarantee strict manager isolation.
      *
-     * <ul>
-     *   <li>GK → defending, physical</li>
-     *   <li>RB/CB/LB → defending, physical</li>
-     *   <li>CDM → defending, passing</li>
-     *   <li>CM → passing, dribbling</li>
-     *   <li>CAM → passing, dribbling, shooting</li>
-     *   <li>RW/LW → pace, dribbling</li>
-     *   <li>ST → shooting, pace</li>
-     * </ul>
-     *
-     * @param player    the player whose attributes will be modified
+     * @param player    the immutable base player
+     * @param state     the manager-specific state where deltas are persisted
      * @param intensity training intensity (controls magnitude of increase)
      * @return true if any attribute was changed, false if all attributes were already at ceiling
      */
-    public static boolean applyPositionAttributeBoost(Player player, TrainingIntensity intensity) {
+    public static boolean applyPositionAttributeBoost(Player player, PlayerState state, TrainingIntensity intensity) {
         int increment = switch (intensity) {
             case LIGHT -> 1;
             case NORMAL -> 1;
@@ -65,108 +57,122 @@ public final class PositionTrainingUtil {
 
         switch (player.getPosition()) {
             case GK -> {
-                changed |= boostDefending(player, increment);
-                changed |= boostPhysical(player, increment);
+                changed |= boostDefending(player, state, increment);
+                changed |= boostPhysical(player, state, increment);
             }
             case RB, CB, LB -> {
-                changed |= boostDefending(player, increment);
-                changed |= boostPhysical(player, increment);
+                changed |= boostDefending(player, state, increment);
+                changed |= boostPhysical(player, state, increment);
             }
             case CDM -> {
-                changed |= boostDefending(player, increment);
-                changed |= boostPassing(player, increment);
+                changed |= boostDefending(player, state, increment);
+                changed |= boostPassing(player, state, increment);
             }
             case CM -> {
-                changed |= boostPassing(player, increment);
-                changed |= boostDribbling(player, increment);
+                changed |= boostPassing(player, state, increment);
+                changed |= boostDribbling(player, state, increment);
             }
             case CAM -> {
-                changed |= boostPassing(player, increment);
-                changed |= boostDribbling(player, increment);
-                changed |= boostShooting(player, increment);
+                changed |= boostPassing(player, state, increment);
+                changed |= boostDribbling(player, state, increment);
+                changed |= boostShooting(player, state, increment);
             }
             case RW, LW -> {
-                changed |= boostPace(player, increment);
-                changed |= boostDribbling(player, increment);
+                changed |= boostPace(player, state, increment);
+                changed |= boostDribbling(player, state, increment);
             }
             case ST -> {
-                changed |= boostShooting(player, increment);
-                changed |= boostPace(player, increment);
+                changed |= boostShooting(player, state, increment);
+                changed |= boostPace(player, state, increment);
             }
         }
 
         if (changed) {
-            recalculateOverall(player);
+            recalculateOverallDelta(player, state);
         }
         return changed;
     }
 
     // ------------------------------------------------------------------ //
-    // Private attribute mutators — each clamps to [MIN_ATTRIBUTE, MAX_ATTRIBUTE]
+    // Private attribute mutators — each maintains the MAX_ATTRIBUTE ceiling 
+    // against the COMBINED (base + delta) score.
     // ------------------------------------------------------------------ //
 
-    private static boolean boostPace(Player player, int increment) {
-        int current = player.getPace();
-        int updated = Math.min(MAX_ATTRIBUTE, current + increment);
-        if (updated == current) return false;
-        player.setPace(updated);
+    private static boolean boostPace(Player player, PlayerState state, int increment) {
+        int effective = player.getPace() + state.getPaceDelta();
+        int maxAllowed = Math.min(MAX_ATTRIBUTE, player.getPotential());
+        int updated = Math.min(maxAllowed, effective + increment);
+        if (updated <= effective) return false;
+        state.setPaceDelta(state.getPaceDelta() + (updated - effective));
         return true;
     }
 
-    private static boolean boostShooting(Player player, int increment) {
-        int current = player.getShooting();
-        int updated = Math.min(MAX_ATTRIBUTE, current + increment);
-        if (updated == current) return false;
-        player.setShooting(updated);
+    private static boolean boostShooting(Player player, PlayerState state, int increment) {
+        int effective = player.getShooting() + state.getShootingDelta();
+        int maxAllowed = Math.min(MAX_ATTRIBUTE, player.getPotential());
+        int updated = Math.min(maxAllowed, effective + increment);
+        if (updated <= effective) return false;
+        state.setShootingDelta(state.getShootingDelta() + (updated - effective));
         return true;
     }
 
-    private static boolean boostPassing(Player player, int increment) {
-        int current = player.getPassing();
-        int updated = Math.min(MAX_ATTRIBUTE, current + increment);
-        if (updated == current) return false;
-        player.setPassing(updated);
+    private static boolean boostPassing(Player player, PlayerState state, int increment) {
+        int effective = player.getPassing() + state.getPassingDelta();
+        int maxAllowed = Math.min(MAX_ATTRIBUTE, player.getPotential());
+        int updated = Math.min(maxAllowed, effective + increment);
+        if (updated <= effective) return false;
+        state.setPassingDelta(state.getPassingDelta() + (updated - effective));
         return true;
     }
 
-    private static boolean boostDribbling(Player player, int increment) {
-        int current = player.getDribbling();
-        int updated = Math.min(MAX_ATTRIBUTE, current + increment);
-        if (updated == current) return false;
-        player.setDribbling(updated);
+    private static boolean boostDribbling(Player player, PlayerState state, int increment) {
+        int effective = player.getDribbling() + state.getDribblingDelta();
+        int maxAllowed = Math.min(MAX_ATTRIBUTE, player.getPotential());
+        int updated = Math.min(maxAllowed, effective + increment);
+        if (updated <= effective) return false;
+        state.setDribblingDelta(state.getDribblingDelta() + (updated - effective));
         return true;
     }
 
-    private static boolean boostDefending(Player player, int increment) {
-        int current = player.getDefending();
-        int updated = Math.min(MAX_ATTRIBUTE, current + increment);
-        if (updated == current) return false;
-        player.setDefending(updated);
+    private static boolean boostDefending(Player player, PlayerState state, int increment) {
+        int effective = player.getDefending() + state.getDefendingDelta();
+        int maxAllowed = Math.min(MAX_ATTRIBUTE, player.getPotential());
+        int updated = Math.min(maxAllowed, effective + increment);
+        if (updated <= effective) return false;
+        state.setDefendingDelta(state.getDefendingDelta() + (updated - effective));
         return true;
     }
 
-    private static boolean boostPhysical(Player player, int increment) {
-        int current = player.getPhysical();
-        int updated = Math.min(MAX_ATTRIBUTE, current + increment);
-        if (updated == current) return false;
-        player.setPhysical(updated);
+    private static boolean boostPhysical(Player player, PlayerState state, int increment) {
+        int effective = player.getPhysical() + state.getPhysicalDelta();
+        int maxAllowed = Math.min(MAX_ATTRIBUTE, player.getPotential());
+        int updated = Math.min(maxAllowed, effective + increment);
+        if (updated <= effective) return false;
+        state.setPhysicalDelta(state.getPhysicalDelta() + (updated - effective));
         return true;
     }
 
     /**
-     * Recalculates overallRating as the integer average of the six skill attributes,
-     * clamped to [MIN_ATTRIBUTE, MAX_ATTRIBUTE].
-     *
-     * This mirrors the way attributes already contribute to overall rating
-     * (as used by the existing simulation engine for team strength calculations).
+     * Recalculates developmentRating delta to correctly offset the average
+     * of the isolated attribute deltas so that PlayerEffectiveRatingService 
+     * correctly surfaces the newly bounded progression natively.
      */
-    static void recalculateOverall(Player player) {
-        int avg = (player.getPace()
-                + player.getShooting()
-                + player.getPassing()
-                + player.getDribbling()
-                + player.getDefending()
-                + player.getPhysical()) / 6;
-        player.setOverallRating(Math.min(MAX_ATTRIBUTE, Math.max(MIN_ATTRIBUTE, avg)));
+    static void recalculateOverallDelta(Player player, PlayerState state) {
+        int avgEffective = (
+                (player.getPace() + state.getPaceDelta())
+                + (player.getShooting() + state.getShootingDelta())
+                + (player.getPassing() + state.getPassingDelta())
+                + (player.getDribbling() + state.getDribblingDelta())
+                + (player.getDefending() + state.getDefendingDelta())
+                + (player.getPhysical() + state.getPhysicalDelta())) / 6;
+                
+        int baseAvg = (player.getPace() + player.getShooting() + player.getPassing()
+                       + player.getDribbling() + player.getDefending() + player.getPhysical()) / 6;
+                       
+        int diff = avgEffective - baseAvg;
+        
+        // We set developmentRating to reflect the attribute growth! 
+        // Note: the effective potential cap was already strictly enforced during attribute boost logic.
+        state.setDevelopmentRating(Math.max(0, diff));
     }
 }

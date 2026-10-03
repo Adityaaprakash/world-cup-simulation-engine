@@ -73,4 +73,29 @@ public class PlayerState {
     @Builder.Default
     @Column(nullable = false)
     private Integer progressionTracker = 0;
+
+    // --- Phase 14C: Isolated Capability Deltas ---
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer paceDelta = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer shootingDelta = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer passingDelta = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer dribblingDelta = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer defendingDelta = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer physicalDelta = 0;
 }

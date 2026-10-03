@@ -184,23 +184,23 @@ class PlayerTrainingServiceTest {
     /**
      * Phase 14C — Critical position training attribute test.
      * Verifies that POSITION training for a CB (defender) actually improves
-     * the defending attribute (real Player field), NOT just the progression tracker.
+     * the defending attribute delta (isolated by PlayerState), NOT global player capability.
      */
     @Test
     void positionTraining_defenderImprovesDefendingAttribute() {
         // youngPlayer is a CB with defending=72, shooting=40
-        int initialDefending = youngPlayer.getDefending();
-        int initialShooting  = youngPlayer.getShooting();
+        int initialDefendingDelta = youngState.getDefendingDelta();
+        int initialShootingDelta  = youngState.getShootingDelta();
 
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
-        when(playerRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // Note: playerRepository.save() is intentionally omitted because attributes isolate to PlayerState.
 
         playerTrainingService.processPlayerTraining(
                 youngState, TrainingCategory.POSITION, TrainingIntensity.NORMAL, null, null);
 
-        // Defending must have increased
-        assertThat(youngPlayer.getDefending()).isGreaterThan(initialDefending);
+        // Defending must have increased via delta
+        assertThat(youngState.getDefendingDelta()).isGreaterThan(initialDefendingDelta);
         // Shooting must NOT have increased (not a defender attribute)
-        assertThat(youngPlayer.getShooting()).isEqualTo(initialShooting);
+        assertThat(youngState.getShootingDelta()).isEqualTo(initialShootingDelta);
     }
 }
