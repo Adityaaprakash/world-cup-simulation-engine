@@ -21,7 +21,7 @@ public class PlayerState {
     @JoinColumn(name = "manager_id", nullable = false)
     private Manager manager;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "player_id", nullable = false)
     private Player player;
 

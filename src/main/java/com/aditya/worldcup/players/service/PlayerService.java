@@ -19,6 +19,7 @@ public class PlayerService {
 
     private final PlayerRepository playerRepository;
     private final com.aditya.worldcup.players.service.PlayerStateService playerStateService;
+    private final PlayerEffectiveRatingService playerEffectiveRatingService;
     private final ManagerService managerService;
     private final PlayerLifecycleRepository playerLifecycleRepository;
 
@@ -26,24 +27,32 @@ public class PlayerService {
 
         return playerRepository.findAll()
                 .stream()
-                .map(player -> new PlayerResponse(
+                .map(player -> {
+                    var state = playerStateService.getOrCreateState(player);
+                    var effective = playerEffectiveRatingService.getEffectiveAttributes(player, state);
+                    return new PlayerResponse(
                         player.getId(),
                         player.getName(),
                         player.getPosition().name(),
-                        player.getOverallRating()
-                ))
+                        effective.overallRating()
+                    );
+                })
                 .toList();
     }
 
     public Page<PlayerResponse> getPlayerPage(Pageable pageable) {
 
         return playerRepository.findAll(pageable)
-                .map(player -> new PlayerResponse(
+                .map(player -> {
+                    var state = playerStateService.getOrCreateState(player);
+                    var effective = playerEffectiveRatingService.getEffectiveAttributes(player, state);
+                    return new PlayerResponse(
                         player.getId(),
                         player.getName(),
                         player.getPosition().name(),
-                        player.getOverallRating()
-                ));
+                        effective.overallRating()
+                    );
+                });
     }
 
     public List<PlayerResponse> getPlayersByCountry(
@@ -52,12 +61,16 @@ public class PlayerService {
 
         return playerRepository.findByCountryId(countryId)
                 .stream()
-                .map(player -> new PlayerResponse(
+                .map(player -> {
+                    var state = playerStateService.getOrCreateState(player);
+                    var effective = playerEffectiveRatingService.getEffectiveAttributes(player, state);
+                    return new PlayerResponse(
                         player.getId(),
                         player.getName(),
                         player.getPosition().name(),
-                        player.getOverallRating()
-                ))
+                        effective.overallRating()
+                    );
+                })
                 .toList();
     }
 
@@ -95,20 +108,22 @@ public class PlayerService {
             }
         }
 
+        var effective = playerEffectiveRatingService.getEffectiveAttributes(player, state);
+
         return new com.aditya.worldcup.players.dto.PlayerDetailsResponse(
                 player.getId(),
                 player.getName(),
                 player.getCountry().getName(),
                 player.getPosition().name(),
                 player.getAge(),
-                player.getOverallRating(),
+                effective.overallRating(),
                 player.getPotential(),
-                player.getPace(),
-                player.getShooting(),
-                player.getPassing(),
-                player.getDribbling(),
-                player.getDefending(),
-                player.getPhysical(),
+                effective.pace(),
+                effective.shooting(),
+                effective.passing(),
+                effective.dribbling(),
+                effective.defending(),
+                effective.physical(),
                 player.getPreferredFoot(),
                 active,
                 retired,
@@ -125,6 +140,7 @@ public class PlayerService {
         com.aditya.worldcup.players.entity.Player player = playerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Player not found"));
         com.aditya.worldcup.players.entity.PlayerState state = playerStateService.getOrCreateState(player);
+        var effective = playerEffectiveRatingService.getEffectiveAttributes(player, state);
 
         return com.aditya.worldcup.players.dto.PlayerDevelopmentDto.builder()
                 .developmentRating(state.getDevelopmentRating())
@@ -132,7 +148,7 @@ public class PlayerService {
                 .potential(player.getPotential())
                 .age(player.getAge())
                 .developmentStage(resolveDevelopmentStage(player.getAge()))
-                .overallRating(player.getOverallRating())
+                .overallRating(effective.overallRating())
                 .fatigue(state.getFatigue())
                 .build();
     }

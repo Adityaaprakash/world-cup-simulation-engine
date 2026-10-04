@@ -41,4 +41,30 @@ public class PlayerEffectiveRatingService {
         return Math.max(1, Math.min(100,
                 (int) Math.round(player.getOverallRating() + adjustment)));
     }
+
+    public EffectiveAttributes getEffectiveAttributes(Player player, PlayerState state) {
+        return new EffectiveAttributes(
+                clampToPotential(player.getPace() + state.getPaceDelta(), player.getPotential()),
+                clampToPotential(player.getShooting() + state.getShootingDelta(), player.getPotential()),
+                clampToPotential(player.getPassing() + state.getPassingDelta(), player.getPotential()),
+                clampToPotential(player.getDribbling() + state.getDribblingDelta(), player.getPotential()),
+                clampToPotential(player.getDefending() + state.getDefendingDelta(), player.getPotential()),
+                clampToPotential(player.getPhysical() + state.getPhysicalDelta(), player.getPotential()),
+                calculate(player, state)
+        );
+    }
+
+    private int clampToPotential(int effective, int potential) {
+        return Math.max(1, Math.min(99, Math.min(effective, potential)));
+    }
+
+    public record EffectiveAttributes(
+            int pace,
+            int shooting,
+            int passing,
+            int dribbling,
+            int defending,
+            int physical,
+            int overallRating
+    ) {}
 }

@@ -18,6 +18,9 @@ import com.aditya.worldcup.tactics.dto.MatchPlanDto;
 import com.aditya.worldcup.tactics.entity.TacticalApproach;
 import com.aditya.worldcup.teams.entity.Team;
 import com.aditya.worldcup.squads.entity.Squad;
+import com.aditya.worldcup.players.service.PlayerEffectiveRatingService;
+import com.aditya.worldcup.players.service.PlayerEffectiveRatingService.EffectiveAttributes;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +32,7 @@ public class TacticalSelectionService {
 
     private final TacticalProfileService tacticalProfileService;
     private final PlayerStateService playerStateService;
+    private final PlayerEffectiveRatingService playerEffectiveRatingService;
 
     public TacticalProfile selectTactics(Team team, int squadQuality,
                                          int opponentQuality) {
@@ -112,10 +116,10 @@ public class TacticalSelectionService {
         }
         return tacticalProfileService.saveProfile(profile);
     }
-    
+
     public MatchPlanDto generateMatchPlan(Squad squad, Squad opponent, TacticalProfile profile, Long matchId) {
         TacticalApproach approach = TacticalApproach.BALANCED;
-        
+
         int diff = squad.getTeam().getOverallRating() - opponent.getTeam().getOverallRating();
         if (diff > 5) {
             approach = TacticalApproach.ATTACKING;
@@ -130,7 +134,7 @@ public class TacticalSelectionService {
                 approach = TacticalApproach.COUNTER_ATTACK;
             }
         }
-        
+
         return MatchPlanDto.builder()
                 .matchId(matchId)
                 .squadId(squad.getId())
@@ -188,12 +192,15 @@ public class TacticalSelectionService {
                                     Attribute attribute) {
         return players.stream()
                 .filter(player -> positions.contains(player.getPlayer().getPosition()))
-                .mapToDouble(player -> switch (attribute) {
-                    case PACE -> player.getPlayer().getPace();
-                    case CREATIVITY -> (player.getPlayer().getPassing()
-                            + player.getPlayer().getDribbling()) / 2.0;
-                    case DEFENSE -> (player.getPlayer().getDefending()
-                            + player.getPlayer().getPhysical()) / 2.0;
+                .map(player -> playerEffectiveRatingService.getEffectiveAttributes(
+                        player.getPlayer(),
+                        playerStateService.getOrCreateState(player.getPlayer())))
+                .mapToDouble(attrs -> switch (attribute) {
+                    case PACE -> attrs.pace();
+                    case CREATIVITY -> (attrs.passing()
+                            + attrs.dribbling()) / 2.0;
+                    case DEFENSE -> (attrs.defending()
+                            + attrs.physical()) / 2.0;
                 })
                 .average()
                 .orElse(0);

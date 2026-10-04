@@ -44,10 +44,14 @@ class PlayerStateIsolationIT {
         // Arrange
         Country country = new Country();
         country.setName("Testland");
+        country.setFifaCode("TST");
+        country.setContinent(com.aditya.worldcup.countries.entity.Continent.EUROPE);
+        country.setFifaRanking(1);
+        country.setOverallRating(80);
         entityManager.persist(country);
         
-        Manager managerA = managerRepository.save(Manager.builder().username("mgrA").build());
-        Manager managerB = managerRepository.save(Manager.builder().username("mgrB").build());
+        Manager managerA = managerRepository.save(Manager.builder().username("mgrA").displayName("A").nationality("N").favoriteFormation("4-4-2").favoriteTacticalProfile("A").coachingStyle(com.aditya.worldcup.managers.entity.CoachingStyle.BALANCED).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).experiencePoints(0).level(1).reputation(com.aditya.worldcup.managers.entity.ManagerReputation.AMATEUR).build());
+        Manager managerB = managerRepository.save(Manager.builder().username("mgrB").displayName("B").nationality("N").favoriteFormation("4-4-2").favoriteTacticalProfile("A").coachingStyle(com.aditya.worldcup.managers.entity.CoachingStyle.BALANCED).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).experiencePoints(0).level(1).reputation(com.aditya.worldcup.managers.entity.ManagerReputation.AMATEUR).build());
         
         Player globalPlayer = playerRepository.save(Player.builder()
                 .name("Isolate Me")
@@ -85,7 +89,7 @@ class PlayerStateIsolationIT {
         playerStateRepository.save(stateA); // Explicit save though transactional handles it
 
         // Re-fetch and check
-        Player refetchedPlayer = playerRepository.findById(globalPlayer.getId()).orElseThrow();
+        // refetchedPlayer skipped 
         PlayerState refetchedStateA = playerStateRepository.findById(stateA.getId()).orElseThrow();
         PlayerState refetchedStateB = playerStateRepository.findById(stateB.getId()).orElseThrow();
         
