@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import TeamSelection from './pages/TeamSelection'
 import Squad from './pages/Squad'
+import Scouting from './pages/Scouting'
 import LineupBuilder from './pages/LineupBuilder'
 import TournamentSelection from './pages/TournamentSelection'
 import TournamentDashboard from './pages/TournamentDashboard'
@@ -34,6 +35,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/teams" element={<TeamSelection />} />
+          <Route path="/scouting" element={<Scouting />} />
           <Route path="/teams/:teamId/squad" element={<Squad />} />
           <Route path="/teams/:teamId/lineup" element={<LineupBuilder />} />
           <Route path="/tournaments" element={<TournamentSelection />} />

@@ -16,8 +16,9 @@ class PlayerServiceTest {
     private final PlayerRepository playerRepository = mock(PlayerRepository.class);
     private final PlayerStateService playerStateService = mock(PlayerStateService.class);
     private final com.aditya.worldcup.managers.service.ManagerService managerService = mock(com.aditya.worldcup.managers.service.ManagerService.class);
+    private final PlayerEffectiveRatingService playerEffectiveRatingService = mock(PlayerEffectiveRatingService.class);
     private final com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository playerLifecycleRepository = mock(com.aditya.worldcup.contracts.repository.PlayerLifecycleRepository.class);
-    private final PlayerService service = new PlayerService(playerRepository, playerStateService, managerService, playerLifecycleRepository);
+    private final PlayerService service = new PlayerService(playerRepository, playerStateService, playerEffectiveRatingService, managerService, playerLifecycleRepository);
 
     @Test
     void comparePlayersReturnsMappedResponses() {
@@ -43,6 +44,9 @@ class PlayerServiceTest {
         when(playerRepository.findById(2L)).thenReturn(Optional.of(p2));
         when(playerStateService.getOrCreateState(any())).thenReturn(new PlayerState());
         when(playerStateService.isAvailable(any())).thenReturn(true);
+        when(playerEffectiveRatingService.getEffectiveAttributes(any(), any())).thenReturn(
+                new PlayerEffectiveRatingService.EffectiveAttributes(90, 90, 90, 90, 90, 90, 90)
+        );
 
         List<PlayerDetailsResponse> result = service.comparePlayers(List.of(1L, 2L));
 
