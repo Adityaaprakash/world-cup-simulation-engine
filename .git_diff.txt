@@ -1,6 +1,0 @@
-﻿M	frontend/src/api/playerApi.js
-M	src/main/java/com/aditya/worldcup/players/controller/PlayerController.java
-M	src/main/java/com/aditya/worldcup/players/service/PlayerService.java
-M	src/main/java/com/aditya/worldcup/training/entity/TrainingCategory.java
-M	src/main/java/com/aditya/worldcup/training/service/PlayerTrainingService.java
-M	src/test/java/com/aditya/worldcup/training/service/PlayerTrainingServiceTest.java
