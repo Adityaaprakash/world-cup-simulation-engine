@@ -47,6 +47,9 @@ public class SaveSlot {
     private Long currentTournamentId;
 
     @Column(nullable = false)
+    private Integer initialSeason;
+
+    @Column(nullable = false)
     private Integer currentSeason;
 
     @Column(nullable = false, length = 80)

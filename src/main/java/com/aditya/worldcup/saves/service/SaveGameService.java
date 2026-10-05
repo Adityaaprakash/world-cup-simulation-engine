@@ -84,6 +84,7 @@ public class SaveGameService {
         validateTournamentReference(request.currentTournamentId());
 
         LocalDateTime now = LocalDateTime.now();
+        Integer season = defaultSeason(request.currentSeason(), now);
         SaveSlot saveSlot = SaveSlot.builder()
                 .manager(manager)
                 .slotName(request.slotName())
@@ -91,7 +92,8 @@ public class SaveGameService {
                 .description(request.description())
                 .saveType(SaveType.MANUAL)
                 .currentTournamentId(request.currentTournamentId())
-                .currentSeason(defaultSeason(request.currentSeason(), now))
+                .initialSeason(season)
+                .currentSeason(season)
                 .currentStage(defaultStage(request.currentStage()))
                 .totalPlayTime(defaultPlayTime(request.totalPlayTime()))
                 .formatVersion(CURRENT_FORMAT_VERSION)
@@ -208,16 +210,19 @@ public class SaveGameService {
             markBackup(saveSlot, "Backup before autosave overwrite");
         }
 
+
+        Integer season = defaultSeason(saveSlot.getCurrentSeason(), now);
+        if (saveSlot.getInitialSeason() == null) {
+            saveSlot.setInitialSeason(season);
+        }
+
         saveSlot.setSlotName(AUTOSAVE_SLOT_NAME);
         saveSlot.setSlotNumber(AUTOSAVE_SLOT_NUMBER);
         saveSlot.setSaveType(SaveType.AUTOSAVE);
         saveSlot.setAutosave(true);
         saveSlot.setDescription(reason);
         saveSlot.setCurrentTournamentId(currentTournamentId);
-        saveSlot.setCurrentSeason(defaultSeason(
-                saveSlot.getCurrentSeason(),
-                now
-        ));
+        saveSlot.setCurrentSeason(season);
         saveSlot.setCurrentStage(defaultStage(saveSlot.getCurrentStage()));
         saveSlot.setTotalPlayTime(defaultPlayTime(saveSlot.getTotalPlayTime()));
         refreshMetadata(saveSlot, now);
@@ -378,6 +383,7 @@ public class SaveGameService {
                 saveSlot.getDescription(),
                 saveSlot.getSaveType(),
                 saveSlot.getCurrentTournamentId(),
+                saveSlot.getInitialSeason(),
                 saveSlot.getCurrentSeason(),
                 saveSlot.getCurrentStage(),
                 saveSlot.getTotalPlayTime(),

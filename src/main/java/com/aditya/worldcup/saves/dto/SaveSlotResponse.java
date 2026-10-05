@@ -12,6 +12,7 @@ public record SaveSlotResponse(
         String description,
         SaveType saveType,
         Long currentTournamentId,
+        Integer initialSeason,
         Integer currentSeason,
         String currentStage,
         Long totalPlayTime,

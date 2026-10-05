@@ -163,9 +163,9 @@ class PlayerStateServiceTest {
         Player player = player(1L, 80);
         PlayerState state = PlayerState.builder()
                 .currentForm(10).confidence(100).fitness(100).fatigue(0).morale(100).build();
-        PlayerEffectiveRatingService ratingService = new PlayerEffectiveRatingService(service);
+        PlayerEffectiveRatingService effectiveRatingService = new PlayerEffectiveRatingService(service, mock(com.aditya.worldcup.saves.repository.SaveSlotRepository.class));
 
-        int effectiveRating = ratingService.calculate(player, state);
+        int effectiveRating = effectiveRatingService.calculate(player, state);
 
         assertThat(effectiveRating).isGreaterThan(80);
         assertThat(player.getOverallRating()).isEqualTo(80);
@@ -253,6 +253,7 @@ class PlayerStateServiceTest {
         Player player = new Player();
         player.setId(id);
         player.setOverallRating(rating);
+        player.setAge(25);
         player.setName("Player " + id);
         return player;
     }

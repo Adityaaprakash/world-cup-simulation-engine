@@ -53,7 +53,10 @@ class Phase10EIntegrationTest {
         playerStateService = new PlayerStateService(playerStateRepository, squadPlayerRepository, 
             mock(com.aditya.worldcup.squads.repository.SquadRepository.class),
             mock(com.aditya.worldcup.managers.repository.ManagerEconomyRepository.class));
-        playerEffectiveRatingService = new PlayerEffectiveRatingService(playerStateService);
+        playerEffectiveRatingService = new PlayerEffectiveRatingService(
+            playerStateService,
+            org.mockito.Mockito.mock(com.aditya.worldcup.saves.repository.SaveSlotRepository.class)
+        );
         teamStrengthService = new TeamStrengthService(squadPlayerRepository, playerEffectiveRatingService);
         rotationService = new RotationService(playerStateService);
         playerEvaluationService = new PlayerEvaluationService(playerEffectiveRatingService, playerStateService);

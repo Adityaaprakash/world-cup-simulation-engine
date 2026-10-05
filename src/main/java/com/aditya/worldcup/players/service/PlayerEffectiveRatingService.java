@@ -11,6 +11,19 @@ import org.springframework.stereotype.Service;
 public class PlayerEffectiveRatingService {
 
     private final PlayerStateService playerStateService;
+    private final com.aditya.worldcup.saves.repository.SaveSlotRepository saveSlotRepository;
+
+    public int getEffectiveAge(Player player, com.aditya.worldcup.managers.entity.Manager manager) {
+        if (manager == null) {
+            return player.getAge();
+        }
+        var saves = saveSlotRepository.findByManagerIdAndActiveTrue(manager.getId());
+        if (saves.isEmpty() || saves.get(0).getInitialSeason() == null) {
+            return player.getAge();
+        }
+        int delta = saves.get(0).getCurrentSeason() - saves.get(0).getInitialSeason();
+        return player.getAge() + delta;
+    }
 
     public int calculate(Player player) {
         PlayerState state = playerStateService.getOrCreateState(player);
@@ -22,6 +35,9 @@ public class PlayerEffectiveRatingService {
             return 0;
         }
 
+        int effectiveAge = getEffectiveAge(player, state.getManager());
+        double declinePenalty = effectiveAge > 34 ? (effectiveAge - 34) * 1.5 : 0.0;
+
         double fitnessPenalty = state.getFitness() < 60 ? (60 - state.getFitness()) / 5.0 : 0.0;
         double fatiguePenalty = state.getFatigue() > 70 ? (state.getFatigue() - 70) / 5.0 : 0.0;
 
@@ -32,7 +48,8 @@ public class PlayerEffectiveRatingService {
                 - fitnessPenalty
                 - fatiguePenalty
                 + (state.getMorale() - 50) / 25.0
-                + state.getDevelopmentRating();
+                + state.getDevelopmentRating()
+                - declinePenalty;
 
         if (state.getInjuryStatus() == InjuryStatus.MINOR) {
             adjustment -= 2;
@@ -50,7 +67,8 @@ public class PlayerEffectiveRatingService {
                 clampToPotential(player.getDribbling() + state.getDribblingDelta(), player.getPotential()),
                 clampToPotential(player.getDefending() + state.getDefendingDelta(), player.getPotential()),
                 clampToPotential(player.getPhysical() + state.getPhysicalDelta(), player.getPotential()),
-                calculate(player, state)
+                calculate(player, state),
+                getEffectiveAge(player, state.getManager())
         );
     }
 
@@ -65,6 +83,7 @@ public class PlayerEffectiveRatingService {
             int dribbling,
             int defending,
             int physical,
-            int overallRating
+            int overallRating,
+            int age
     ) {}
 }

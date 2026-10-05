@@ -38,6 +38,7 @@ public class PlayerTrainingService {
     private final ManagerObjectiveService managerObjectiveService;
     private final ManagerService managerService;
     private final ManagerEventGeneratorService eventGeneratorService;
+    private final com.aditya.worldcup.players.service.PlayerEffectiveRatingService playerEffectiveRatingService;
 
     @Transactional
     public void trainSquad(Long squadId, TrainingCategory category, TrainingIntensity intensity) {
@@ -133,7 +134,7 @@ public class PlayerTrainingService {
         double fatiguePenalty = Math.min(1.0, currentFatigue * FATIGUE_PENALTY_PER_POINT);
         
         // Progression
-        int baseProgression = calculateBaseProgression(state.getPlayer(), intensity, category);
+        int baseProgression = calculateBaseProgression(state.getPlayer(), manager, intensity, category);
         int finalProgressionBase = baseProgression + (baseProgression * trainingBonus / 100);
         int actualProgression = (int) Math.round(finalProgressionBase * (1.0 - fatiguePenalty));
         
@@ -157,8 +158,8 @@ public class PlayerTrainingService {
 
     private static final double FATIGUE_PENALTY_PER_POINT = 0.02;
 
-    private int calculateBaseProgression(Player player, TrainingIntensity intensity, TrainingCategory category) {
-        int age = player.getAge();
+    private int calculateBaseProgression(Player player, Manager manager, TrainingIntensity intensity, TrainingCategory category) {
+        int age = playerEffectiveRatingService.getEffectiveAge(player, manager);
         int potential = player.getPotential();
         int overall = player.getOverallRating();
         

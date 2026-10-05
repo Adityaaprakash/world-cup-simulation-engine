@@ -1,6 +1,7 @@
 package com.aditya.worldcup.players.entity;
 
 import com.aditya.worldcup.countries.entity.Country;
+import com.aditya.worldcup.managers.entity.Manager;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -69,4 +70,8 @@ public class Player {
     @Builder.Default
     @Column(nullable = false, length = 10)
     private String preferredFoot = "RIGHT";
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "generated_manager_id")
+    private Manager generatedForManager;
 }

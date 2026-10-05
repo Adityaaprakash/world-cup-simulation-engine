@@ -44,6 +44,15 @@ class PlayerTrainingServiceTest {
     @Mock
     private com.aditya.worldcup.managers.service.ManagerEventGeneratorService eventGeneratorService;
 
+    @Mock
+    private com.aditya.worldcup.players.service.PlayerEffectiveRatingService playerEffectiveRatingService;
+
+    @Mock
+    private com.aditya.worldcup.managers.service.ManagerObjectiveService managerObjectiveService;
+
+    @Mock
+    private com.aditya.worldcup.managers.service.ManagerService managerService;
+
     @InjectMocks
     private PlayerTrainingService playerTrainingService;
 
@@ -84,6 +93,7 @@ class PlayerTrainingServiceTest {
         squad.setUser(u);
         when(squadRepository.findById(10L)).thenReturn(java.util.Optional.of(squad));
 
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(20);
         playerTrainingService.trainSquad(10L, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL);
 
         verify(playerStateService).saveAll(any());
@@ -106,6 +116,7 @@ class PlayerTrainingServiceTest {
     void restReducesFatigueAndGivesNoProgression() {
         youngState.setFatigue(50);
         
+        // REST doesn't call base progression (returns early)
         playerTrainingService.processPlayerTraining(youngState, TrainingCategory.REST, TrainingIntensity.LIGHT, null, null);
 
         assertThat(youngState.getProgressionTracker()).isZero();
@@ -118,6 +129,7 @@ class PlayerTrainingServiceTest {
         youngState.setProgressionTracker(95);
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
 
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(20);
         playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE, null, null);
 
         // Young player roomToGrow = 15. intense = 6, physical = +1 means 7. 15 * 7 = 105 tracker points.
@@ -131,7 +143,7 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(oldState)).thenReturn(true);
         oldState.setFatigue(0);
         oldState.setProgressionTracker(-95);
-        
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(35);
         playerTrainingService.processPlayerTraining(oldState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null, null);
 
         // Old player intense = -5
@@ -149,6 +161,7 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(freshState)).thenReturn(true);
         when(playerStateService.isAvailable(tiredState)).thenReturn(true);
         
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(20);
         playerTrainingService.processPlayerTraining(freshState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null, null);
         playerTrainingService.processPlayerTraining(tiredState, TrainingCategory.TECHNICAL, TrainingIntensity.NORMAL, null, null);
         
@@ -162,6 +175,7 @@ class PlayerTrainingServiceTest {
         youngState.setProgressionTracker(99);
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
         
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(20);
         playerTrainingService.processPlayerTraining(youngState, TrainingCategory.TECHNICAL, TrainingIntensity.INTENSE, null, null);
         
         assertThat(youngState.getDevelopmentRating()).isEqualTo(10);
@@ -173,6 +187,7 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
         youngState.setWorkload(75);
         
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(20);
         playerTrainingService.processPlayerTraining(youngState, TrainingCategory.PHYSICAL, TrainingIntensity.INTENSE, null, null);
         
         // Intensity INTENSE = 25 workload. Baseline fatigue increase = 25.
@@ -195,6 +210,7 @@ class PlayerTrainingServiceTest {
         when(playerStateService.isAvailable(youngState)).thenReturn(true);
         // Note: playerRepository.save() is intentionally omitted because attributes isolate to PlayerState.
 
+        when(playerEffectiveRatingService.getEffectiveAge(any(), any())).thenReturn(20);
         playerTrainingService.processPlayerTraining(
                 youngState, TrainingCategory.POSITION, TrainingIntensity.NORMAL, null, null);
 

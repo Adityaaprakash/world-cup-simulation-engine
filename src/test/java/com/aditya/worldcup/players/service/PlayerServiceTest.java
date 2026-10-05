@@ -45,7 +45,7 @@ class PlayerServiceTest {
         when(playerStateService.getOrCreateState(any())).thenReturn(new PlayerState());
         when(playerStateService.isAvailable(any())).thenReturn(true);
         when(playerEffectiveRatingService.getEffectiveAttributes(any(), any())).thenReturn(
-                new PlayerEffectiveRatingService.EffectiveAttributes(90, 90, 90, 90, 90, 90, 90)
+                new PlayerEffectiveRatingService.EffectiveAttributes(90, 85, 80, 80, 80, 50, 75, 25)
         );
 
         List<PlayerDetailsResponse> result = service.comparePlayers(List.of(1L, 2L));
